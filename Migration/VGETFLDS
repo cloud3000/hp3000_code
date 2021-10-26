@@ -1,0 +1,556 @@
+000100$CONTROL POST85, BOUNDS, LINES=59, LIST, MAP, CROSSREF                    
+000200 IDENTIFICATION DIVISION.                                                 
+000300 PROGRAM-ID. VGETFLD.                                                     
+000400 AUTHOR.     MICHAEL ANDERSON.                                            
+000500 ENVIRONMENT DIVISION.                                                    
+000600 CONFIGURATION SECTION.                                                   
+000700 SOURCE-COMPUTER. HP-3000.                                                
+000800* SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                           
+000900 OBJECT-COMPUTER. HP-3000.                                                
+001000*                                                                         
+001100 INPUT-OUTPUT SECTION.                                                    
+001200 FILE-CONTROL.                                                            
+001300*                                                                         
+001400     SELECT FORMA-FILE      ASSIGN TO "FORM,,,DISC"                       
+001500            FILE STATUS IS FORMFILE-STATUS.                               
+001600     SELECT G-FILE      ASSIGN TO "GFILE,,,DISC"                          
+001700            FILE STATUS IS GFILE-STATUS.                                  
+001800     SELECT T-FILE      ASSIGN TO "TFILE,,,DISC"                  100705ma
+001900            FILE STATUS IS TFILE-STATUS.                          100705ma
+002000*                                                                         
+002100 DATA DIVISION.                                                           
+002200 FILE SECTION.                                                            
+002300 FD  FORMA-FILE                                                           
+002400     RECORD CONTAINS 256 CHARACTERS                                       
+002500     DATA RECORD IS Form-File.                                            
+002600 01  Form-File.                                                           
+002700     05  Form-Rec                     PIC X(256).                         
+002800 FD  G-File                                                               
+002900     RECORD CONTAINS 1540 CHARACTERS                                      
+003000     DATA RECORD is G-REC.                                                
+003100 01  G-REC                            PIC X(1540).                        
+003200 FD  T-File                                                       100705ma
+003300     RECORD CONTAINS 102 CHARACTERS                               100705ma
+003400     DATA RECORD is T-REC.                                        100705ma
+003500 01  T-REC                            PIC X(102).                 100705ma
+003600*                                                                         
+003700 WORKING-STORAGE SECTION.                                         100705ma
+003800*                                                                         
+003900 01 GSIDX                      PIC S9(4) COMP VALUE 0.            100705ma
+004000 01 GSCNT                      PIC S9(4) COMP VALUE 0.                    
+004100 01 G-SCREEN-DATA.                                                        
+004200    02 G-SCREEN-ARRAY.                                                    
+004300       05 G-SCREEN-ENTRIES OCCURS 260 TIMES.                              
+004400          10 GS-HEADER         PIC XXX.                                   
+004500          10 GS-FIELD          PIC X(1537).                               
+004600 01 G-DATA-STORAGE.                                                       
+004700    02 GIDX                    PIC S9(4) COMP VALUE 0.                    
+004800    02 GCNT                    PIC S9(4) COMP VALUE 0.                    
+004900    02 G-LEN                   PIC S9(9) COMP VALUE 0.                    
+005000    02 G-STRT                  PIC S9(9) COMP VALUE 0.                    
+005100    02 G-END                   PIC S9(9) COMP VALUE 0.                    
+005200    02 G-RECORD.                                                          
+005300       05 G-HEADER             PIC X(3).                                  
+005400       05 G-FIELD              PIC X(1536).                               
+005500 01 D-RECORD.                                                             
+005600    02 DIDX                    PIC S9(4) COMP VALUE 0.                    
+005700    02 D-LEN                   PIC S9(9) COMP VALUE 0.                    
+005800    02 D-STRT                  PIC S9(9) COMP VALUE 0.                    
+005900    02 D-END                   PIC S9(9) COMP VALUE 0.                    
+006000    02 D-RECORD-ENTRIES OCCURS 256 TIMES.                                 
+006100       05 D-HEADER             PIC X(3).                                  
+006200       05 D-FIELD              PIC X(99).                                 
+006300 01 T-RECORD.                                                             
+006400    02 TIDX                    PIC S9(4) COMP VALUE 0.                    
+006500    02 T-LEN                   PIC S9(9) COMP VALUE 0.                    
+006600    02 T-STRT                  PIC S9(9) COMP VALUE 0.                    
+006700    02 T-END                   PIC S9(9) COMP VALUE 0.                    
+006710    02 T-ACTUAL-RECORD.                                           100705ma
+006800       05 T-HEADER                PIC X(40).                      100705ma
+006900       05 T-FLD-ENTRIES OCCURS 256 TIMES.                         100705ma
+007000          10 T-FIELD              PIC X(62).                      100705ma
+007100 01 G-HEADER-FORMAT.                                                      
+007200    05 GHF-LENGTH              PIC S9(4) COMP.                            
+007300    05 GHF-TYPE                PIC X.                                     
+007400 01 D-HEADER-FORMAT.                                                      
+007500    05 DHF-LENGTH              PIC S9(4) COMP.                            
+007600    05 DHF-TYPE                PIC X.                                     
+007700 01 D-FIELD-FORMAT.                                                       
+007800    05 DFF-FLD1                PIC X(15).                                 
+007900    05 DFF-FLD2                PIC X(15).                                 
+008000    05 DFF-LEN                 PIC XXX.                                   
+008100    05 DFF-DTYPE               PIC XXXX.                                  
+008200    05 DFF-INIT                PIC X(62).                                 
+008300 01 G-FIELD-FORMAT.                                                       
+008400    05 GFF-FORM                PIC X(15).                                 
+008500    05 GFF-FIELD               PIC X(15).                                 
+008600    05 GFF-NUM                 PIC X(4).                                  
+008700    05 GFF-LEN                 PIC X(4).                                  
+008800    05 GFF-FIELD2              PIC X(15).                                 
+008900    05 GFF-ENH                 PIC X(4).                                  
+009000    05 GFF-FTYPE               PIC X.                                     
+009100    05 GFF-DTYPE               PIC X(4).                                  
+009200    05 GFF-INIT                PIC X(65).                                 
+009300    05 GFF-PROCSPECS           PIC X(1300).                               
+009400 01 T-HEADER-FORMAT.                                                      
+009500    05 THF-LENGTH              PIC S9(4) COMP.                            
+009600    05 THF-TYPE                PIC X.                                     
+009700    05 THF-FORM                PIC X(15).                                 
+009800    05 THF-CNT1                PIC S9(4) COMP.                            
+009900    05 THF-CNT2                PIC S9(4) COMP.                            
+010000    05 FILLER                  PIC X(18).                                 
+010100 01 T-FIELD-FORMAT.                                                       
+010200    05 TFF-FLD1                PIC X(15).                                 
+010300    05 TFF-FLD2                PIC X(15).                                 
+010400    05 TFF-ENH                 PIC X(4).                                  
+010500    05 TFF-ESCVAL              PIC X.                                     
+010600    05 TFF-A                   PIC X.                                     
+010700    05 TFF-FLDNUM              PIC S9(4) COMP.                            
+010800    05 TFF-SCRNODR             PIC S9(4) COMP.                            
+010900    05 FILLER                  PIC S9(4) COMP.                            
+011000    05 FILLER                  PIC S9(4) COMP.                            
+011100    05 TFF-LEN                 PIC S9(4) COMP.                            
+011200    05 TFF-ROW                 PIC S9(4) COMP.                            
+011300    05 TFF-COL                 PIC S9(4) COMP.                            
+011400 01  FORMFILE-STATUS           PIC XX    VALUE SPACES.            100705ma
+011500 01  FORMFILE-COUNT            PIC S9(9) COMP VALUE 0.            100705ma
+011600 01  FORMFILE-FLAG             PIC XX    VALUE SPACES.            100705ma
+011700     88 FORMFILE-CLOSED        VALUE SPACES.                      100705ma
+011800     88 FORMFILE-OPENED-INPUT  VALUE "01".                        100705ma
+011900     88 FORMFILE-OPENED-OUTPUT VALUE "02".                        100705ma
+012000     88 FORMFILE-EOF           VALUE "99".                        100705ma
+012100 01 CMD                        PIC X(255)      VALUE SPACES.      100705ma
+012200 01 M                          Pic X(78) Value Spaces.            100705ma
+012300 01 CSTR                       PIC X(255)      VALUE SPACES.      100705ma
+012400 01 CERR                       PIC S9(4) COMP  VALUE 0.           100705ma
+012500 01 CPARM                      PIC S9(4) COMP  VALUE 0.           100705ma
+012600 01 CMSG                       PIC S9(4) COMP  VALUE 2.           100705ma
+012700 01 DB-Idx                     PIC S9(4) COMP  VALUE 2.           100705ma
+012800                                                                  100705ma
+012900 01 FORMS-DATA.                                                   100705ma
+013000    05 FRDIDX                  PIC S9(9) COMP VALUE 0.            100705ma
+013100    05 FRDPTR                  PIC S9(9) COMP VALUE 0.            100705ma
+013200    05 PRCPTR                  PIC S9(9) COMP VALUE 0.            100705ma
+013300    05 FRDCNT                  PIC S9(9) COMP VALUE 0.            100705ma
+013400    05 PRCCNT                  PIC S9(9) COMP VALUE 0.            100705ma
+013500    05 FRD-TABLE.                                                 100705ma
+013600       10 FRD-ENTRIES OCCURS 32767  TIMES.                        100705ma
+013700          20 FRDSTR            PIC X(256).                        100705ma
+013800  01 S1                        PIC S9(9) COMP VALUE 0.            100705ma
+013900  01 S2                        PIC S9(9) COMP VALUE 0.            100705ma
+014000  01 DATA-LEN                  PIC S9(4) COMP.                    100705ma
+014100 01  GFILE-STATUS              PIC XX    VALUE SPACES.            100705ma
+014200 01  GFILE-COUNT               PIC S9(9) COMP VALUE 0.            100705ma
+014300 01  GFILE-RCOUNT              PIC S9(9) COMP VALUE 0.            100705ma
+014400 01  GFILE-FLAG                PIC XX    VALUE SPACES.            100705ma
+014500     88 GFILE-CLOSED           VALUE SPACES.                      100705ma
+014600     88 GFILE-OPENED-INPUT     VALUE "01".                        100705ma
+014700     88 GFILE-OPENED-OUTPUT    VALUE "02".                        100705ma
+014800     88 GFILE-EOF              VALUE "99".                        100705ma
+014900 01  TFILE-STATUS              PIC XX    VALUE SPACES.            100705ma
+015000 01  TFILE-COUNT               PIC S9(9) COMP VALUE 0.            100705ma
+015100 01  TFILE-RCOUNT              PIC S9(9) COMP VALUE 0.            100705ma
+015200 01  TFILE-FLAG                PIC XX    VALUE SPACES.            100705ma
+015300     88 TFILE-CLOSED           VALUE SPACES.                      100705ma
+015400     88 TFILE-OPENED-INPUT     VALUE "01".                        100705ma
+015500     88 TFILE-OPENED-OUTPUT    VALUE "02".                        100705ma
+015600     88 TFILE-EOF              VALUE "99".                        100705ma
+015700 01  EXTFILE-STATUS            PIC X   VALUE "0".                 100705ma
+015800     88 EXTFILE-EOF                    VALUE "9".                 100705ma
+015900 01 FORMSFILE-SW               PIC X   VALUE "0".                 100705ma
+016000    88 END-OF-FORMSFILE                VALUE "1".                 100705ma
+016100 01  Ascii-Value               PIC S9(4) COMP VALUE 0.            100705ma
+016200 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 100705ma
+016300     02 ASCII-BYTE1            PIC X.                             100705ma
+016400     02 ASCII-BYTE2            PIC X.                             100705ma
+016500 01 MY-FLD-ENH                 PIC X(4)  VALUE SPACES.            100705ma
+016600*                                                                 100705ma
+016700 01  VALID-T-SW                PIC X.                             100705ma
+016800     88  VALID-T               VALUE "1".                         100705ma
+016900*                                                                 100705ma
+017000 01  VALID-D-SW                PIC X.                             100705ma
+017100     88  VALID-D               VALUE "1".                         100705ma
+017200*                                                                 100705ma
+017300 01  VALID-G-SW                PIC X.                             100705ma
+017400     88  VALID-G               VALUE "1".                         100705ma
+017500 01  ERRORS-SW                 PIC X VALUE "0".                   100705ma
+017600     88  ERRORS                VALUE "1".                         100705ma
+017700*                                                                 100705ma
+017800*                                                                 100705ma
+017900 01 NUMDEC                     PIC S9(4) COMP.                    100705ma
+018000 01 NUMERR                     PIC S9(4) COMP.                    100705ma
+018100 01 NUM1                       PIC X(14).                         100705ma
+018200 01 NUM2                       PIC S9(14).                        100705ma
+018300*                                                                 100705ma
+018400 01  FILE-ERROR-DATA.                                             100705ma
+018500     05 ERROR-NUMBER           PIC XX    VALUE SPACES.            100705ma
+018600     05 FNAME                  PIC X(8)  VALUE SPACES.            100705ma
+018700     05 FILE-ERROR-RECORD      PIC X(79) VALUE SPACES.            100705ma
+018800*                                                                 100705ma
+018900 01 SCREEN-FORMS-FILE          PIC X(36)                          100705ma
+019000    VALUE "POEFORM.PUR.SOURCE".                                   100705ma
+019100 01 DECIMAL-VALUE              PIC S9(4) COMP VALUE 0.            100705ma
+019200 01 I                          PIC S9(4) COMP VALUE 0.            100705ma
+019300 01 DISP-N                     PIC ZZZ9 VALUE ZERO.               100705ma
+019400 01 EDIT-MESSAGE               PIC X(120).                        100705ma
+019500                                                                  100705ma
+019600 PROCEDURE DIVISION.                                                      
+019700                                                                          
+019800 BEGIN-VGETFLD.                                                           
+019900     OPEN INPUT FORMA-FILE.                                               
+020000     IF FORMFILE-STATUS <> "00"                                           
+020100        DISPLAY " 9001-FILE-ERROR."                                       
+020200        STOP RUN.                                                         
+020300     PERFORM Load-Form-Source.                                            
+020400     perform LOAD-G-RECORDS.                                      100705ma
+020500     PERFORM LOAD-T-RECORDS.                                      100705ma
+020600     STOP RUN.                                                    100705ma
+020700*----------------------------                                             
+020800 Load-Form-Source.                                                        
+020900D    Display " Load-Form-Source.".                                        
+021000     INITIALIZE CMD forms-data.                                           
+021100     Perform Fopen-Formsfile.                                             
+021200     MOVE 256 TO DATA-LEN.                                                
+021300     Perform varying DB-Idx From 1 By 1                                   
+021400       Until ( EXTFILE-EOF ) Or ( DB-Idx > 32766 )                        
+021500      Read Forma-File                                                     
+021600          At End     Move '1' To Formsfile-Sw                             
+021700          Not At End                                                      
+021800       Move '0' To Formsfile-Sw                                           
+021900       Add 1 to frdcnt                                                    
+022000       Move Form-Rec to frdstr(frdcnt)                                    
+022100       Move Frdstr(frdcnt)(1:2) To Ascii-Character                        
+022200      End-Read                                                            
+022300     End-Perform.                                                         
+022400     CLOSE FORMA-FILE.                                                    
+022500     Move Frdstr(2)(25:4) To MY-FLD-ENH.                                  
+022600D    Display SCREEN-FORMS-FILE "Records : " frdcnt.                       
+022700*----------------------------------------------------------------         
+022800 LOAD-G-RECORDS.                                                          
+022900D    DISPLAY "LOAD-G-RECORDS".                                            
+023000*                                                                         
+023100* L O A D    "G"    R E C O R D S                                         
+023200*                                                                         
+023300     INITIALIZE G-DATA-STORAGE.                                           
+023400     IF NOT GFILE-CLOSED PERFORM CLOSE-GFILE.                             
+023500     PERFORM OPEN-GFILE-OUTPUT.                                           
+023600     MOVE "0" TO VALID-G-SW.                                              
+023700     Perform Varying Frdidx From 1 By 1                                   
+023800       Until ( Frdidx > Frdcnt )                                          
+023900      Move Frdstr(Frdidx)(1:2) To Ascii-Character                         
+024000      If (Frdstr(Frdidx)(3:1) = "G")                                      
+024100       Compute G-STRT = ((Frdidx * 256) - 255 ) End-compute               
+024200       Compute G-END  = G-STRT + (Ascii-Value - 1) End-Compute            
+024300       Move Ascii-Value To G-LEN                                          
+024400       If G-Len > 0 and G-Len < 1540                                      
+024500        ADD 1 TO GIDX                                                     
+024600        Move frd-table(G-STRT:G-LEN) to G-RECORD                          
+024700        MOVE G-HEADER TO G-HEADER-FORMAT                                  
+024800*       IF GHF-LENGTH < 1536                                              
+024900         MOVE "1" TO VALID-G-SW                                           
+025000         MOVE G-FIELD TO G-FIELD-FORMAT                                   
+025100         INITIALIZE NUM1 NUM2 NUMDEC NUMERR                               
+025200         MOVE GFF-LEN TO NUM1                                             
+025300         CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR                      
+025400         IF NUM2 < 1                                                      
+025500          MOVE 1 TO NUM2                                                  
+025600         END-IF                                                           
+025700         IF NUM2 > 62                                                     
+025800          MOVE 62 TO NUM2                                                 
+025900         END-IF                                                           
+026000         PERFORM WRITE-GFILE                                              
+026100         DISPLAY "DATA FIELD:  "                                  100705ma
+026200           GFF-FORM " " GFF-FIELD " " GFF-NUM GFF-LEN             100705ma
+026300           GFF-ENH " " GFF-FTYPE " " GFF-DTYPE                    100705ma
+026400           " Init [" GFF-INIT(1:NUM2) "]"                         100705ma
+026500*       END-IF                                                            
+026600       End-If                                                             
+026700      END-IF                                                              
+026800     END-PERFORM.                                                         
+026900     MOVE GIDX TO GCNT.                                           100705ma
+027000*---------------------------------------------------------------- 100705ma
+027100 LOAD-T-RECORDS.                                                  100705ma
+027200D    DISPLAY "LOAD-T-RECORDS".                                    100705ma
+027300*                                                                 100705ma
+027400* L O A D    "T"    R E C O R D S                                 100705ma
+027500*                                                                 100705ma
+027600     INITIALIZE Frdidx T-RECORD.                                  100705ma
+027700     IF NOT TFILE-CLOSED PERFORM CLOSE-TFILE.                     100705ma
+027800     PERFORM OPEN-TFILE-OUTPUT.                                   100705ma
+027900     MOVE "0" TO VALID-T-SW.                                      100705ma
+028000     Perform Varying Frdidx From 1 By 1                           100705ma
+028100       Until ( Frdidx > Frdcnt )                                  100705ma
+028200      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 100705ma
+028300      If (Frdstr(Frdidx)(3:1) = "T")                              100705ma
+028400          And ( Ascii-Value > 0 )                                 100705ma
+028410       DISPLAY "ASCII-VALUE " ASCII-VALUE                         100705ma
+028500       Compute T-STRT = ((Frdidx * 256) - 255 ) End-compute       100705ma
+028600       Compute T-END  = T-STRT + (Ascii-Value - 1) End-Compute    100705ma
+028700       Move Ascii-Value To T-LEN                                  100705ma
+028800       Move frd-table(T-STRT:T-LEN) to T-ACTUAL-RECORD            100705ma
+028900       MOVE T-HEADER TO T-HEADER-FORMAT                           100705ma
+028910       DISPLAY "THF-LENGTH " THF-LENGTH                           100705ma
+028920       DISPLAY "T-LEN      " T-LEN                                100705ma
+029020       DISPLAY "THF-CNT1   " THF-CNT1                             100705ma
+029030       DISPLAY "THF-CNT2   " THF-CNT2                             100705ma
+029050       IF (( THF-LENGTH = Ascii-Value)) AND                       100705ma
+029100          (((( THF-CNT1 * 62) + 40) = THF-LENGTH )                100705ma
+029200           OR ((( THF-CNT2 * 62) + 40) = THF-LENGTH ))            100705ma
+029300        MOVE "1" TO VALID-T-SW                                    100705ma
+029400        PERFORM VARYING TIDX FROM 1 BY 1                          100705ma
+029500          UNTIL TIDX > THF-CNT1                                   100705ma
+029600         MOVE T-FIELD(TIDX) TO T-FIELD-FORMAT                     100705ma
+029700         ADD 1 TO TFF-ROW                                         100705ma
+029800         ADD 1 TO TFF-COL                                         100705ma
+029900         MOVE T-FIELD-FORMAT TO T-FIELD(TIDX)                     100705ma
+030000         MOVE %0 TO ASCII-BYTE1                                   100705ma
+030100         MOVE TFF-A TO ASCII-BYTE2                                100705ma
+030200         INITIALIZE T-REC                                         100705ma
+030300         STRING T-HEADER-FORMAT T-FIELD-FORMAT                    100705ma
+030310          DELIMITED BY SIZE INTO T-REC                            100705ma
+030320         END-STRING                                               100705ma
+030400         PERFORM WRITE-TFILE                                      100705ma
+030500         DISPLAY TFF-FLD1 " " TFF-ENH " " TFF-ESCVAL " "          100705ma
+030600                 Ascii-Value " " TFF-FLDNUM " " TFF-SCRNODR       100705ma
+030700                 " " TFF-LEN " " TFF-ROW " " TFF-COL              100705ma
+030800        END-PERFORM                                               100705ma
+030900       END-IF                                                     100705ma
+031000      END-IF                                                      100705ma
+031100     END-PERFORM.                                                 100705ma
+031200*--------------------------------                                         
+031300 Fopen-Formsfile.                                                         
+031400D    DISPLAY "Fopen-Formsfile".                                           
+031500     MOVE 1 TO S1.                                                        
+031600     INSPECT SCREEN-FORMS-FILE                                            
+031700      TALLYING S1 FOR CHARACTERS BEFORE ' '.                              
+031800     IF S1 > 28 MOVE 28 TO S1.                                            
+031900     MOVE 'FILE FORM='           TO CMD.                                  
+032000     MOVE SCREEN-FORMS-FILE(1:S1) TO CMD(11:).                            
+032100     Perform MPE-COMMAND.                                                 
+032200     MOVE "FORMFILE" TO FNAME.                                            
+032300     OPEN INPUT FORMA-FILE.                                               
+032400     IF FORMFILE-STATUS <> "00"                                           
+032500        PERFORM 9001-FILE-ERROR.                                          
+032600     MOVE ZERO TO FORMFILE-COUNT.                                         
+032700     MOVE "01" TO  FORMFILE-FLAG.                                         
+032800*--------------------------------                                         
+032900 OPEN-GFILE-OUTPUT.                                                       
+033000*    DISPLAY "OPEN-GFILE-OUTPUT".                                         
+033100     MOVE 'FILE GFILE=GFILE,OLD'  TO CMD.                                 
+033200     Perform MPE-COMMAND.                                                 
+033300     MOVE 'PURGE GFILE'           TO CMD.                                 
+033400     Perform MPE-COMMAND.                                                 
+033500     MOVE 'PURGE GFILE'           TO CMD.                                 
+033600     Perform MPE-COMMAND.                                                 
+033700     MOVE 'BUILD GFILE;REC=-1540,1,F,BINARY;DISC=16384' TO CMD.           
+033800     Perform MPE-COMMAND.                                                 
+033900     MOVE "GFILE" TO FNAME.                                               
+034000     OPEN OUTPUT G-FILE.                                                  
+034100     IF GFILE-STATUS <> "00" PERFORM 9001-FILE-ERROR.                     
+034200     MOVE ZERO TO GFILE-RCOUNT GFILE-COUNT.                               
+034300     MOVE "02" TO GFILE-FLAG.                                             
+034400*--------------------------------                                         
+034500 OPEN-GFILE-INPUT.                                                        
+034600*    DISPLAY "OPEN-GFILE-INPUT ".                                         
+034700     MOVE "GFILE" TO FNAME.                                               
+034800     OPEN INPUT G-FILE.                                                   
+034900     IF GFILE-STATUS <> "00" PERFORM 9001-FILE-ERROR.                     
+035000     MOVE ZERO   TO GFILE-RCOUNT.                                         
+035100     MOVE "01" TO GFILE-FLAG.                                             
+035200*--------------------------------                                         
+035300 READ-GFILE.                                                              
+035400*    DISPLAY "READ-GFILE ".                                               
+035500     MOVE "GFILE" TO FNAME.                                               
+035600     Read G-File                                                          
+035700      At End                                                              
+035800          INITIALIZE G-RECORD                                             
+035900          Move '99' To GFILE-FLAG                                         
+036000      Not At End                                                          
+036100        IF GFILE-STATUS <> "00"                                           
+036200         PERFORM 9001-FILE-ERROR                                          
+036300        END-IF                                                            
+036400        ADD 1 TO GFILE-RCOUNT                                             
+036500        Move G-REC TO G-RECORD.                                           
+036600*--------------------------------                                         
+036700 WRITE-GFILE.                                                             
+036800*    DISPLAY "WRITE-GFILE ".                                              
+036900     MOVE "GFILE" TO FNAME.                                               
+037000     MOVE G-RECORD TO G-REC.                                              
+037100     WRITE G-REC.                                                         
+037200     IF GFILE-STATUS <> "00"                                      100705ma
+037210      PERFORM 9001-FILE-ERROR.                                    100705ma
+037300     ADD 1 TO GFILE-COUNT.                                                
+037400*--------------------------------                                         
+037500 CLOSE-GFILE.                                                             
+037600*    DISPLAY "CLOSE-GFILE ".                                              
+037700     MOVE "GFILE" TO FNAME.                                               
+037800     CLOSE G-FILE.                                                        
+037900     MOVE SPACES TO GFILE-FLAG.                                           
+038000                                                                          
+038100*---------------------------------------------------------        100705ma
+038200 MPE-COMMAND.                                                     100705ma
+038300D    DISPLAY "MPE-COMMAND".                                       100705ma
+038400     INITIALIZE CSTR.                                             100705ma
+038500     STRING CMD DELIMITED BY "  " %15                             100705ma
+038600      DELIMITED BY SIZE INTO CSTR.                                100705ma
+038700     Move 2 To CMSG.                                              100705ma
+038800D    DISPLAY CMD(1:79).                                           100705ma
+038900     CALL INTRINSIC "HPCICOMMAND" USING                           100705ma
+039000          CSTR CERR CPARM CMSG.                                   100705ma
+039100     IF CERR <> 0                                                 100705ma
+039200      DISPLAY CERR                                                100705ma
+039300      DISPLAY CMD                                                 100705ma
+039400      DISPLAY CMSG.                                               100705ma
+039500     INITIALIZE CMD.                                              100705ma
+039600*---------------------------------------------------------        100705ma
+039700$PAGE "MISC. ERROR CONDITION SUBROUTINES"                         100705ma
+039800 9001-FILE-ERROR.                                                 100705ma
+039900D    DISPLAY "9001-FILE-ERROR".                                   100705ma
+040000     MOVE SPACES TO FILE-ERROR-RECORD.                            100705ma
+040100     MOVE "00" TO ERROR-NUMBER.                                   100705ma
+040300     IF FNAME = "FORMFILE" MOVE FORMFILE-STATUS TO ERROR-NUMBER.  100705ma
+040400     IF FNAME = "GFILE"    MOVE GFILE-STATUS    TO ERROR-NUMBER.  100705ma
+040500     IF FNAME = "TFILE"    MOVE TFILE-STATUS    TO ERROR-NUMBER.  100705ma
+040520     EVALUATE ERROR-NUMBER                                        100705ma
+040600     WHEN "00" MOVE "0" TO ERRORS-SW                              100705ma
+040700     WHEN "04" MOVE "1" TO ERRORS-SW                              100705ma
+040800               STRING "Read length of record  doesn't match "     100705ma
+040900                      FNAME " length."                            100705ma
+041000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+041100     WHEN "05" MOVE "0" TO ERRORS-SW                              100705ma
+041200               STRING "OPEN " FNAME " not present,  created."     100705ma
+041300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+041400     WHEN "07" MOVE "1" TO ERRORS-SW                              100705ma
+041500               STRING FNAME " is not a tape as the OPEN/CLOSE "   100705ma
+041600                      "phrase implies."                           100705ma
+041700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+041800     WHEN "30" MOVE "1" TO ERRORS-SW                              100705ma
+041900               STRING FNAME " error.  problem unknown! "          100705ma
+042000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+042100     WHEN "34" MOVE "1" TO ERRORS-SW                              100705ma
+042200               STRING FNAME " boundary violation."                100705ma
+042300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+042400     WHEN "35" MOVE "1" TO ERRORS-SW                              100705ma
+042500               STRING FNAME " not found."                         100705ma
+042600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+042700     WHEN "37" MOVE "1" TO ERRORS-SW                              100705ma
+042800               STRING FNAME " error.  Inconsistent operation "    100705ma
+042900                      "during file I/O !"                         100705ma
+043000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+043100     WHEN "39" MOVE "1" TO ERRORS-SW                              100705ma
+043200               STRING "OPEN " FNAME " failed due to fixed file"   100705ma
+043300                      " attribute conflict."                      100705ma
+043400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+043500     WHEN "41" MOVE "0" TO ERRORS-SW                              100705ma
+043600               STRING FNAME " was already opened."                100705ma
+043700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+043800     WHEN "42" MOVE "0" TO ERRORS-SW                              100705ma
+043900               STRING "CLOSE " FNAME " without openning first."   100705ma
+044000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+044100     WHEN "44" MOVE "1" TO ERRORS-SW                              100705ma
+044200               STRING FNAME " error.   boundary violation, "      100705ma
+044300                      " Record too big or record too small."      100705ma
+044400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+044500     WHEN "46" MOVE "1" TO ERRORS-SW                              100705ma
+044600               STRING "READ " FNAME " after AT END  or   after"   100705ma
+044700                      " unsuccessful READ."                       100705ma
+044800                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+044900     WHEN "47" MOVE "1" TO ERRORS-SW                              100705ma
+045000               STRING "READ on " FNAME " not open for INPUT."     100705ma
+045100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+045200     WHEN "48" MOVE "1" TO ERRORS-SW                              100705ma
+045300               STRING "WRITE on " FNAME " not open for OUTPUT."   100705ma
+045400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+045500     WHEN "49" MOVE "1" TO ERRORS-SW                              100705ma
+045600               STRING "REWRITE on " FNAME                         100705ma
+045700                      " not open for I-O."                        100705ma
+045800                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100705ma
+045900     WHEN OTHER MOVE "1" TO ERRORS-SW                             100705ma
+046000                MOVE ERROR-NUMBER TO DECIMAL-VALUE                100705ma
+046100                STRING FNAME " ERROR #" ERROR-NUMBER              100705ma
+046200                             " MESSAGE UNDEFINED ."               100705ma
+046300                DELIMITED BY SIZE INTO FILE-ERROR-RECORD.         100705ma
+046400     MOVE ERROR-NUMBER TO ASCII-CHARACTER.                        100705ma
+046500     IF ASCII-BYTE1 = "9"                                         100705ma
+046600        MOVE ASCII-BYTE2 TO Ascii-Value                           100705ma
+046700        MOVE Ascii-Value TO DISP-N                                100705ma
+046800        DISPLAY "MPE FILE ERROR #" DISP-N                         100705ma
+046900        MOVE "1" TO ERRORS-SW                                     100705ma
+047000        MOVE SPACES TO FILE-ERROR-RECORD                          100705ma
+047100        CALL INTRINSIC "FERRMSG" USING                            100705ma
+047200            Ascii-Value FILE-ERROR-RECORD I.                      100705ma
+047300     IF NOT ERRORS DISPLAY FILE-ERROR-RECORD                      100705ma
+047400     ELSE GO TO 9900-ABEND.                                       100705ma
+047500     MOVE FILE-ERROR-RECORD TO EDIT-MESSAGE.                      100705ma
+047600     PERFORM 7805-LOG-EDIT-MESSAGE.                               100705ma
+047700*--------------------------                                       100705ma
+047800 7805-LOG-EDIT-MESSAGE.                                           100705ma
+047900     DISPLAY EDIT-MESSAGE.                                        100705ma
+048000***************************************************************** 100705ma
+048100*---------------------------------------------------------------  100705ma
+048200 9900-ABEND.                                                      100705ma
+048300     DISPLAY "----------------------------------------".          100705ma
+048400     DISPLAY "-VFGETFLD- ABNORMAL END OF PROGRAM".                100705ma
+048500     DISPLAY "----------------------------------------".          100705ma
+048600*---------------------------------------------------------------  100705ma
+048700 9999-RETURN.                                                     100705ma
+048800     Display " END OF PROGRAM "  WITH NO ADVANCING.               100705ma
+048900     MOVE "SHOWTIME" TO CMD.                                      100705ma
+049000     PERFORM MPE-COMMAND.                                         100705ma
+049100     IF FILE-ERROR-RECORD NOT = SPACES DISPLAY FILE-ERROR-RECORD. 100705ma
+049200     IF NOT FORMFILE-CLOSED  CLOSE FORMA-FILE.                    100705ma
+049300     GOBACK.                                                      100705ma
+049400*--------------------------------                                 100705ma
+049500 OPEN-TFILE-OUTPUT.                                               100705ma
+049600*    DISPLAY "OPEN-TFILE-OUTPUT".                                 100705ma
+049700     MOVE 'FILE TFILE=TFILE,OLD'  TO CMD.                         100705ma
+049800     Perform MPE-COMMAND.                                         100705ma
+049900     MOVE 'PURGE TFILE'           TO CMD.                         100705ma
+050000     Perform MPE-COMMAND.                                         100705ma
+050100     MOVE 'PURGE TFILE'           TO CMD.                         100705ma
+050200     Perform MPE-COMMAND.                                         100705ma
+050300     MOVE 'BUILD TFILE;REC=-102,1,F,BINARY;DISC=16384' TO CMD.    100705ma
+050400     Perform MPE-COMMAND.                                         100705ma
+050500     MOVE "TFILE" TO FNAME.                                       100705ma
+050600     OPEN OUTPUT T-FILE.                                          100705ma
+050700     IF TFILE-STATUS <> "00" PERFORM 9001-FILE-ERROR.             100705ma
+050800     MOVE ZERO TO TFILE-RCOUNT TFILE-COUNT.                       100705ma
+050900     MOVE "02" TO TFILE-FLAG.                                     100705ma
+051000*--------------------------------                                 100705ma
+051100 OPEN-TFILE-INPUT.                                                100705ma
+051200*    DISPLAY "OPEN-TFILE-INPUT ".                                 100705ma
+051300     MOVE "TFILE" TO FNAME.                                       100705ma
+051400     OPEN INPUT T-FILE.                                           100705ma
+051500     IF TFILE-STATUS <> "00" PERFORM 9001-FILE-ERROR.             100705ma
+051600     MOVE ZERO   TO TFILE-RCOUNT.                                 100705ma
+051700     MOVE "01" TO TFILE-FLAG.                                     100705ma
+051800*--------------------------------                                 100705ma
+051900 READ-TFILE.                                                      100705ma
+052000*    DISPLAY "READ-TFILE ".                                       100705ma
+052100     MOVE "TFILE" TO FNAME.                                       100705ma
+052200     Read T-FILE                                                  100705ma
+052300      At End                                                      100705ma
+052400          INITIALIZE G-RECORD                                     100705ma
+052500          Move '99' To TFILE-FLAG                                 100705ma
+052600      Not At End                                                  100705ma
+052700        IF TFILE-STATUS <> "00"                                   100705ma
+052800         PERFORM 9001-FILE-ERROR                                  100705ma
+052900        END-IF                                                    100705ma
+053000        ADD 1 TO TFILE-RCOUNT                                     100705ma
+053100        Move G-REC TO G-RECORD.                                   100705ma
+053200*--------------------------------                                 100705ma
+053300 WRITE-TFILE.                                                     100705ma
+053400*    DISPLAY "WRITE-TFILE ".                                      100705ma
+053500     MOVE "TFILE" TO FNAME.                                       100705ma
+053600     MOVE G-RECORD TO G-REC.                                      100705ma
+053700     WRITE G-REC.                                                 100705ma
+053800     IF TFILE-STATUS <> "00" PERFORM 9001-FILE-ERROR.             100705ma
+053900     ADD 1 TO TFILE-COUNT.                                        100705ma
+054000*--------------------------------                                 100705ma
+054100 CLOSE-TFILE.                                                     100705ma
+054200*    DISPLAY "CLOSE-TFILE ".                                      100705ma
+054300     MOVE "TFILE" TO FNAME.                                       100705ma
+054400     CLOSE T-FILE.                                                100705ma
+054500     MOVE SPACES TO TFILE-FLAG.                                   100705ma
+054600                                                                  100705ma
+054700                                                                  100705ma

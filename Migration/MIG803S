@@ -1,0 +1,686 @@
+068100$CONTROL POST85, BOUNDS, LINES=59, LIST                           100202ma
+068200*                                                *                100202ma
+068300* VALDATE VPLUS DATA.                                             100202ma
+068400* First retrive the server records chain length for FORMSFILES.   100202ma
+068500* Second retrive FORMSFILE chain length for FIELDS.               100202ma
+068600* Then read all fields where server = 1, counting fields and      100202ma
+068700* FORMSFILES. Compared counts should all match.                   100202ma
+068800*                                                                 100202ma
+068900 IDENTIFICATION DIVISION.                                         100202ma
+069000 PROGRAM-ID.     MIG803.                                          100202ma
+069100 AUTHOR.     MICHAEL ANDERSON.                                    100202ma
+069200 ENVIRONMENT DIVISION.                                            100202ma
+069300 CONFIGURATION SECTION.                                           100202ma
+069400 SOURCE-COMPUTER. HP-3000.                                        100202ma
+069500*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  100202ma
+069600 OBJECT-COMPUTER. HP-3000.                                        100202ma
+069700*                                                                 100202ma
+069800 INPUT-OUTPUT SECTION.                                            100202ma
+069900 FILE-CONTROL.                                                    100202ma
+070000    SELECT WORK-FILE     ASSIGN TO "DBLIST,,,,5000".              100202ma
+070100    SELECT SCHEMA-FILE   ASSIGN TO "SCHEM,,,DISC".                100202ma
+070200    SELECT JOB-FILE      ASSIGN TO "DBJOB,,,DISC".                100202ma
+070300                                                                  100202ma
+070400 DATA DIVISION.                                                   100202ma
+070500  FILE SECTION.                                                   100202ma
+070600                                                                  100202ma
+070700 FD  WORK-FILE.                                                   100202ma
+070800 01  WRK-REC.                                                     100202ma
+070900     05  WRK-FOUND-DB          PIC X(36).                         100202ma
+071000     05  WRK-FILL-DB           PIC X(45).                         100202ma
+071100 FD  SCHEMA-FILE.                                                 100202ma
+071200 01  SCHMA                PIC X(80).                              100202ma
+071300 FD  JOB-FILE.                                                    100202ma
+071400 01  JOBREC                PIC X(80).                             100202ma
+071500                                                                  100202ma
+071600$PAGE "WORKING STORAGE"                                           100202ma
+071700 WORKING-STORAGE SECTION.                                         100202ma
+071800 01  HPVAR-NAME        PIC X(20) VALUE "ITOSQLS_STATUS~  ".       100202ma
+071900 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                   100202ma
+072000 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                    100202ma
+072100 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                    100202ma
+072200 01  DS-IDX            PIC S9(9) COMP VALUE 0.                    100202ma
+072300 01  DI-IDX            PIC S9(9) COMP VALUE 0.                    100202ma
+072400 01  DISP-99           PIC Z(9).                                  100202ma
+072500 01 MYDBCAP PIC S9(9) COMP VALUE 0.                               100202ma
+072600 01 MYDSCAP PIC S9(9) COMP VALUE 0.                               100202ma
+072700 01 MYFLDCAP PIC S9(9) COMP VALUE 0.                              100202ma
+072800 01 MY16CAP PIC S9(9) COMP VALUE 0.                               100202ma
+072900                                                                  100202ma
+073000 01  GETINFO-DATA.                                                100202ma
+073100    05  GINFO-LEN                PIC S9(4) COMP.                  100202ma
+073200    05  GINFO-STR                PIC X(128).                      100202ma
+073300    05  GINFO-PARM               PIC S9(4) COMP.                  100202ma
+073400 01  PARSED-DATA.                                                 100202ma
+073500    05  ITEMS-PARSED             PIC S9(4) COMP.                  100202ma
+073600        88 PARSE-IS-COMPLETE VALUES ARE 3 THRU 99.                100202ma
+073700    05  PARSED-STRING            PIC X(128).                      100202ma
+073800    05  NEXT-STRING              PIC X(128).                      100202ma
+073900    05  STRING-POINTER             PIC S9(4) COMP.                100202ma
+074000    05  GX                       PIC S9(4) COMP.                  100202ma
+074100    05  GY                       PIC S9(4) COMP.                  100202ma
+074200    05  PX                       PIC S9(4) COMP.                  100202ma
+074300                                                                  100202ma
+074400 COPY SRVMST OF J3KLIB.                                           100202ma
+074500 COPY FFFLDS OF J3KLIB.                                           100202ma
+074600 COPY FMMSTR OF J3KLIB.                                           100202ma
+074700 COPY FFMSTR OF J3KLIB.                                           100202ma
+074800                                                                  100202ma
+074900 01  FULL-CURRENT-DATE.                                           100202ma
+075000         05  C-DATE.                                              100202ma
+075100             10  C-YEAR       PIC 9(4).                           100202ma
+075200             10  C-MONTH      PIC 99.                             100202ma
+075300             10  C-DAY        PIC 99.                             100202ma
+075400         05  C-TIME.                                              100202ma
+075500             10  C-HOUR       PIC 99.                             100202ma
+075600             10  C-MINUTES    PIC 99.                             100202ma
+075700             10  C-SECONDS    PIC 99.                             100202ma
+075800             10  C-SEC-HUND   PIC 99.                             100202ma
+075900         05  C-TIME-DIFF.                                         100202ma
+076000             10  O-GMT-DIR    PIC X.                              100202ma
+076100             10  O-HOUR       PIC 99.                             100202ma
+076200             10  O-MINUTES    PIC 99.                             100202ma
+076300 01 ERROR-MSG                PIC X(80) VALUE SPACES.              100202ma
+076400 01 NUMDEC                 PIC S9(4) COMP.                        100202ma
+076500 01 NUMERR                 PIC S9(4) COMP.                        100202ma
+076600 01 NUM1                   PIC X(14).                             100202ma
+076700 01 NUM2                   PIC S9(14). 01  DB-MISC.               100202ma
+076800     02  RE-READ           PIC S9(4) COMP VALUE 1.                100202ma
+076900     02  MAX-DB            PIC S9(4) COMP VALUE 100.              100202ma
+077000     02  SERIAL            PIC S9(4) COMP VALUE 2.                100202ma
+077100     02  BACKWARD          PIC S9(4) COMP VALUE 3.                100202ma
+077200     02  DIRECT            PIC S9(4) COMP VALUE 4.                100202ma
+077300     02  CHAINED           PIC S9(4) COMP VALUE 5.                100202ma
+077400     02  BACK-CHAINED      PIC S9(4) COMP VALUE 6.                100202ma
+077500     02  KEYED             PIC S9(4) COMP VALUE 7.                100202ma
+077600     02  MODE-1            PIC S9(4) COMP VALUE 1.                100202ma
+077700     02  MODE-3            PIC S9(4) COMP VALUE 3.                100202ma
+077800     02  MODE-4            PIC S9(4) COMP VALUE 4.                100202ma
+077900     02  MODE-20           PIC S9(4) COMP VALUE 20.               100202ma
+078000     02  MODE-104          PIC S9(4) COMP VALUE 104.              100202ma
+078100     02  MODE-102          PIC S9(4) COMP VALUE 102.              100202ma
+078200     02  MODE-103          PIC S9(4) COMP VALUE 103.              100202ma
+078300     02  MODE-202          PIC S9(4) COMP VALUE 202.              100202ma
+078400     02  MODE-203          PIC S9(4) COMP VALUE 203.              100202ma
+078500     02  MODE-301          PIC S9(4) COMP VALUE 301.              100202ma
+078600     02  MODE-406          PIC S9(4) COMP VALUE 406.              100202ma
+078700     02  MODE-5            PIC S9(4) COMP VALUE 5.                100202ma
+078800     02  MODE-N            PIC S9(4) COMP VALUE 0.                100202ma
+078900     02  IREAD-LEN         PIC S9(4) COMP VALUE 0.                100202ma
+079000     02  IMAGE-ERRNUM      PIC S9(4) COMP VALUE 0.                100202ma
+079100     02  CALL-STRING       PIC X(80) VALUE SPACES.                100202ma
+079200     02  CSLEN             PIC S9(4) COMP VALUE 0.                100202ma
+079300     02  ERROR-STRING      PIC X(80) VALUE SPACES.                100202ma
+079400     02  ESLEN             PIC S9(4) COMP VALUE 0.                100202ma
+079500     02  NULL-ITEM         PIC XXXX VALUE "; ".                   100202ma
+079600     02  ALL-ITEMS         PIC XX VALUE "@;".                     100202ma
+079700     02  SEARCH-ITEM       PIC X(18).                             100202ma
+079800     02  SEARCH-KEY        PIC X(64).                             100202ma
+079900     02  SEARCH-KEYI2 REDEFINES SEARCH-KEY.                       100202ma
+080000         03 SEARCH-KEYI32  PIC S9(9) COMP.                        100202ma
+080100         03 FILLER         PIC X(60).                             100202ma
+080200     02  STATUS-AREA.                                             100202ma
+080300         03  CONDITION-WORD    PIC S9(4) COMP VALUE  0.           100202ma
+080400             88  NO-IMAGE-ERRORS         VALUE  0.                100202ma
+080500             88  IMAGE-ERRORS                                     100202ma
+080600                 VALUES ARE -9999 THRU -1, 1 THRU  9999.          100202ma
+080700             88  END-OF-FILE             VALUE 11.                100202ma
+080800             88  BEG-OF-FILE             VALUE 12.                100202ma
+080900             88  BEG-OF-CHAIN            VALUE 14.                100202ma
+081000             88  END-OF-CHAIN            VALUE 15.                100202ma
+081100             88  NO-ENTRY                VALUE 17.                100202ma
+081200         03  RECORD-LENGTH     PIC S9(4) COMP VALUE  0.           100202ma
+081300         03  RECORD-NUMBER     PIC S9(9) COMP VALUE  0.           100202ma
+081400         03  ENTRIES-IN-CHAIN  PIC S9(9) COMP VALUE  0.           100202ma
+081500         03  PREV-RECORD-NO    PIC S9(9) COMP VALUE  0.           100202ma
+081600         03  NEXT-RECORD-NO    PIC S9(9) COMP VALUE  0.           100202ma
+081700 01  MIGDB    PIC S9(4) COMP VALUE  9.                            100202ma
+081800 01  MYDB     PIC S9(4) COMP VALUE  9.                            100202ma
+081900 01  MIGDB-STATUS.                                                100202ma
+082000     03  FILLER    PIC S9(4) COMP VALUE  0.                       100202ma
+082100     03  FILLER    PIC S9(4) COMP VALUE  0.                       100202ma
+082200     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+082300     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+082400     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+082500     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+082600 01  FIRST-TIME-SW         PIC X.                                 100202ma
+082700     88  FIRST-TIME        VALUE "1".                             100202ma
+082800                                                                  100202ma
+082900 01  ERRORS-SW             PIC X.                                 100202ma
+083000     88  ERRORS            VALUE "1".                             100202ma
+083100                                                                  100202ma
+083200 01  EDIT-ERRORS-SW        PIC X.                                 100202ma
+083300     88  EDIT-ERRORS       VALUE "1".                             100202ma
+083400                                                                  100202ma
+083500 01  BAD-KEY-SW            PIC X.                                 100202ma
+083600     88  BAD-KEY           VALUE "1".                             100202ma
+083700                                                                  100202ma
+083800 01  Last-Column-SW       PIC X.                                  100202ma
+083900     88  Last-Column      VALUE "1".                              100202ma
+084000                                                                  100202ma
+084100 01  X-FLOWTEST-JCW          PIC X(8) VALUE "FLOWTEST".           100202ma
+084200 01  X-FLOWTEST-VALUE        PIC S9(4) COMP VALUE 0.              100202ma
+084300     88  X-FLOWTEST          VALUE 1.                             100202ma
+084400                                                                  100202ma
+084500 01 TARGET-FIELD                    PIC X(64) VALUE SPACES.       100202ma
+084600 01 DWNSHFT-SW                      PIC X.                        100202ma
+084700    88 OK-TO-DOWNSHIFT VALUE "1".                                 100202ma
+084800 01 MYIDX                           PIC S9(4) COMP VALUE 0.       100202ma
+084900 01 SOURCE-FIELD                    PIC X(64) VALUE SPACES.       100202ma
+085000 01 ASCII-CHARACTERS.                                             100202ma
+085100    02 TWO-BYTES                    PIC XX VALUE SPACES.          100202ma
+085200    02 SIXTEEN-BITS REDEFINES TWO-BYTES.                          100202ma
+085300       05 ASCII-INT                 PIC S9(4) COMP.               100202ma
+085400    02 TWO-CHARS    REDEFINES TWO-BYTES.                          100202ma
+085500       05 FILLER                    PIC X.                        100202ma
+085600       05 ASCII-CHAR                PIC X.                        100202ma
+085700                                                                  100202ma
+085800                                                                  100202ma
+085900 01 ABORT-SWITCHES.                                               100202ma
+086000    02 ON-IMAGE-ERRORS     PIC X VALUE "0".                       100202ma
+086100       88 ABORT-ON-IMAGE-ERRORS  VALUE "9".                       100202ma
+086200                                                                  100202ma
+086300 01  DATA-BASE-COMMON.                                            100202ma
+086400     02  DB-PTR                    PIC S9(4) COMP.                100202ma
+086500     02  DB-CNT                    PIC S9(4) COMP.                100202ma
+086600     02  DB-MAX                    PIC S9(4) COMP.                100202ma
+086700     02  DB-IDX                    PIC S9(4) COMP.                100202ma
+086800     02  DB-POINTER-STORAGE.                                      100202ma
+086900         03 DB-POINTER-ENTRIES OCCURS 100 TIMES.                  100202ma
+087000            04 DBPTR               PIC S9(4) COMP.                100202ma
+087100                                                                  100202ma
+087200     02  SAVE-STATUS.                                             100202ma
+087300         03  CONDITION-SAVED   PIC S9(4) COMP.                    100202ma
+087400         03  SAVED-LENGTH      PIC S9(4) COMP.                    100202ma
+087500         03  SAVED-NUMBER      PIC S9(9) COMP.                    100202ma
+087600         03  SAVED-IN-CHAIN    PIC S9(9) COMP.                    100202ma
+087700         03  PREV-SAVED-NO     PIC S9(9) COMP.                    100202ma
+087800         03  NEXT-SAVED-NO     PIC S9(9) COMP.                    100202ma
+087900                                                                  100202ma
+088000     02 DATABASE-TABLE.                                           100202ma
+088100         03 DATA-BASE-NAMES            OCCURS 512 TIMES.          100202ma
+088200            05 DATA-BASE-NAME.                                    100202ma
+088300             10 IMAGE-WORD           PIC XX.                      100202ma
+088400             10 DBNAME               PIC X(26).                   100202ma
+088500            05 DATA-BASE-PASS          PIC X(08).                 100202ma
+088600                                                                  100202ma
+088700 01 A-TABLE-SW               PIC X VALUE "0".                     100202ma
+088800    88 ITS-A-TABLE    VALUE "1".                                  100202ma
+088900 01 DOW                      PIC S9(4) COMP  VALUE 0.             100202ma
+089000 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.             100202ma
+089100 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.             100202ma
+089200                                                                  100202ma
+089300 01 WHO-INTRINSIC-PARMS.                                          100202ma
+089400    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                    100202ma
+089500    15  WHO-MODE               PIC S9999 COMP.                    100202ma
+089600    15  WHO-CAPABILITY         PIC S9(6) COMP.                    100202ma
+089700    15  WHO-LATTR              PIC S9(6) COMP.                    100202ma
+089800    15  WHO-USERN.                                                100202ma
+089900        20 BYTE1-6             PIC X(6).                          100202ma
+090000        20 SCHOOL-NUMBER       PIC XX.                            100202ma
+090100    15  WHO-GROUPN             PIC X(8).                          100202ma
+090200    15  WHO-ACCTN              PIC X(8).                          100202ma
+090300    15  WHO-HOMEN              PIC X(8).                          100202ma
+090400                                                                  100202ma
+090500 01 DP-IDX                  PIC S9(9) COMP  VALUE 0.              100202ma
+090600 01 MyHpSusan               PIC S9(9) COMP  VALUE 0.              100202ma
+090700 01 MYHPVERSION             PIC X(24) VALUE SPACES.               100202ma
+090800 01 MYHPCPUNAME             PIC X(24) VALUE SPACES.               100202ma
+090900 01 MYHPLOCIPADDR           PIC X(24) VALUE SPACES.               100202ma
+091000 01 MYMSG                   PIC X(79) VALUE SPACES.               100202ma
+091100 01 SI-IDX                  PIC S9(9) COMP  VALUE 0.              100202ma
+091200 01 CSTR                     PIC X(255)      VALUE SPACES.        100202ma
+091300 01 CMD                     PIC X(255)      VALUE SPACES.         100202ma
+091400 01 CERR                     PIC S9(4) COMP  VALUE 0.             100202ma
+091500 01 CPARM                    PIC S9(4) COMP  VALUE 0.             100202ma
+091600 01 CMSG                     PIC S9(4) COMP  VALUE 2.             100202ma
+091700 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.             100202ma
+091800 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.             100202ma
+091900 01  EXTFILE-STATUS            PIC X   VALUE "0".                 100202ma
+092000     88 EXTFILE-EOF                    VALUE "9".                 100202ma
+092100 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.             100202ma
+092200 01 My-FILEName              Pic X(28) Value Spaces.              100202ma
+092300 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.             100202ma
+092400 01 NUM-X                    PIC S9(4) COMP  VALUE 0.             100202ma
+092500 01 My-Bytes                  pic S9(4) Comp  Value 0.            100202ma
+092600 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.             100202ma
+092700 01 VAR-LEN                  PIC S9(4) COMP  VALUE 0.             100202ma
+092800 01 FCIDX                  PIC S9(4) COMP  VALUE 0.               100202ma
+092900 01 SCIDX                  PIC S9(4) COMP  VALUE 0.               100202ma
+093000 01 BCIDX                  PIC S9(4) COMP  VALUE 0.               100202ma
+093100                                                                  100202ma
+093200 01 SHOWTIME-STR.                                                 100202ma
+093300    02 FILLER PIC X(8) VALUE "SHOWTIME".                          100202ma
+093400    02 FILLER PIC X    VALUE %15.                                 100202ma
+093500 01 DATE-EDITING.                                                 100202ma
+093600    05 RAW-DATE.                                                  100202ma
+093700       10 D1     PIC X   VALUE SPACES.                            100202ma
+093800       10 D2     PIC X   VALUE SPACES.                            100202ma
+093900       10 D3     PIC X   VALUE SPACES.                            100202ma
+094000       10 D4     PIC X   VALUE SPACES.                            100202ma
+094100       10 D5     PIC X   VALUE SPACES.                            100202ma
+094200       10 D6     PIC X   VALUE SPACES.                            100202ma
+094300       10 D7     PIC X   VALUE SPACES.                            100202ma
+094400       10 D8     PIC X   VALUE SPACES.                            100202ma
+094500    05 EDITED-DATE.                                               100202ma
+094600       10 D5     PIC X   VALUE SPACES.                            100202ma
+094700       10 D6     PIC X   VALUE SPACES.                            100202ma
+094800       10 FILLER PIC X   VALUE "/".                               100202ma
+094900       10 D7     PIC X   VALUE SPACES.                            100202ma
+095000       10 D8     PIC X   VALUE SPACES.                            100202ma
+095100       10 FILLER PIC X   VALUE "/".                               100202ma
+095200       10 D1     PIC X   VALUE SPACES.                            100202ma
+095300       10 D2     PIC X   VALUE SPACES.                            100202ma
+095400       10 D3     PIC X   VALUE SPACES.                            100202ma
+095500       10 D4     PIC X   VALUE SPACES.                            100202ma
+095600                                                                  100202ma
+095700* 1: DataFILE new limits (# of sets = 240,                        100202ma
+095800*                         # of items = 1200,                      100202ma
+095900*                         # paths per masters = 64)               100202ma
+096000* 0: DataFILE old limits (# of sets = 199,                        100202ma
+096100*                         # of items = 1024,                      100202ma
+096200*                         # paths per master = 16)                100202ma
+096300                                                                  100202ma
+096400 01 Db-Info-406-Word-17.                                          100202ma
+096500    05  BIT1             PIC 9.                                   100202ma
+096600    05  BIT2             PIC 9.                                   100202ma
+096700    05  BIT3             PIC 9.                                   100202ma
+096800    05  BIT4             PIC 9.                                   100202ma
+096900    05  BIT5             PIC 9.                                   100202ma
+097000    05  BIT6             PIC 9.                                   100202ma
+097100    05  BIT7             PIC 9.                                   100202ma
+097200    05  BIT8             PIC 9.                                   100202ma
+097300    05  BIT9             PIC 9.                                   100202ma
+097400        88 DataFILE-Newlimits Value 1.                            100202ma
+097500        88 DataFILE-Oldlimits Value 0.                            100202ma
+097600    05  BIT10            PIC 9.                                   100202ma
+097700        88 DataFILE-Entrynumber-Format Value 1.                   100202ma
+097800        88 DataFILE-Entryname-Format   Value 0.                   100202ma
+097900    05  BIT11            PIC 9.                                   100202ma
+098000    05  BIT12            PIC 9.                                   100202ma
+098100        88 Expandable-Master-Form     Value 1.                    100202ma
+098200        88 No-Expandable-Master-Form   Value 0.                   100202ma
+098300    05  BIT13            PIC 9.                                   100202ma
+098400        88 B-Tree      Value 1.                                   100202ma
+098500        88 No-B-Tree   Value 0.                                   100202ma
+098600    05  BIT14            PIC 9.                                   100202ma
+098700    05  BIT15            PIC 9.                                   100202ma
+098800    05  BIT16            PIC 9.                                   100202ma
+098900 01  BINARY-VALUE.                                                100202ma
+099000     05 BIT-ZERO                     PIC 9.                       100202ma
+099100     05 BIT OCCURS 15 TIMES          PIC 9.                       100202ma
+099200                                                                  100202ma
+099300 01 FFMIDX            PIC S9(18) COMP VALUE 0.                    100202ma
+099400 01 THISSERVER-FILCNT PIC S9(18) COMP VALUE 0.                    100202ma
+099500 01 THISFILE-FRMCNT   PIC S9(18) COMP VALUE 0.                    100202ma
+099600 01 THISFORM-FLDCNT   PIC S9(18) COMP VALUE 0.                    100202ma
+099700 01 FRMIDX            PIC S9(18) COMP VALUE 0.                    100202ma
+099800 01 MY-FLDCNT         PIC S9(18) COMP VALUE 0.                    100202ma
+099900 01 FLDIDX            PIC S9(18) COMP VALUE 0.                    100202ma
+100000 01 MY-FRMCNT         PIC S9(18) COMP VALUE 0.                    100202ma
+100100 01 LAST-FM-UNIQUE    PIC S9(18) COMP VALUE 0.                    100202ma
+100200                                                                  100202ma
+100300                                                                  100202ma
+100400 01 BC-FILE-CNT      PIC S9(18) COMP VALUE 0.                     100202ma
+100500 01 BC-FRMCNT        PIC S9(18) COMP VALUE 0.                     100202ma
+100600 01 BC-FLDCNT        PIC S9(18) COMP VALUE 0.                     100202ma
+100700 01 SC-FRMCNT        PIC S9(18) COMP VALUE 0.                     100202ma
+100800 01 SC-FLDCNT        PIC S9(18) COMP VALUE 0.                     100202ma
+100900 01 FC-FRMCNT        PIC S9(18) COMP VALUE 0.                     100202ma
+101000                                                                  100202ma
+101100                                                                  100202ma
+101200 01 BZ-FILE-CNT      PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101300 01 BZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101400 01 BZ-FLDCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101500 01 SZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101600 01 SZ-FLDCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101700 01 FZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                         100202ma
+101800 01 DISP-FORMCNT1     PIC ZZZ9.                                   100202ma
+101900 01 DISP-FORMCNT2     PIC ZZZ9.                                   100202ma
+102000 01 DISP-FLDCNT1      PIC ZZ9.                                    100202ma
+102100 01 DISP-FLDCNT2      PIC ZZ9.                                    100202ma
+102200                                                                  100202ma
+102300 01 NUMERIC-EDITS.                                                100202ma
+102400    02 Split-Word        Pic S9(4) Comp.                          100202ma
+102500    02 Splating-a-word Redefines Split-Word.                      100202ma
+102600       05 Split-Word-1 Pic x.                                     100202ma
+102700       05 Split-Word-2 Pic x.                                     100202ma
+102800    02 CHR3              PIC XXX.                                 100202ma
+102900    02 Y1                PIC 9.                                   100202ma
+103000    02 Y2                PIC 99.                                  100202ma
+103100    02 Y3                PIC 999.                                 100202ma
+103200    02 Y4                PIC 9999.                                100202ma
+103300    02 Y5                PIC 99999.                               100202ma
+103400    02 CHR6              PIC XXXXXX.                              100202ma
+103500    02 Z1                PIC 9.                                   100202ma
+103600    02 Z2                PIC 99.                                  100202ma
+103700    02 Z3                PIC 999.                                 100202ma
+103800    02 Z4                PIC 9999.                                100202ma
+103900    02 Z5                PIC 99999.                               100202ma
+104000 01 Collate-Str          Pic x(64).                               100202ma
+104100 01  WS-LOGON-DESC                       VALUE SPACES.            100202ma
+104200     05  WS-LD-JOB-NAME      PIC  X(16).                          100202ma
+104300     05  WS-LD-ACCT-NAME     PIC  X(16).                          100202ma
+104400     05  WS-LD-ACCT-PASS     PIC  X(16).                          100202ma
+104500     05  WS-LD-USER-NAME     PIC  X(16).                          100202ma
+104600     05  WS-LD-USER-PASS     PIC  X(16).                          100202ma
+104700     05  WS-LD-GROUP-NAME    PIC  X(16).                          100202ma
+104800     05  WS-LD-GROUP-PASS    PIC  X(16).                          100202ma
+104900 01  WS-ERR PIC S9(4) COMP VALUE 0.                               100202ma
+105000 01  WS-ERR-MSG PIC X(80) VALUE SPACES.                           100202ma
+105100 01  TDAY                PIC X(8)  VALUE SPACES.                  100202ma
+105200 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                  100202ma
+105300 01  TDOW                PIC S9(4) COMP VALUE 0.                  100202ma
+105400 01  DDAY                PIC X(8)  VALUE SPACES.                  100202ma
+105500 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                  100202ma
+105600 01  DDOW                PIC S9(4) COMP VALUE 0.                  100202ma
+105700 01  DCNT                PIC S9(4) COMP VALUE 0.                  100202ma
+105800                                                                  100202ma
+105900                                                                  100202ma
+106000*=================================================================100202ma
+106100$PAGE  "Main logical flow"                                        100202ma
+106200*=================================================================100202ma
+106300 PROCEDURE DIVISION.                                              100202ma
+106400 BEGIN-0000.                                                      100202ma
+106500     Display "V/Plus Documentation Tool version C.7.3".           100202ma
+106600     DISPLAY "-------------------------------------------------". 100202ma
+106700     DISPLAY "***             MIG803.PUB.J3K                ***". 100202ma
+106800     DISPLAY "***                                           ***". 100202ma
+106900     DISPLAY "***      Cross Reference & Verification       ***". 100202ma
+107000     DISPLAY "***                                           ***". 100202ma
+107100     DISPLAY "-------------------------------------------------". 100202ma
+107200     CALL   INTRINSIC "WHO"                                       100202ma
+107300     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN           100202ma
+107400            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.       100202ma
+107500     IF WHO-ACCTN(1:3) <> "SYS" OR                                100202ma
+107600        WHO-USERN(1:7) <> "MANAGER" OR                            100202ma
+107700        WHO-GROUPN(1:3) <> "J3K"                                  100202ma
+107800       DISPLAY "PLEASE LOGON AS MANAGER.SYS,J3K"                  100202ma
+107900       DISPLAY "This program will not run as "                    100202ma
+108000               WHO-USERN "." WHO-ACCTN "," WHO-GROUPN             100202ma
+108100       CALL INTRINSIC "QUIT" USING \1\.                           100202ma
+108200     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                   100202ma
+108300     INITIALIZE WS-LOGON-DESC WS-ERR WS-ERR-MSG.                  100202ma
+108400     MOVE "J3KDIAG" TO WS-LD-JOB-NAME.                            100202ma
+108500     MOVE "MANAGER" TO WS-LD-USER-NAME.                           100202ma
+108600     MOVE "J3K"     TO WS-LD-ACCT-NAME.                           100202ma
+108700     MOVE "PUB"     TO WS-LD-GROUP-NAME.                          100202ma
+108800     CALL "CHGLOGON" USING WS-LOGON-DESC WS-ERR WS-ERR-MSG.       100202ma
+108900     IF WS-ERR <> 0                                               100202ma
+109000      DISPLAY "UNABLE TO CHANGE LOGON"                            100202ma
+109100      DISPLAY WS-ERR-MSG                                          100202ma
+109200      CALL INTRINSIC "QUIT" USING \3\ END-CALL                    100202ma
+109300     ELSE                                                         100202ma
+109400      CALL   INTRINSIC "WHO"                                      100202ma
+109500       USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN         100202ma
+109600              WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO      100202ma
+109700      END-CALL                                                    100202ma
+109800     END-IF                                                       100202ma
+109900     INITIALIZE WS-ERR-MSG                                        100202ma
+110000     STRING "J3KDIAG," DELIMITED BY SIZE                          100202ma
+110100             WHO-USERN DELIMITED BY SPACE                         100202ma
+110200             "."       DELIMITED BY SIZE                          100202ma
+110300             WHO-ACCTN DELIMITED BY SPACE                         100202ma
+110400             ","       DELIMITED BY SIZE                          100202ma
+110500             WHO-GROUPN DELIMITED BY SPACES                       100202ma
+110600         INTO WS-ERR-MSG.                                         100202ma
+110700     DISPLAY "Change logon successfully to " ws-err-msg.          100202ma
+110800     Display "Verifying values in the migration database, "       100202ma
+110900      With No Advancing.                                          100202ma
+111000     Perform ShowTime.                                            100202ma
+111100     PERFORM GET-HPSUSAN.                                         100202ma
+111200     PERFORM GET-HPVERSION.                                       100202ma
+111300     PERFORM GET-HPCPUNAME.                                       100202ma
+111400     PERFORM GET-HPLOCIPADDR.                                     100202ma
+111500     Initialize DATABASE-TABLE My-FILEName.                       100202ma
+111600     MOVE 128 TO GINFO-LEN.                                       100202ma
+111700     MOVE 9 TO MIGDB.                                             100202ma
+111800     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                        100202ma
+111900     MOVE ";" TO NULL-ITEM.                                       100202ma
+112000     CALL "DBOPEN" USING                                          100202ma
+112100      DATA-BASE-NAME(MIGDB) NULL-ITEM MODE-1 STATUS-AREA.         100202ma
+112200     IF IMAGE-ERRORS PERFORM 9000-IMAGE-ERROR.                    100202ma
+112300     MOVE STATUS-AREA TO MIGDB-STATUS.                            100202ma
+112400     INITIALIZE FFFLDS-BUFFER.                                    100202ma
+112500     Move 1 to SEARCH-KEYI32.                                     100202ma
+112600     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                           100202ma
+112700     PERFORM FIND-FFMSTR.                                         100202ma
+112800     IF NO-ENTRY                                                  100202ma
+112900      DISPLAY "Server #1 has no Form Files"                       100202ma
+113000     ELSE                                                         100202ma
+113100      PERFORM PROCESS-FFMSTR.                                     100202ma
+113200     PERFORM FIND-FMMSTR.                                         100202ma
+113300     IF NO-ENTRY                                                  100202ma
+113400      DISPLAY "Server #1 has no Forms"                            100202ma
+113500     ELSE                                                         100202ma
+113600      PERFORM PROCESS-FMMSTR.                                     100202ma
+113700     PERFORM FIND-FFFLDS.                                         100202ma
+113800     IF NO-ENTRY                                                  100202ma
+113900      DISPLAY "Server #1 has no Form Fields"                      100202ma
+114000     ELSE                                                         100202ma
+114100      PERFORM PROCESS-FFFLDS.                                     100202ma
+114200     PERFORM MOVE-STATS.                                          100202ma
+114300     PERFORM CHECK-STATS.                                         100202ma
+114400     PERFORM DISPLAY-STATS.                                       100202ma
+114500                                                                  100202ma
+114600     Move 1 to SEARCH-KEYI32.                                     100202ma
+114700     Perform Get-SRVMST-Keyed.                                    100202ma
+114800     If NOT No-Entry                                              100202ma
+114900      MOVE  BZ-FILE-CNT   TO SRVMST-SVR-VFILCNT                   100202ma
+115000      MOVE  BZ-FRMCNT     TO SRVMST-SVR-VFRMCNT                   100202ma
+115100      MOVE  BZ-FLDCNT     TO SRVMST-SVR-VFLDCNT                   100202ma
+115200      PERFORM LOCK-SRVMST                                         100202ma
+115300      PERFORM update-SRVMST                                       100202ma
+115400      IF NOT IMAGE-ERRORS                                         100202ma
+115500      PERFORM UNLOCK-SRVMST                                       100202ma
+115600     ELSE                                                         100202ma
+115700      DISPLAY "Server #1 NOT FOUND".                              100202ma
+115800     PERFORM VPLUS-SUMMARY.                                       100202ma
+115900     CALL "DBCLOSE" USING DATA-BASE-NAME(MIGDB)                   100202ma
+116000                          NULL-ITEM MODE-1 STATUS-AREA.           100202ma
+116100     STOP RUN.                                                    100202ma
+116200*=================================================================100202ma
+116300$page "MISC SubParagraphs"                                        100202ma
+116400*=================================================================100202ma
+116500*---------------------------------------------------------        100202ma
+116600 GET-NUM.                                                         100202ma
+116700D    DISPLAY "GET-NUM".                                           100202ma
+116800     INITIALIZE NUM2 NUMDEC NUMERR.                               100202ma
+116900     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 100202ma
+117000     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            100202ma
+117100     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            100202ma
+117200*---------------------------------------------------------        100202ma
+117300 MPE-COMMAND.                                                     100202ma
+117400D    DISPLAY "MPE-COMMAND".                                       100202ma
+117500     INITIALIZE CSTR.                                             100202ma
+117600     STRING CMD DELIMITED BY "  " %15 DELIMITED BY SIZE INTO CSTR.100202ma
+117700     Move 2 To CMSG.                                              100202ma
+117800     CALL INTRINSIC "HPCICOMMAND" USING                           100202ma
+117900          CSTR CERR CPARM CMSG.                                   100202ma
+118000     INITIALIZE CMD.                                              100202ma
+118100*---------------------------------------------------------        100202ma
+118200 SHOWTIME.                                                        100202ma
+118300     CALL INTRINSIC "HPCICOMMAND" USING                           100202ma
+118400          SHOWTIME-STR CERR CPARM CMSG.                           100202ma
+118500*---------------------------------------------------------        100202ma
+118600 COPY SRVMST0 OF J3KLIB.                                          100202ma
+118700 COPY SRVMST1 OF J3KLIB.                                          100202ma
+118800 COPY SRVMST2 OF J3KLIB.                                          100202ma
+118900 COPY SRVMST3 OF J3KLIB.                                          100202ma
+119000 COPY SRVMST4 OF J3KLIB.                                          100202ma
+119100 COPY SRVMST5 OF J3KLIB.                                          100202ma
+119200 COPY SRVMST6 OF J3KLIB.                                          100202ma
+119300 COPY SRVMST7 OF J3KLIB.                                          100202ma
+119400 COPY SRVMST8 OF J3KLIB.                                          100202ma
+119500                                                                  100202ma
+119600 COPY FFFLDS1 OF J3KLIB.                                          100202ma
+119700 COPY FFFLDS2 OF J3KLIB.                                          100202ma
+119800                                                                  100202ma
+119900 COPY FMMSTR1 OF J3KLIB.                                          100202ma
+120000 COPY FMMSTR2 OF J3KLIB.                                          100202ma
+120100                                                                  100202ma
+120200 COPY FFMSTR1 OF J3KLIB.                                          100202ma
+120300 COPY FFMSTR2 OF J3KLIB.                                          100202ma
+120400*---------------------------------------------------------        100202ma
+120500 9000-IMAGE-ERROR.                                                100202ma
+120600D    DISPLAY "9000-IMAGE-ERROR".                                  100202ma
+120700     CALL "DBEXPLAIN" USING STATUS-AREA.                          100202ma
+120800*---------------------------------------------------------        100202ma
+120900*---------------------------------------------------------        100202ma
+121000 9999-RETURN.                                                     100202ma
+121100D    DISPLAY "9999-RETURN".                                       100202ma
+121200     GOBACK.                                                      100202ma
+121300*--------------------------------------------------------         100202ma
+121400 GET-HPSUSAN.                                                     100202ma
+121500     MOVE "HPSUSAN~" TO HPVAR-NAME.                               100202ma
+121600     MOVE 1 TO HPVAR-ITEMNUM.                                     100202ma
+121700     INITIALIZE HPVAR-ITEM HPVAR-STAT.                            100202ma
+121800     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 100202ma
+121900         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                      100202ma
+122000     DISPLAY "HPSUSAN: " MYHPSUSAN.                               100202ma
+122100*--------------------------------------------------------         100202ma
+122200 GET-HPVERSION.                                                   100202ma
+122300     MOVE "HPVERSION~" TO HPVAR-NAME.                             100202ma
+122400     MOVE 2 TO HPVAR-ITEMNUM.                                     100202ma
+122500     INITIALIZE MYHPVERSION HPVAR-STAT.                           100202ma
+122600     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 100202ma
+122700         HPVAR-STAT HPVAR-ITEMNUM MYHPVERSION.                    100202ma
+122800     DISPLAY "HPVERSION: " MYHPVERSION.                           100202ma
+122900*--------------------------------------------------------         100202ma
+123000 GET-HPCPUNAME.                                                   100202ma
+123100     MOVE "HPCPUNAME~" TO HPVAR-NAME.                             100202ma
+123200     MOVE 2 TO HPVAR-ITEMNUM.                                     100202ma
+123300     INITIALIZE MYHPCPUNAME HPVAR-STAT.                           100202ma
+123400     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 100202ma
+123500         HPVAR-STAT HPVAR-ITEMNUM MYHPCPUNAME.                    100202ma
+123600     DISPLAY "HPCPUNAME: " MYHPCPUNAME.                           100202ma
+123700*--------------------------------------------------------         100202ma
+123800 GET-HPLOCIPADDR.                                                 100202ma
+123900     MOVE "HPLOCIPADDR~" TO HPVAR-NAME.                           100202ma
+124000     MOVE 2 TO HPVAR-ITEMNUM.                                     100202ma
+124100     INITIALIZE MYHPLOCIPADDR HPVAR-STAT.                         100202ma
+124200     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 100202ma
+124300         HPVAR-STAT HPVAR-ITEMNUM MYHPLOCIPADDR.                  100202ma
+124400     DISPLAY "HPLOCIPADDR: " MYHPLOCIPADDR.                       100202ma
+124500*--------------------------------------------------------         100202ma
+124600 PROCESS-FFMSTR.                                                  100202ma
+124700     MOVE ENTRIES-IN-CHAIN TO BC-FILE-CNT.                        100202ma
+124800*--------------------------------------------------------         100202ma
+124900 PROCESS-FMMSTR.                                                  100202ma
+125000     MOVE ENTRIES-IN-CHAIN TO BC-FRMCNT.                          100202ma
+125100     INITIALIZE FRMIDX MY-FLDCNT.                                 100202ma
+125200     PERFORM VARYING FRMIDX FROM 1 BY 1                           100202ma
+125300       UNTIL (END-OF-CHAIN) OR (FRMIDX > 999999)                  100202ma
+125400      PERFORM GET-FMMSTR-CHAINED                                  100202ma
+125500      IF NOT END-OF-CHAIN                                         100202ma
+125600       ADD FMMSTR-FLDCNT TO MY-FLDCNT                             100202ma
+125700      END-IF                                                      100202ma
+125800     END-PERFORM.                                                 100202ma
+125900     MOVE MY-FLDCNT TO SC-FLDCNT.                                 100202ma
+126000*--------------------------------------------------------         100202ma
+126100 PROCESS-FFFLDS.                                                  100202ma
+126200     MOVE ENTRIES-IN-CHAIN TO BC-FLDCNT.                          100202ma
+126300     INITIALIZE FLDIDX MY-FRMCNT LAST-FM-UNIQUE.                  100202ma
+126400     PERFORM VARYING FLDIDX FROM 1 BY 1                           100202ma
+126500       UNTIL (END-OF-CHAIN) OR (FLDIDX > 999999)                  100202ma
+126600      PERFORM GET-FFFLDS-CHAINED                                  100202ma
+126700      IF NOT END-OF-CHAIN                                         100202ma
+126800       IF FFFLDS-FM-UNIQUE <> LAST-FM-UNIQUE                      100202ma
+126900        MOVE FFFLDS-FM-UNIQUE TO LAST-FM-UNIQUE                   100202ma
+127000        ADD 1 TO MY-FRMCNT                                        100202ma
+127100       END-IF                                                     100202ma
+127200      END-IF                                                      100202ma
+127300     END-PERFORM.                                                 100202ma
+127400     MOVE MY-FRMCNT TO FC-FRMCNT.                                 100202ma
+127500*--------------------------------------------------------         100202ma
+127600 MOVE-STATS.                                                      100202ma
+127700     MOVE  BC-FILE-CNT   TO BZ-FILE-CNT.                          100202ma
+127800     MOVE  BC-FRMCNT     TO BZ-FRMCNT.                            100202ma
+127900     MOVE  BC-FLDCNT     TO BZ-FLDCNT.                            100202ma
+128000     MOVE  SC-FRMCNT     TO SZ-FRMCNT.                            100202ma
+128100     MOVE  SC-FLDCNT     TO SZ-FLDCNT.                            100202ma
+128200     MOVE  FC-FRMCNT     TO FZ-FRMCNT.                            100202ma
+128300                                                                  100202ma
+128400*----------------------------------------------------------       100202ma
+128500 CHECK-STATS.                                                     100202ma
+128600     IF BC-FLDCNT = SC-FLDCNT                                     100202ma
+128700      DISPLAY "Form field count matches actual field count."      100202ma
+128800     Else                                                         100202ma
+128900      Display "Form field count not = actual field count.".       100202ma
+129000 DISPLAY-STATS.                                                   100202ma
+129100     DISPLAY "Forms Files      : "  BZ-FILE-CNT.                  100202ma
+129200     DISPLAY "Total Forms      : "  BZ-FRMCNT.                    100202ma
+129300     DISPLAY "Total Fields     : "  BZ-FLDCNT.                    100202ma
+129400     DISPLAY "Forms Fields     : "  SZ-FLDCNT.                    100202ma
+129500     DISPLAY "Forms with Fields: "  FZ-FRMCNT.                    100202ma
+129600*---------------------------------------------------------        100202ma
+129700 VPLUS-SUMMARY.                                                   100202ma
+129800     Move 1 to SEARCH-KEYI32.                                     100202ma
+129900     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                           100202ma
+130000     Perform Get-SRVMST-Keyed.                                    100202ma
+130100     PERFORM FIND-FFMSTR.                                         100202ma
+130200     IF NOT NO-ENTRY                                              100202ma
+130300      INITIALIZE FFMIDX THISSERVER-FILCNT                         100202ma
+130400      PERFORM VARYING FFMIDX FROM 1 BY 1                          100202ma
+130500        UNTIL (END-OF-CHAIN) OR (FFMIDX > 999999)                 100202ma
+130600       PERFORM GET-FFMSTR-CHAINED                                 100202ma
+130700       IF NOT END-OF-CHAIN                                        100202ma
+130800        ADD 1 TO THISSERVER-FILCNT                                100202ma
+130900        MOVE "VFIL-UNIQUE;" TO SEARCH-ITEM                        100202ma
+131000        MOVE FFMSTR-VFIL-UNIQUE TO SEARCH-KEYI32                  100202ma
+131100        PERFORM FIND-FMMSTR                                       100202ma
+131200        IF NO-ENTRY                                               100202ma
+131300         DISPLAY "*W* " FFMSTR-VFIL-NAME                          100202ma
+131400                 " HAS NO FORMS"                                  100202ma
+131500        ELSE                                                      100202ma
+131600         INITIALIZE FRMIDX THISFILE-FRMCNT                        100202ma
+131700         PERFORM VARYING FRMIDX FROM 1 BY 1                       100202ma
+131800           UNTIL (END-OF-CHAIN) OR (FRMIDX > 999999)              100202ma
+131900          PERFORM GET-FMMSTR-CHAINED                              100202ma
+132000          IF NOT END-OF-CHAIN                                     100202ma
+132100           ADD 1 TO THISFILE-FRMCNT                               100202ma
+132200           MOVE "FM-UNIQUE;" TO SEARCH-ITEM                       100202ma
+132300           MOVE FMMSTR-FM-UNIQUE TO SEARCH-KEYI32                 100202ma
+132400           PERFORM FIND-FFFLDS                                    100202ma
+132500           IF NO-ENTRY                                            100202ma
+132600*            DISPLAY "FORM: " FFMSTR-VFIL-NAME FMMSTR-FRM-NAME    100202ma
+132700*                    "HAS NO FIELDS"                              100202ma
+132800            CONTINUE                                              100202ma
+132900           ELSE                                                   100202ma
+133000            INITIALIZE FLDIDX THISFORM-FLDCNT                     100202ma
+133100            PERFORM VARYING FLDIDX FROM 1 BY 1                    100202ma
+133200              UNTIL (END-OF-CHAIN) OR (FLDIDX > 999999)           100202ma
+133300             PERFORM GET-FFFLDS-CHAINED                           100202ma
+133400             IF NOT END-OF-CHAIN                                  100202ma
+133500              ADD 1 TO THISFORM-FLDCNT                            100202ma
+133600*              DISPLAY FFMSTR-VFIL-NAME                           100202ma
+133700*                      FMMSTR-FRM-NAME                            100202ma
+133800*                      FFFLDS-VFLD-NAME                           100202ma
+133900*                      FFFLDS-VFLD-NUM                            100202ma
+134000*                      FFFLDS-VFLD-LENGTH                         100202ma
+134100*                      FFFLDS-BUF-X                               100202ma
+134200*                      FFFLDS-BUF-Y                               100202ma
+134300*                      FFFLDS-VFLD-ENHANCE                        100202ma
+134400             END-IF                                               100202ma
+134500            END-PERFORM                                           100202ma
+134600            MOVE 0 TO CONDITION-WORD                              100202ma
+134700            IF THISFORM-FLDCNT <> FMMSTR-FLDCNT                   100202ma
+134800             DISPLAY "*W* VGETFORMINFO EXPECTS " FMMSTR-FLDCNT    100202ma
+134900                     " FIELDS, VFIELDINFO FOUND " THISFORM-FLDCNT 100202ma
+135000            END-IF                                                100202ma
+135100*            DISPLAY FFMSTR-VFIL-NAME FMMSTR-FRM-NAME             100202ma
+135200*                    "HAS " THISFORM-FLDCNT " FIELDS"             100202ma
+135300           END-IF                                                 100202ma
+135400          END-IF                                                  100202ma
+135500         END-PERFORM                                              100202ma
+135600         MOVE 0 TO CONDITION-WORD                                 100202ma
+135700         IF THISFILE-FRMCNT <> FFMSTR-NBR-OF-FORMS                100202ma
+135800          MOVE FFMSTR-NBR-OF-FORMS TO DISP-FORMCNT1               100202ma
+135900          MOVE THISFILE-FRMCNT TO DISP-FORMCNT2                   100202ma
+136000          DISPLAY "*W* " FFMSTR-VFIL-NAME  DISP-FORMCNT1          100202ma
+136100                  " FORMS, VGETFORMINFO FOUND " DISP-FORMCNT2     100202ma
+136200         END-IF                                                   100202ma
+136300        END-IF                                                    100202ma
+136400       END-IF                                                     100202ma
+136500      END-PERFORM.                                                100202ma
+136600                                                                  100202ma

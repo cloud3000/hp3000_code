@@ -1,0 +1,332 @@
+001000$CONTROL LIST                                                             
+001100 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. SHOWF.                                                       
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400 DATE-COMPILED.                                                           
+001500 ENVIRONMENT DIVISION.                                                    
+001600 CONFIGURATION SECTION.                                                   
+001700 SOURCE-COMPUTER. HP3000.                                                 
+001800 OBJECT-COMPUTER. HP3000.                                                 
+001900 SPECIAL-NAMES.                                                           
+002000     CONDITION-CODE IS CC.                                                
+002100****************************************************************          
+002200*   SHOWF.UTIL.SYS  Is a tool for programmers to use in the    *          
+002300*   development phase of reviewing screen design.              *          
+002400*                                                              *          
+002500*  Modification:                                               *          
+002600*  Name       Date     Description                             *          
+002700*  M.Anderson 05/06/93 Added the ability to review Fkey Labels *          
+002800*                      And the ability to go to the next screen*          
+002900*                      in alphabetical order.                  *          
+003000*                      And the ability to test FORMSPEC edits. *          
+003100*                                                              *          
+003200*  M.Anderson 05/07/93 POEFORMS.PUR.TIW had too many forms for *          
+003300*                      the forms table in working storage. So  *          
+003400*                      increased the size from 99 to 128.      *          
+003500*                      If a file goes over 128 then paging     *          
+003600*                      code will be required.                  *          
+003700*                                                              *          
+003800*  M.Anderson 10/21/93 ADDED Fkey 7 logic, to print the current*          
+003900*                      form. A call to VIEWSUB routine "VSPRINT"          
+004000*                      is used to do this.                     *          
+004100****************************************************************          
+004200 DATA DIVISION.                                                           
+004300$PAGE " WORKING STORAGE"                                                  
+004400 WORKING-STORAGE SECTION.                                                 
+004500                                                                          
+004600 01 FILE-TO-OPEN           PIC X(36) VALUE SPACES.                        
+004700 01 SCREEN-TO-SHOW         PIC X(16) VALUE SPACES.                        
+004900 01 SAVE-FUNC-KEYS.                                                       
+005000    02 SF-KEY OCCURS 8 PIC X(16).                                         
+005100 01 INFOBUFFLEN            PIC S9(4)  COMP.                               
+005200 01 DISP-ZZZ9              PIC ZZZ9.                                      
+005300 01 DISP-N2                PIC 999.                                       
+005400 01 DISP-Z3                PIC ZZ9.                                       
+005500 01 DISP-Z4                PIC ZZZ9.                                      
+005600 01 PRINT-LDEV             PIC XXX.                                       
+005700 01 PRINT-MESSAGE          PIC X(80).                                     
+005800 01 MPE-COMMAND            PIC X(80).                                     
+005900 01 DISP-VERSION           PIC 9(8).                                      
+005910 01  FLOWJCW               PIC X(8) VALUE "FLOWTEST".                     
+006010 01  FLOWJCW-VALUE         PIC S9(4) COMP VALUE 0.                        
+006020     88  FLOWTEST          VALUE 1.                                       
+006030 01 X                      PIC S9(4)  COMP.                               
+006040 01 i                      PIC S9(4)  COMP.                               
+006120 01 N                      PIC S9(4)  COMP.                               
+006200 01 WHO-LDEV               PIC S9(4)  COMP.                               
+006300 01 INPUT-SHOWNUM.                                                        
+006400    05 SHOWNUM             PIC XXX.                                       
+006500    05 FILLER REDEFINES SHOWNUM.                                          
+006600       10 NUMVAL           PIC 999.                                       
+006610 01 WHO-INTRINSIC-PARMS.                                                  
+006701    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                            
+006702    15  WHO-MODE               PIC S9999 COMP.                            
+006703    15  WHO-CAPABILITY         PIC S9(6) COMP.                            
+006704    15  WHO-LATTR              PIC S9(6) COMP.                            
+006705    15  WHO-USERN.                                                        
+006706        20 BYTE1-6             PIC X(6).                                  
+006707        20 SCHOOL-NUMBER       PIC XX.                                    
+006708    15  WHO-GROUPN             PIC X(8).                                  
+006709    15  WHO-ACCTN              PIC X(8).                                  
+006710    15  WHO-HOMEN              PIC X(8).                                  
+006711 01 THREE-SECONDS          PIC S9(4) COMP VALUE 300.                      
+006800/                                                                         
+006900     COPY SWITCHES  OF J3KLIB.                                            
+007000     COPY FLOWEX    OF J3KLIB.                                            
+007100     COPY APPCOM    OF J3KLIB.                                            
+007200     COPY LINKDB    OF J3KLIB.                                            
+007300     COPY USERX     OF J3KLIB.                                            
+007400     COPY LINKPROG  OF J3KLIB.                                            
+007500     COPY LINKSCRX  OF J3KLIB.                                            
+007600 01 FORM-INFOBUF.                                                         
+007700    05 FORM-BUFFENTRIES    PIC S9(4)  COMP.                               
+007800    05 FORM-ENTRYLEN       PIC S9(4)  COMP.                               
+007900    05 FORM-ENTRYTABLE OCCURS 256 TIMES.                                  
+008000       10 FORM-NAME        PIC X(15).                                     
+008100       10 FILLER           PIC X.                                         
+008200       10 FORM-NUMBER      PIC S9(4)  COMP.                               
+008300       10 NUM-OF-FIELDS    PIC S9(4)  COMP.                               
+008400       10 BUF-LENGTH       PIC S9(4)  COMP.                               
+008500       10 NEXT-FORM        PIC X(15).                                     
+008600       10 FILLER           PIC X.                                         
+008700       10 REPEAT-OPTION    PIC X.                                         
+008800       10 NFORM-OPTION     PIC X.                                         
+008900                                                                          
+009000 01 FILE-INFOBUF.                                                         
+009100    05 FILE-BUFFENTRIES    PIC S9(4)  COMP.                               
+009200    05 FILE-ENTRYLEN       PIC S9(4)  COMP.                               
+009300    05 FILE-ENTRYTABLE OCCURS 1 TIMES.                                    
+009400       10 FILE-VERSION     PIC S9(8)  COMP.                               
+009500       10 NUM-OF-FORMS     PIC S9(4)  COMP.                               
+009600       10 MAX-FIELDS       PIC S9(4)  COMP.                               
+009700       10 MAX-BUFFSIZE     PIC S9(4)  COMP.                               
+009800       10 SAVE-FIELDS      PIC S9(4)  COMP.                               
+009900       10 HEAD-FORM        PIC X(15).                                     
+010000       10 FILLER           PIC X.                                         
+010100       10 ERROR-ENH        PIC X(4).                                      
+010200       10 WINDOW-ENH       PIC X(4).                                      
+010300       10 WINDOW-POSITION  PIC S9(4)  COMP.                               
+010400                                                                          
+010500                                                                          
+010600$PAGE "PROCEDURE CODE"                                                    
+010700 PROCEDURE DIVISION.                                                      
+010800 MIG0000-MAIN SECTION 00.                                                 
+010900******************************************************************        
+011000 0000-BEGIN.                                                              
+011100     INITIALIZE                                                           
+011200     COPY AMSITEMS OF J3KLIB.                                             
+011300     APPL-COMMON.                                                         
+011400     CALL INTRINSIC "FINDJCW" USING FLOWJCW FLOWJCW-VALUE I.              
+011500     MOVE SPACES TO LAST-SCREEN THIS-SCREEN.                              
+011600     MOVE SPACES TO SCREEN-COMAREA.                                       
+011700     MOVE "STARTUP" TO NEXT-SCREEN.                                       
+011800     MOVE "LAST-DBN-ENTRY" TO DBNAME(1).                                  
+011900     Display "Showf c.7.3".                                               
+012000     DISPLAY "-------------------------------------------------".         
+012100     DISPLAY "***              (showf)                       ***".        
+012200     DISPLAY "***    Review V/Plus Forms Files and Screens  ***".         
+012300     DISPLAY "***                                           ***".         
+012400     DISPLAY "-------------------------------------------------".         
+012500     Display "Copyright 2007 J3K Solutions".                              
+012600     CALL   INTRINSIC "WHO"                                               
+012700     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN                   
+012800            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.               
+012900     INITIALIZE  SCREEN-COMMON.                                           
+013000     PERFORM 7805-ASSOCIATE-PRINTER.                                      
+013100 NEW-FILE.                                                                
+013200     MOVE SPACES  TO FILE-TO-OPEN.                                        
+013300     DISPLAY "Enter MPE forms files ?" WITH NO ADVANCING.                 
+013400     ACCEPT FILE-TO-OPEN.                                                 
+013500     IF FILE-TO-OPEN = SPACES GO TO 7803-EXIT.                            
+013600     IF FILE-TO-OPEN = "?" OR "HELP" OR "help"                            
+013700        MOVE SPACES TO MPE-COMMAND                                        
+013800        STRING "LISTF @F@R@M@.@,2" %15                                    
+013900               DELIMITED BY SIZE INTO MPE-COMMAND                         
+014000        CALL INTRINSIC "COMMAND" USING MPE-COMMAND N X                    
+014100        GO TO NEW-FILE.                                                   
+014200     MOVE SPACES TO MPE-COMMAND.                                          
+014300     MOVE 0 TO X.                                                         
+014400     INSPECT FILE-TO-OPEN TALLYING X FOR ALL "@".                         
+014500     IF X = 0 INSPECT FILE-TO-OPEN TALLYING X FOR ALL "#".                
+014600     IF X > 0                                                             
+014700        STRING "LISTF " FILE-TO-OPEN DELIMITED BY "   "                   
+014800               ",2" %15                                                   
+014900        DELIMITED BY SIZE INTO MPE-COMMAND                                
+015000        CALL INTRINSIC "COMMAND" USING MPE-COMMAND N X                    
+015100        GO TO NEW-FILE.                                                   
+015200                                                                          
+015300     MOVE SPACES TO MPE-COMMAND.                                          
+015400     STRING "LISTF " FILE-TO-OPEN DELIMITED BY "  " ";$NULL" %15          
+015500      DELIMITED BY SIZE INTO MPE-COMMAND.                                 
+015600     CALL INTRINSIC "COMMAND" USING MPE-COMMAND N X.                      
+015700     IF      N = 907 DISPLAY "NON-EXISTENT FILE.  (CIERR 907)"            
+015800     ELSE IF N = 908 DISPLAY "NON-EXISTENT GROUP.  (CIERR 908)"           
+015900     ELSE IF N = 909 DISPLAY "NON-EXISTENT ACCOUNT.  (CIERR 909)"         
+016000     ELSE IF ( N <> 0 ) DISPLAY "INVALID FILE REFERENCE.".                
+016100     IF N NOT = 0 GO TO NEW-FILE.                                         
+016200                                                                          
+016300     PERFORM 7900-FORMTBL.                                                
+016400     IF ERRORS GO TO 7803-EXIT.                                           
+016500                                                                          
+016600 NEW-SCREEN.                                                              
+016700     PERFORM 7901-SHOWSCREENS.                                            
+016800 GET-SCREEN-NBR.                                                          
+016900     MOVE SPACES TO SCREEN-TO-SHOW SHOWNUM.                               
+017000     DISPLAY "Enter screen number ?" WITH NO ADVANCING.                   
+017100     ACCEPT SHOWNUM.                                                      
+017200     IF SHOWNUM = SPACES GO TO NEW-FILE.                                  
+017300     PERFORM 2 TIMES                                                      
+017400       PERFORM VARYING X FROM 3 BY -1 UNTIL X < 2                         
+017500        COMPUTE N = X - 1 END-COMPUTE                                     
+017600        IF SHOWNUM(X:1) = SPACE                                           
+017700           MOVE SHOWNUM(N:1) TO SHOWNUM(X:1)                              
+017800           MOVE SPACE TO SHOWNUM(N:1)                                     
+017900        END-IF                                                            
+018000       END-PERFORM                                                        
+018100     END-PERFORM.                                                         
+018200     INSPECT SHOWNUM REPLACING ALL " " BY "0".                            
+018300     IF SHOWNUM IS NOT NUMERIC                                            
+018400        DISPLAY "NUMBER MUST NUMERIC!"                                    
+018500        GO TO GET-SCREEN-NBR.                                             
+018600     IF NUMVAL IS GREATER THAN NUM-OF-FORMS(1)                            
+018700        COMPUTE N = ( NUM-OF-FORMS(1) + 1 )                               
+018800        MOVE N TO DISP-ZZZ9                                               
+018900        DISPLAY "SCREEN NUMBER MUST BE LESS THAN " DISP-ZZZ9              
+019000        GO TO GET-SCREEN-NBR.                                             
+019100                                                                          
+019200 SCREEN-NAME-OF-NUMVAL.                                                   
+019300     MOVE NUMVAL TO N.                                                    
+019400     MOVE FORM-NAME(N) TO SCREEN-TO-SHOW.                                 
+019500     IF SCREEN-TO-SHOW = "NEW FILE" GO TO NEW-FILE.                       
+019600     IF SCREEN-TO-SHOW = "Uncompiled"                                     
+019700        COPY AMSCALL OF J3KLIB                                            
+019800         REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.               
+019900         END-CALL                                                         
+020000        DISPLAY "INVALID SELECTION, not compiled"                         
+020100        GO TO GET-SCREEN-NBR.                                             
+020200     MOVE SCREEN-TO-SHOW TO SCREEN-NAME.                                  
+020300     MOVE SPACES TO SCREEN-TITLE.                                         
+020400     MOVE NUM-OF-FIELDS(N) TO DISP-Z3.                                    
+020500     MOVE BUF-LENGTH(N)  TO DISP-Z4.                                      
+020600     STRING DISP-Z4 " Byte Form contains " DISP-Z3 " Fields."             
+020700     DELIMITED BY SIZE INTO SCREEN-TITLE.                                 
+020800     COPY AMSCALL OF J3KLIB                                               
+020900      REPLACING ==VALUE OF PROCEDURE== BY =="VSINIT"==.                   
+021000      END-CALL                                                            
+021100     MOVE SCREEN-FUNC-KEYS TO SAVE-FUNC-KEYS.                             
+021200                                                                          
+021300$PAGE "MAIN LOGIC"                                                        
+021400 TERMINAL-READ.                                                           
+021500     MOVE SPACES TO SCREEN-FUNC-KEYS.                                     
+021600     MOVE "  NEXT   SCREEN " TO SCREEN-FUNC-KEY(2).                       
+021700     MOVE "PREVIOUS SCREEN " TO SCREEN-FUNC-KEY(1).                       
+021800     MOVE "  FORM    NAMES " TO SCREEN-FUNC-KEY(3).                       
+021900     MOVE "  SHOW  FKLABELS" TO SCREEN-FUNC-KEY(4).                       
+022000     MOVE " PRINT   SCREEN " TO SCREEN-FUNC-KEY(7).                       
+022100     MOVE "  EXIT" TO SCREEN-FUNC-KEY(8).                                 
+022200     PERFORM 7800-READ-SCREEN.                                            
+022300                                                                          
+022400     IF EDIT-ERRORS AND ( SCREEN-KEY-PRESSED = 0 )                        
+022500     COPY AMSCALL OF J3KLIB                                               
+022600      REPLACING ==VALUE OF PROCEDURE== BY =="VSSHOWERR"==.                
+022700      END-CALL.                                                           
+022800                                                                          
+022900     IF SCREEN-KEY-PRESSED = 0                                            
+023000        GO TO TERMINAL-READ.                                              
+023100                                                                          
+023200     IF SCREEN-KEY-PRESSED = 1 AND NUMVAL > 1                             
+023300        SUBTRACT 1 FROM NUMVAL                                            
+023400        GO TO SCREEN-NAME-OF-NUMVAL.                                      
+023500                                                                          
+023600     IF SCREEN-KEY-PRESSED = 2 AND NUMVAL < NUM-OF-FORMS(1)               
+023700        ADD 1 TO NUMVAL                                                   
+023800        GO TO SCREEN-NAME-OF-NUMVAL.                                      
+023900                                                                          
+024000     IF SCREEN-KEY-PRESSED = 4                                            
+024100        PERFORM 7804-SHOW-LABELS                                          
+024200        GO TO TERMINAL-READ.                                              
+024300                                                                          
+024400     IF SCREEN-KEY-PRESSED = 7                                            
+024500      COPY AMSCALL OF J3KLIB                                              
+024600      REPLACING ==VALUE OF PROCEDURE== BY =="VSPRINT"==.                  
+024700      END-CALL                                                            
+024800        MOVE PRINT-MESSAGE TO SCREEN-MESSAGE                              
+024900      COPY AMSCALL OF J3KLIB                                              
+025000      REPLACING ==VALUE OF PROCEDURE== BY =="VSMESG"==.                   
+025100      END-CALL                                                            
+025200        GO TO TERMINAL-READ.                                              
+025300                                                                          
+025400     IF BAD-KEY                                                           
+025500        PERFORM 7801-BAD-FUNCTION-KEY                                     
+025600        GO TO TERMINAL-READ.                                              
+025700                                                                          
+025800     IF SCREEN-KEY-PRESSED = 8 GO TO 7803-EXIT.                           
+025900                                                                          
+026000      COPY AMSCALL OF J3KLIB                                              
+026100      REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.                  
+026200      END-CALL.                                                           
+026300     GO TO NEW-SCREEN.                                                    
+026400                                                                          
+026500$PAGE "MISC ROUTINES"                                                     
+026600     COPY READSCR  OF J3KLIB.                                             
+026700                                                                          
+026800*---------------------------------------------------------------          
+026900 7803-EXIT.                                                               
+027000      COPY AMSCALL OF J3KLIB                                              
+027100      REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.                  
+027200      END-CALL.                                                           
+027300      GOBACK.                                                             
+027400*---------------------------------------------------------------          
+027500 7804-SHOW-LABELS.                                                        
+027600     MOVE SAVE-FUNC-KEYS TO SCREEN-FUNC-KEYS.                             
+027700      COPY AMSCALL OF J3KLIB                                              
+027800      REPLACING ==VALUE OF PROCEDURE== BY =="VSWRITE"==.                  
+027900      END-CALL.                                                           
+028000     CALL "CPAUSE" USING THREE-SECONDS .                                  
+028100*---------------------------------------------------------------          
+028200 7805-ASSOCIATE-PRINTER.                                                  
+028300     CALL INTRINSIC "WHO" USING \\ \\ \\ \\ \\ \\ \\ WHO-LDEV.            
+028500     MOVE SPACES TO MPE-COMMAND.                                          
+028600     STRING "FILE FORMLIST;DEV=LP,1" %15                                  
+028700     DELIMITED BY SIZE INTO MPE-COMMAND.                                  
+028800     CALL INTRINSIC "COMMAND" USING MPE-COMMAND N X.                      
+028900     MOVE SPACES TO PRINT-MESSAGE.                                        
+029000     STRING "PRINTED ON LP AT PRI=1"                                      
+029100        DELIMITED BY SIZE INTO PRINT-MESSAGE.                             
+029200                                                                          
+029300*---------------------------------------------------------------          
+029400 7900-FORMTBL.                                                            
+029500     MOVE SPACES TO FILE-INFOBUF.                                         
+029600     MOVE 1 TO FILE-BUFFENTRIES.                                          
+029700     MOVE 19 TO  FILE-ENTRYLEN.                                           
+029800     MOVE 21 TO INFOBUFFLEN.                                              
+029900     MOVE FILE-TO-OPEN TO SCREEN-USER SCREEN-FORMS-FILE.                  
+030000     MOVE SPACES TO SCREEN-NAME.                                          
+030100     COPY AMSCALL OF J3KLIB                                               
+030200      REPLACING ==VALUE OF PROCEDURE== BY =="VSINIT"==.                   
+030300      END-CALL.                                                           
+030400     CALL "VGETFILEINFO" USING SCREEN-COMAREA FILE-INFOBUF                
+030500                               INFOBUFFLEN.                               
+030600     MOVE FILE-VERSION(1) TO DISP-VERSION.                                
+030700     MOVE NUM-OF-FORMS(1) TO DISP-ZZZ9.                                   
+030800     MOVE SPACES TO FORM-INFOBUF.                                         
+030900     MOVE NUM-OF-FORMS(1) TO FORM-BUFFENTRIES.                            
+031000     MOVE 20 TO  FORM-ENTRYLEN.                                           
+031100     MOVE 5120 TO INFOBUFFLEN.                                            
+031200     CALL "VGETFORMINFO" USING SCREEN-COMAREA FORM-INFOBUF                
+031300                               INFOBUFFLEN.                               
+031400*---------------------------------------------------------------          
+031500 7901-SHOWSCREENS.                                                        
+031600     COPY AMSCALL OF J3KLIB                                               
+031700      REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.                  
+031800      END-CALL.                                                           
+031900     DISPLAY SCREEN-FORMS-FILE "version " DISP-VERSION                    
+032000             " contains " DISP-ZZZ9 " forms.".                            
+032100     PERFORM VARYING X FROM 1 BY 1 UNTIL X > NUM-OF-FORMS(1)              
+032200      MOVE X TO DISP-N2                                                   
+032300      IF FORM-NAME(X) = SPACES                                            
+032400         MOVE "Uncompiled" TO FORM-NAME(X)                                
+032500      END-IF                                                              
+032600      DISPLAY DISP-N2 "    " FORM-NAME(X)                                 
+032700     END-PERFORM.                                                         
+032800     DISPLAY "   ".                                                       

@@ -1,0 +1,1849 @@
+136600$CONTROL POST85, BOUNDS, LINES=59, LIST, MAP, CROSSREF            100202ma
+136700******************************************************************100202ma
+136800*   COPYRIGHT 2007 - 2009 J3K Solutions All rights reserved.      100202ma
+136900*                                                                 100202ma
+137000*                ****************************                     100202ma
+137100*                  FORMSPEC XML export utility                    100202ma
+137200*                ****************************                     100202ma
+137300*                                                                 100202ma
+137400*   http://www.j3ksolutions.com                                   100202ma
+137500*   mailto:support@j3ksolutions.com                               100202ma
+137600******************************************************************100202ma
+137700 IDENTIFICATION DIVISION.                                         100202ma
+137800 PROGRAM-ID.     MIG805.                                          100202ma
+137900 AUTHOR.     MICHAEL ANDERSON.                                    100202ma
+138000 ENVIRONMENT DIVISION.                                            100202ma
+138100 CONFIGURATION SECTION.                                           100202ma
+138200 SOURCE-COMPUTER. HP-3000.                                        100224ma
+138300* SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                   100224ma
+138400 OBJECT-COMPUTER. HP-3000.                                        100202ma
+138500*                                                                 100202ma
+138600 INPUT-OUTPUT SECTION.                                            100202ma
+138700 FILE-CONTROL.                                                    100202ma
+138800*                                                                 100202ma
+138900     SELECT SRVXML-FILE         ASSIGN TO "SRVXML,,,,9000000"     100202ma
+139000            FILE STATUS IS XML-STATUS.                            100202ma
+139100     SELECT FILXML-FILE         ASSIGN TO "FILXML,,,,9000000"     100202ma
+139200            FILE STATUS IS XML-STATUS.                            100202ma
+139300*                                                                 100202ma
+139400 DATA DIVISION.                                                   100202ma
+139500 FILE SECTION.                                                    100202ma
+139600                                                                  100202ma
+139700 FD  SRVXML-FILE                                                  100202ma
+139800     RECORD CONTAINS 256 CHARACTERS                               100202ma
+139900     DATA RECORD IS SRVXML-REC.                                   100202ma
+140000 01  SRVXML-REC.                                                  100202ma
+140100     05  SRVXML-STR                     PIC X(256).               100202ma
+140200                                                                  100202ma
+140300 FD  FILXML-FILE                                                  100202ma
+140400     RECORD CONTAINS 256 CHARACTERS                               100202ma
+140500     DATA RECORD IS FILXML-REC.                                   100202ma
+140600 01  FILXML-REC.                                                  100202ma
+140700     05  FILXML-STR                     PIC X(256).               100202ma
+140800                                                                  100202ma
+140900$PAGE "WORKING STORAGE"                                           100202ma
+141000 WORKING-STORAGE SECTION.                                         100202ma
+141100***************************************************************** 100202ma
+141200 01 FNAME                 PIC X(8)  VALUE SPACES.                 100202ma
+141300 01  FILE-ERROR-DATA.                                             100202ma
+141400     05 ERROR-NUMBER        PIC XX    VALUE SPACES.               100202ma
+141500     05 FILE-ERROR-RECORD   PIC X(79) VALUE SPACES.               100202ma
+141600                                                                  100202ma
+141700 01  XML-data             PIC X(256)  VALUE SPACES.               100202ma
+141800 01  XML-STATUS           PIC XX    VALUE SPACES.                 100202ma
+141900 01  XMLIDX               PIC S9(4) COMP VALUE 0.                 100202ma
+142000 01  XmlPtr               PIC S9(4) COMP VALUE 0.                 100202ma
+142100 01  XMLLEN               PIC S9(4) COMP VALUE 0.                 100202ma
+142200 01  XMLLEVEL             PIC S9(4) COMP VALUE 0.                 100202ma
+142300 01  SRVLEVEL             PIC S9(4) COMP VALUE 0.                 100202ma
+142400 01  FILLEVEL             PIC S9(4) COMP VALUE 0.                 100202ma
+142500 01  XML-COUNT            PIC S9(9) COMP VALUE 0.                 100202ma
+142600 01  XML-RCOUNT           PIC S9(9) COMP VALUE 0.                 100202ma
+142700 01  XML-FLAG             PIC XX    VALUE SPACES.                 100202ma
+142800     88 XML-CLOSED        VALUE SPACES.                           100202ma
+142900     88 XML-OPENED        VALUE "02".                             100202ma
+143000     88 XML-EOF           VALUE "99".                             100202ma
+143100                                                                  100520ma
+143200 01  MY-VFIL-NAME          PIC X(36)  VALUE SPACES.               100520ma
+143300 01  X2                    PIC S9(4) COMP VALUE 0.                100202ma
+143400 01  NEXIDX                PIC S9(4) COMP VALUE 0.                100202ma
+143500 01  I                     PIC S9(4) COMP VALUE 0.                100202ma
+143600 01  X                     PIC S9(4) COMP VALUE 0.                100202ma
+143700 01  FCNT                  PIC S9(4) COMP VALUE 0.                100202ma
+143800 01  FX                    PIC S9(4) COMP VALUE 0.                100202ma
+143900 01 Esc-len                PIC S9(4) COMP VALUE 0.                100202ma
+144000 01 ld-IDX                 PIC S9(4) COMP VALUE 0.                100202ma
+144100 01 ld-len                 PIC S9(4) COMP VALUE 0.                100202ma
+144200 01  my-tally              PIC S9(4) COMP VALUE 0.                100520ma
+144300 01  Ascii-Value           PIC S9(4) COMP VALUE 0.                100520ma
+144400 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 100520ma
+144500     02 ASCII-BYTE1        PIC X.                                 100202ma
+144600     02 ASCII-BYTE2        PIC X.                                 100202ma
+144700 01  LAST-FORMFILE          PIC S9(4) COMP VALUE 1.               100202ma
+144800 01  HPVAR-NAME        PIC X(20) VALUE "ITOSQLS_STATUS~  ".       100202ma
+144900 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                   100202ma
+145000 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                    100202ma
+145100 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                    100202ma
+145200 01  DS-IDX            PIC S9(9) COMP VALUE 0.                    100202ma
+145300 01  DI-IDX            PIC S9(9) COMP VALUE 0.                    100202ma
+145400 01 S1       PIC S9(9) COMP VALUE 0.                              100202ma
+145500 01 S2       PIC S9(9) COMP VALUE 0.                              100202ma
+145600 01 end-of-tag-sw pic x value "0".                                100202ma
+145700 01 next-tag-sw   pic x value "0".                                100202ma
+145800 01 CD-Syntax     pic x value "0".                                100202ma
+145900                                                                  100202ma
+146000 01  GETINFO-DATA.                                                100202ma
+146100    05  GINFO-LEN                PIC S9(4) COMP.                  100202ma
+146200    05  GINFO-STR                PIC X(128).                      100202ma
+146300    05  GINFO-PARM               PIC S9(4) COMP.                  100202ma
+146400 01  PARSED-DATA.                                                 100202ma
+146500    05  ITEMS-PARSED             PIC S9(4) COMP.                  100202ma
+146600        88 PARSE-IS-COMPLETE VALUES ARE 8 THRU 99.                100202ma
+146700    05  PARSED-STRING            PIC X(128).                      100202ma
+146800    05  NEXT-STRING              PIC X(256).                      100202ma
+146900    05  STRING-POINTER             PIC S9(4) COMP.                100202ma
+147000    05  GX                       PIC S9(4) COMP.                  100202ma
+147100    05  GY                       PIC S9(4) COMP.                  100202ma
+147200    05  PX                       PIC S9(4) COMP.                  100202ma
+147300 01 ITEM-1                  PIC S9(9)  COMP VALUE 1.              100202ma
+147400 01 ITEM-2                  PIC S9(9)  COMP VALUE 2.              100202ma
+147500 01 ITEM-11                 PIC S9(9)  COMP VALUE 11.             100202ma
+147600 01 VAR-VALUE                PIC 9(3)       VALUE ZERO.           100202ma
+147700 01 VAR-NAME                PIC X(15)       VALUE SPACES.         100202ma
+147800 01 VAR-STATUS              PIC S9(9)  COMP VALUE 0.              100202ma
+147900 01 VAR-VALUE-I             PIC S9(9)  COMP VALUE 0.              100202ma
+148000 01 VAR-VALUE-S             PIC X(20)       VALUE SPACES.         100202ma
+148100 01 VAR-VALUE-S-SIZE        PIC S9(9)  COMP VALUE 20.             100202ma
+148200 01 MY-NEW-FILCNT          pic s9(9) comp value 0.                100202ma
+148300 01 MY-NEW-frmCNT          pic s9(9) comp value 0.                100202ma
+148400 01 MY-NEW-fldCNT          pic s9(9) comp value 0.                100202ma
+148500 01 MY-NEW-spcCNT          pic s9(9) comp value 0.                100202ma
+148600 01 DISP-N2                PIC ZZZ9.                              100202ma
+148700 01  FULL-CURRENT-DATE.                                           100202ma
+148800         05  C-DATE.                                              100202ma
+148900             10  C-YEAR       PIC 9(4).                           100202ma
+149000             10  C-MONTH      PIC 99.                             100202ma
+149100             10  C-DAY        PIC 99.                             100202ma
+149200         05  C-TIME.                                              100202ma
+149300             10  C-HOUR       PIC 99.                             100202ma
+149400             10  C-MINUTES    PIC 99.                             100202ma
+149500             10  C-SECONDS    PIC 99.                             100202ma
+149600             10  C-SEC-HUND   PIC 99.                             100202ma
+149700         05  C-TIME-DIFF.                                         100202ma
+149800             10  O-GMT-DIR    PIC X.                              100202ma
+149900             10  O-HOUR       PIC 99.                             100202ma
+150000             10  O-MINUTES    PIC 99.                             100202ma
+150100 01 ERROR-MSG                PIC X(80) VALUE SPACES.              100202ma
+150200 01 CALLTYPE                 PIC X(20) VALUE SPACES.              100202ma
+150300                                                                  100202ma
+150400 01 NUMDEC                 PIC S9(4) COMP.                        100202ma
+150500 01 NUMERR                 PIC S9(4) COMP.                        100202ma
+150600 01 NUM1                   PIC X(14).                             100202ma
+150700 01 NUM2                   PIC S9(14).                            100202ma
+150800 01  FIRST-TIME-SW         PIC X.                                 100202ma
+150900     88  FIRST-TIME        VALUE "1".                             100202ma
+151000                                                                  100202ma
+151100 01  E-Record-Found-Sw     Pic X Value "0".                       100202ma
+151200     88 E-Record-Found           Value "1".                       100202ma
+151300                                                                  100202ma
+151400 01  POINTER-LINK-SW         PIC X.                               100202ma
+151500     88  POINTERS-LINKED        VALUE "1".                        100202ma
+151600                                                                  100202ma
+151700 01  HAVE-FKEYS-SW                PIC X VALUE "9".                100202ma
+151800     88 HARDWARE-FKEYS  VALUE "H".                                100202ma
+151900     88 PAINTED-FKEYS   VALUE "P".                                100202ma
+152000     88 NO-FKEYS-YET    VALUE "N".                                100202ma
+152100                                                                  100202ma
+152200 01  VALID-T-SW         PIC X.                                    100202ma
+152300     88  VALID-T        VALUE "1".                                100202ma
+152400                                                                  100202ma
+152500 01  VALID-D-SW         PIC X.                                    100202ma
+152600     88  VALID-D        VALUE "1".                                100202ma
+152700                                                                  100202ma
+152800 01  VALID-G-SW         PIC X.                                    100202ma
+152900     88  VALID-G        VALUE "1".                                100202ma
+153000                                                                  100202ma
+153100 01  FIRST-TIME-SW         PIC X.                                 100202ma
+153200     88  FIRST-TIME        VALUE "1".                             100202ma
+153300 01  infield-sw         PIC X.                                    100202ma
+153400     88  infield        VALUE "1".                                100202ma
+153500                                                                  100202ma
+153600*01  ERRORS-SW             PIC X.                                 100202ma
+153700*    88  ERRORS            VALUE "1".                             100202ma
+153800                                                                  100202ma
+153900 01  NONBLANK-SW         PIC X.                                   100202ma
+154000     88  NONBLANK        VALUE "1".                               100202ma
+154100                                                                  100202ma
+154200 01  MATCH-SW        PIC X.                                       100202ma
+154300     88  MATCH-FOUND       VALUE "1".                             100202ma
+154400                                                                  100202ma
+154500 01  FMMSTR-SW        PIC X.                                      100202ma
+154600     88  FMMSTR-FOUND       VALUE "1".                            100202ma
+154700                                                                  100202ma
+154800 01  EDIT-ERRORS-SW        PIC X.                                 100202ma
+154900     88  EDIT-ERRORS       VALUE "1".                             100202ma
+155000                                                                  100202ma
+155100 01  BAD-KEY-SW            PIC X.                                 100202ma
+155200     88  BAD-KEY           VALUE "1".                             100202ma
+155300                                                                  100202ma
+155400 01  Last-Column-SW       PIC X.                                  100202ma
+155500     88  Last-Column      VALUE "1".                              100202ma
+155600                                                                  100202ma
+155700 01  X-FLOWTEST-JCW          PIC X(8) VALUE "FLOWTEST".           100202ma
+155800 01  X-FLOWTEST-VALUE        PIC S9(4) COMP VALUE 0.              100202ma
+155900     88  X-FLOWTEST          VALUE 1.                             100202ma
+156000                                                                  100202ma
+156100 01 TARGET-FIELD                    PIC X(64) VALUE SPACES.       100202ma
+156200 01 DWNSHFT-SW                      PIC X.                        100202ma
+156300    88 OK-TO-DOWNSHIFT VALUE "1".                                 100202ma
+156400 01 MYIDX                           PIC S9(4) COMP VALUE 0.       100202ma
+156500 01 SOURCE-FIELD                    PIC X(64) VALUE SPACES.       100202ma
+156600 01 ASCII-CHARACTERS.                                             100202ma
+156700    02 TWO-BYTES                    PIC XX VALUE SPACES.          100202ma
+156800    02 SIXTEEN-BITS REDEFINES TWO-BYTES.                          100202ma
+156900       05 ASCII-INT                 PIC S9(4) COMP.               100202ma
+157000    02 TWO-CHARS    REDEFINES TWO-BYTES.                          100202ma
+157100       05 FILLER                    PIC X.                        100202ma
+157200       05 ASCII-CHAR                PIC X.                        100202ma
+157300                                                                  100202ma
+157400 01  MY-TIMESTAMP             PIC X(28) VALUE SPACES.             100202ma
+157500                                                                  100202ma
+157600 01 ABORT-SWITCHES.                                               100202ma
+157700    02 ON-VPLUS-ERRORS     PIC X VALUE "0".                       100202ma
+157800       88 ABORT-ON-VPLUS-ERRORS  VALUE "9".                       100202ma
+157900                                                                  100202ma
+158000     01  SAVE-STATUS.                                             100202ma
+158100         03  CONDITION-SAVED   PIC S9(4) COMP.                    100202ma
+158200         03  SAVED-LENGTH      PIC S9(4) COMP.                    100202ma
+158300         03  SAVED-NUMBER      PIC S9(9) COMP.                    100202ma
+158400         03  SAVED-IN-CHAIN    PIC S9(9) COMP.                    100202ma
+158500         03  PREV-SAVED-NO     PIC S9(9) COMP.                    100202ma
+158600         03  NEXT-SAVED-NO     PIC S9(9) COMP.                    100202ma
+158700                                                                  100202ma
+158800 01 A-TABLE-SW               PIC X VALUE "0".                     100202ma
+158900    88 ITS-A-TABLE    VALUE "1".                                  100202ma
+159000 01 DOW                      PIC S9(4) COMP  VALUE 0.             100202ma
+159100 01  MYDB     PIC S9(4) COMP VALUE  9.                            100202ma
+159200 01  MIGDB-STATUS.                                                100202ma
+159300     03  FILLER    PIC S9(4) COMP VALUE  0.                       100202ma
+159400     03  FILLER    PIC S9(4) COMP VALUE  0.                       100202ma
+159500     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+159600     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+159700     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+159800     03  FILLER    PIC S9(9) COMP VALUE  0.                       100202ma
+159900 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.             100202ma
+160000 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.             100202ma
+160100                                                                  100202ma
+160200 01 WHO-INTRINSIC-PARMS.                                          100202ma
+160300    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                    100202ma
+160400    15  WHO-MODE               PIC S9999 COMP.                    100202ma
+160500    15  WHO-CAPABILITY         PIC S9(6) COMP.                    100202ma
+160600    15  WHO-CAP-PARTS REDEFINES WHO-CAPABILITY.                   100520ma
+160700        20 WHO-CAP1         PIC S9(4) COMP.                       100520ma
+160800        20 WHO-CAP2         PIC S9(4) COMP.                       100520ma
+160900    15  WHO-LATTR              PIC S9(6) COMP.                    100202ma
+161000    15  WHO-USERN.                                                100202ma
+161100        20 BYTE1-6             PIC X(6).                          100202ma
+161200        20 SCHOOL-NUMBER       PIC XX.                            100202ma
+161300    15  WHO-GROUPN             PIC X(8).                          100202ma
+161400    15  WHO-ACCTN              PIC X(8).                          100202ma
+161500    15  WHO-HOMEN              PIC X(8).                          100202ma
+161600                                                                  100202ma
+161700 01 DP-IDX                  PIC S9(9) COMP  VALUE 0.              100202ma
+161800 01 MyHpSusan               PIC S9(9) COMP  VALUE 0.              100202ma
+161900 01 MyCREATOR               PIC X(8)   VALUE SPACES.              100202ma
+162000 01 MYACCOUNT               PIC X(8)   VALUE SPACES.              100202ma
+162100 01 MYGROUP               PIC X(8)   VALUE SPACES.                100202ma
+162200 01 LINK-USER  PIC X(8) VALUE SPACES.                             100202ma
+162300 01 LINK-UPASS PIC X(8) VALUE SPACES.                             100202ma
+162400 01 LINK-ACCT  PIC X(8) VALUE SPACES.                             100202ma
+162500 01 LINK-APASS PIC X(8) VALUE SPACES.                             100202ma
+162600 01 LINK-GROUP PIC X(8) VALUE SPACES.                             100202ma
+162700 01 LINK-GPASS PIC X(8) VALUE SPACES.                             100202ma
+162800 01  speclen               PIC S9(4) COMP.                        100202ma
+162900 01  specidx               pic s9(4) comp.                        100202ma
+163000 01 chrcnt                 pic s9(4) comp.                        100202ma
+163100 01 chridx                 pic s9(4) comp.                        100202ma
+163200 01  DATA-LEN              PIC S9(4) COMP.                        100202ma
+163300                                                                  100202ma
+163400 01 MYCOST      PIC S9(18) COMP VALUE 0.                          100202ma
+163500 01 TOTAL-FILES      PIC S9(18) COMP VALUE 0.                     100202ma
+163600 01 TOTAL-FORMS       PIC S9(18) COMP VALUE 0.                    100202ma
+163700 01 TOTAL-FIELDS     PIC S9(18) COMP VALUE 0.                     100202ma
+163800 01 CAPACITY-FILES   PIC S9(18) COMP VALUE 0.                     100202ma
+163900 01 CAPACITY-SPECS   pic s9(18) comp value 0.                     100202ma
+164000 01 CAPACITY-FORMS    PIC S9(18) COMP VALUE 0.                    100202ma
+164100 01 CAPACITY-FIELDS  PIC S9(18) COMP VALUE 0.                     100202ma
+164200 01 MYMONEY     PIC S9(18) COMP VALUE 0.                          100202ma
+164300 01 MYBYTES     PIC S9(18) COMP VALUE 0.                          100202ma
+164400 01 MYMSG                   PIC X(79) VALUE SPACES.               100202ma
+164500 01 SI-IDX                  PIC S9(9) COMP  VALUE 0.              100202ma
+164600 01 bufpos                  PIC S9(4) COMP  VALUE 0.              100202ma
+164700 01 CMD                     PIC X(255)      VALUE SPACES.         100202ma
+164800 01 M               Pic X(78) Value Spaces.                       100202ma
+164900 01 CSTR                     PIC X(255)      VALUE SPACES.        100202ma
+165000 01 CERR                     PIC S9(4) COMP  VALUE 0.             100202ma
+165100 01 CPARM                    PIC S9(4) COMP  VALUE 0.             100202ma
+165200 01 CMSG                     PIC S9(4) COMP  VALUE 2.             100202ma
+165300 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.             100202ma
+165400 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.             100202ma
+165500 01  EXTFILE-STATUS            PIC X   VALUE "0".                 100202ma
+165600     88 EXTFILE-EOF                    VALUE "9".                 100202ma
+165700 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.             100202ma
+165800 01 My-BaseName              Pic X(6) Value Spaces.               100202ma
+165900 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.             100202ma
+166000 01 NUM-X                    PIC S9(4) COMP  VALUE 0.             100202ma
+166100 01 MYINCREMENT              PIC S9(4) COMP  VALUE 0.             100202ma
+166200                                                                  100202ma
+166300 01 My-Bytes                  pic S9(4) Comp  Value 0.            100202ma
+166400 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.             100202ma
+166500 01 VAR-LEN                  PIC S9(4) COMP  VALUE 0.             100202ma
+166600 01 SHOWTIME-STR.                                                 100202ma
+166700    02 FILLER PIC X(8) VALUE "SHOWTIME".                          100202ma
+166800    02 FILLER PIC X    VALUE %15.                                 100202ma
+166900 01 DATE-EDITING.                                                 100202ma
+167000    05 RAW-DATE.                                                  100202ma
+167100       10 D1     PIC X   VALUE SPACES.                            100202ma
+167200       10 D2     PIC X   VALUE SPACES.                            100202ma
+167300       10 D3     PIC X   VALUE SPACES.                            100202ma
+167400       10 D4     PIC X   VALUE SPACES.                            100202ma
+167500       10 D5     PIC X   VALUE SPACES.                            100202ma
+167600       10 D6     PIC X   VALUE SPACES.                            100202ma
+167700       10 D7     PIC X   VALUE SPACES.                            100202ma
+167800       10 D8     PIC X   VALUE SPACES.                            100202ma
+167900    05 EDITED-DATE.                                               100202ma
+168000       10 D5     PIC X   VALUE SPACES.                            100202ma
+168100       10 D6     PIC X   VALUE SPACES.                            100202ma
+168200       10 FILLER PIC X   VALUE "/".                               100202ma
+168300       10 D7     PIC X   VALUE SPACES.                            100202ma
+168400       10 D8     PIC X   VALUE SPACES.                            100202ma
+168500       10 FILLER PIC X   VALUE "/".                               100202ma
+168600       10 D1     PIC X   VALUE SPACES.                            100202ma
+168700       10 D2     PIC X   VALUE SPACES.                            100202ma
+168800       10 D3     PIC X   VALUE SPACES.                            100202ma
+168900       10 D4     PIC X   VALUE SPACES.                            100202ma
+169000                                                                  100202ma
+169100                                                                  100202ma
+169200 01 Db-Info-406-Word-17.                                          100202ma
+169300    05  BIT1             PIC 9.                                   100202ma
+169400    05  BIT2             PIC 9.                                   100202ma
+169500    05  BIT3             PIC 9.                                   100202ma
+169600    05  BIT4             PIC 9.                                   100202ma
+169700    05  BIT5             PIC 9.                                   100202ma
+169800    05  BIT6             PIC 9.                                   100202ma
+169900    05  BIT7             PIC 9.                                   100202ma
+170000    05  BIT8             PIC 9.                                   100202ma
+170100    05  BIT9             PIC 9.                                   100202ma
+170200        88 Database-Newlimits Value 1.                            100202ma
+170300        88 Database-Oldlimits Value 0.                            100202ma
+170400    05  BIT10            PIC 9.                                   100202ma
+170500        88 Database-Entrynumber-Format Value 1.                   100202ma
+170600        88 Database-Entryname-Format   Value 0.                   100202ma
+170700    05  BIT11            PIC 9.                                   100202ma
+170800    05  BIT12            PIC 9.                                   100202ma
+170900        88 Expandable-Master-Dataset     Value 1.                 100202ma
+171000        88 No-Expandable-Master-Dataset   Value 0.                100202ma
+171100    05  BIT13            PIC 9.                                   100202ma
+171200        88 B-Tree      Value 1.                                   100202ma
+171300        88 No-B-Tree   Value 0.                                   100202ma
+171400    05  BIT14            PIC 9.                                   100202ma
+171500    05  BIT15            PIC 9.                                   100202ma
+171600    05  BIT16            PIC 9.                                   100202ma
+171700 01  BINARY-VALUE.                                                100202ma
+171800     02 WORD1-WHO-CAPABILITY.                                     100520ma
+171900        05 SM-CAPABILITY         PIC 9.                           100520ma
+172000           88 SM-TRUE     VALUE 1.                                100520ma
+172100           88 SM-FALSE    VALUE 0.                                100520ma
+172200        05 ACTMGR-CAPABILITY     PIC 9.                           100520ma
+172300           88 AM-TRUE     VALUE 1.                                100520ma
+172400           88 AM-FALSE    VALUE 0.                                100520ma
+172500        05 ACTMGR-CAPABILITY     PIC 9(14).                       100520ma
+172600                                                                  100520ma
+172700 01 NUMERIC-EDITS.                                                100202ma
+172800    02 Split-Word        Pic S9(4) Comp.                          100202ma
+172900    02 Splating-a-word Redefines Split-Word.                      100202ma
+173000       05 Split-Word-1 Pic x.                                     100202ma
+173100       05 Split-Word-2 Pic x.                                     100202ma
+173200    02 CHR3              PIC XXX.                                 100202ma
+173300    02 Y1                PIC 9.                                   100202ma
+173400    02 Y2                PIC 99.                                  100202ma
+173500    02 Y3                PIC 999.                                 100202ma
+173600    02 Y4                PIC 9999.                                100202ma
+173700    02 Y5                PIC 99999.                               100202ma
+173800    02 CHR6              PIC XXXXXX.                              100202ma
+173900    02 Z1                PIC 9.                                   100202ma
+174000    02 Z2                PIC 99.                                  100202ma
+174100    02 Z3                PIC 999.                                 100202ma
+174200    02 Z4                PIC 9999.                                100202ma
+174300    02 Z5                PIC 99999.                               100202ma
+174400    02 COLUMN-BYTES    PIC S9(4) COMP.                            100202ma
+174500                                                                  100202ma
+174600                                                                  100202ma
+174700 01  THIS-TIMESTAMP.                                              100202ma
+174800     05 TS-LAYOUT.                                                100202ma
+174900        10 VTIMESTAMP     PIC S9(9) COMP.                         100202ma
+175000        10 VTS-BYTES REDEFINES VTIMESTAMP.                        100202ma
+175100         12 VTS-WORD1 PIC S9(4) COMP.                             100202ma
+175200         12 VTS-WORD1-BIT REDEFINES VTS-WORD1 PIC XX.             100202ma
+175300         12 VTS-WORD2 PIC S9(4) COMP.                             100202ma
+175400         12 VTS-WORD2-BIT REDEFINES VTS-WORD2 PIC XX.             100202ma
+175500        10 CALENDAR-PARM.                                         100202ma
+175600            15 CAL-INT    PIC S9(4) COMP.                         100202ma
+175700        10 CLOCK-PARM.                                            100202ma
+175800            15 CLOCK-DINT PIC S9(9) COMP.                         100202ma
+175900        10 THIS-CLOCK REDEFINES  CLOCK-PARM.                      100202ma
+176000         12 CLK-WORD1 PIC S9(4) COMP.                             100202ma
+176100         12 CLK-WORD1-BIT REDEFINES CLK-WORD1 PIC XX.             100202ma
+176200         12 CLK-WORD2 PIC S9(4) COMP.                             100202ma
+176300         12 CLK-WORD1-BIT REDEFINES CLK-WORD2 PIC XX.             100202ma
+176400                                                                  100202ma
+176500                                                                  100202ma
+176600 01 Collate-Str          Pic x(64).                               100202ma
+176700 01  TDAY                PIC X(8)  VALUE SPACES.                  100202ma
+176800 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                  100202ma
+176900 01  TDOW                PIC S9(4) COMP VALUE 0.                  100202ma
+177000 01  DDAY                PIC X(8)  VALUE SPACES.                  100202ma
+177100 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                  100202ma
+177200 01  DDOW                PIC S9(4) COMP VALUE 0.                  100202ma
+177300 01  DCNT                PIC S9(4) COMP VALUE 0.                  100202ma
+177400 01  PICZ5 PIC Z,ZZZ.                                             100202ma
+177500 01  WS-LOGON-DESC                       VALUE SPACES.            100202ma
+177600     05  WS-LD-JOB-NAME      PIC  X(16).                          100202ma
+177700     05  WS-LD-ACCT-NAME     PIC  X(16).                          100202ma
+177800     05  WS-LD-ACCT-PASS     PIC  X(16).                          100202ma
+177900     05  WS-LD-USER-NAME     PIC  X(16).                          100202ma
+178000     05  WS-LD-USER-PASS     PIC  X(16).                          100202ma
+178100     05  WS-LD-GROUP-NAME    PIC  X(16).                          100202ma
+178200     05  WS-LD-GROUP-PASS    PIC  X(16).                          100202ma
+178300 01  WS-ERR PIC S9(4) COMP VALUE 0.                               100202ma
+178400 01  WS-ERR-MSG PIC X(80) VALUE SPACES.                           100202ma
+178500 01  LAST-CREATOR  PIC X(30) VALUE SPACES.                        100202ma
+178600 01  THIS-CREATOR  PIC X(30) VALUE SPACES.                        100202ma
+178700 01  IDX           PIC S9(4) COMP VALUE 0.                        100202ma
+178800 01  DBMSTR-RECNO  PIC S9(9) COMP VALUE 0.                        100202ma
+178900 01  MYTALLY             PIC S9(9) COMP VALUE 0.                  100202ma
+179000 01 OLD-FDFCNT PIC S9(4) COMP VALUE 0.                            100202ma
+179100 01  Y                PIC S9(4) COMP VALUE 0.                     100202ma
+179200 01 clearscreen.                                                  100202ma
+179300    02 filler pic x value %33.                                    100202ma
+179400    02 filler pic x value "E".                                    100202ma
+179500 01 FKEY-TEST1 PIC X(100) VALUE SPACES.                           100202ma
+179600 01 FKEY-TEST2 PIC X(100) VALUE SPACES.                           100202ma
+179700 01  DECIMAL-VALUE         PIC S9(4) COMP VALUE 0.                100202ma
+179800 01  DISP-N                PIC ZZZZZZZZZZZZZ9 VALUE ZERO.         100505ma
+179900 01  DISP-N14              PIC ZZZZZZZZZZZZZ9 VALUE ZERO.         100505ma
+180000 01  DISP-N7               PIC 9999999 VALUE ZERO.                100505ma
+180100 01 EDIT-MESSAGE           PIC X(120).                            100202ma
+180200 01 THISFORM-FLDCNT   PIC S9(18) COMP VALUE 0.                    100202ma
+180300 01 THISFILE-FRMCNT   PIC S9(18) COMP VALUE 0.                    100202ma
+180400 01 IROW                  PIC S9(4) COMP  VALUE 0.                100202ma
+180500 01 XCOL                  PIC S9(4) COMP  VALUE 0.                100202ma
+180600 01  SRVIDX            PIC S9(9) COMP VALUE 0.                    100202ma
+180700 01  FFMIDX            PIC S9(9) COMP VALUE 0.                    100202ma
+180800 01  FmMIDX            PIC S9(9) COMP VALUE 0.                    100202ma
+180900 01  FFFIDX            PIC S9(9) COMP VALUE 0.                    100202ma
+181000 01  SRVCNT            PIC S9(9) COMP VALUE 0.                    100202ma
+181100 01  FfMCNT            PIC S9(9) COMP VALUE 0.                    100202ma
+181200 01  FmMCNT            PIC S9(9) COMP VALUE 0.                    100202ma
+181300 01  FFFCNT            PIC S9(9) COMP VALUE 0.                    100202ma
+181400 COPY DBSTAT  OF J3KLIB.                                          100202ma
+181500 COPY FFFLDS  OF J3KLIB.                                          100202ma
+181600 COPY FFMSTR  OF J3KLIB.                                          100202ma
+181700 COPY FMMSTR  OF J3KLIB.                                          100202ma
+181800 01 FMMSAV-BUFFER.                                                100202ma
+181900    02 FMMSAV-VFIL-UNIQUE                PIC S9(09) COMP VALUE 0. 100202ma
+182000    02 FMMSAV-FM-UNIQUE                  PIC S9(09) COMP VALUE 0. 100202ma
+182100    02 FMMSAV-SVR-UNIQUE                 PIC S9(09) COMP VALUE 0. 100202ma
+182200    02 FMMSAV-FRM-NAME                   PIC X(016) VALUE SPACES. 100202ma
+182300    02 FMMSAV-PAN-NAME                   PIC X(016) VALUE SPACES. 100202ma
+182400    02 FMMSAV-PAN-TYPE                   PIC X(006) VALUE SPACES. 100202ma
+182500    02 FMMSAV-FRM-NUMBER                 PIC S9(09) COMP VALUE 0. 100202ma
+182600    02 FMMSAV-FLDCNT                     PIC S9(18) COMP VALUE 0. 100202ma
+182700    02 FMMSAV-BUF-LEN                    PIC S9(18) COMP VALUE 0. 100202ma
+182800    02 FMMSAV-NEXT-FRM                   PIC X(016) VALUE SPACES. 100202ma
+182900    02 FMMSAV-REPEAT-OPT                 PIC X(002) VALUE SPACES. 100202ma
+183000    02 FMMSAV-NFORM-OPT                  PIC X(002) VALUE SPACES. 100202ma
+183100    02 FMMSAV-REPRODUCED-FR              PIC X(16) VALUE SPACES.  100202ma
+183200    02 FMMSAV-FKEY-DEF                   PIC X(2) VALUE SPACES.   100202ma
+183300    02 FMMSAV-COMMENT                    PIC X(80) VALUE SPACES.  100202ma
+183400 01 Formname.                                                     100202ma
+183500     02 formname-name pic xxxx.                                   100202ma
+183600     02 formname-number pic 9999.                                 100202ma
+183700 COPY prspec  OF J3KLIB.                                          100202ma
+183800 COPY SRVMST  OF J3KLIB.                                          100202ma
+183900 COPY AMSCOMM OF J3KLIB.                                          100202ma
+184000                                                                  100202ma
+184100*=================================================================100202ma
+184200$PAGE  "Main logical flow"                                        100202ma
+184300*=================================================================100202ma
+184400 PROCEDURE DIVISION.                                              100202ma
+184500 Begin-0000.                                                      100202ma
+184600     Call   Intrinsic "WHO"                                       100202ma
+184700     Using  Who-Mode Who-Capability Who-Lattr Who-Usern           100202ma
+184800            Who-Groupn Who-Acctn Who-Homen Who-Term-Dev-No.       100202ma
+184900     Move Who-Mode To User-Mode.                                  100202ma
+185000*     If Who-Acctn(1:3) <> "SYS" Or                               100520ma
+185100*        Who-Usern(1:7) <> "MANAGER" Or                           100520ma
+185200*        Who-Groupn(1:3) <> "J3K"                                 100520ma
+185300*       Display "Please Logon As Manager.Sys,J3K"                 100520ma
+185400*       Display "This Program Will Not Run As "                   100520ma
+185500*               Who-Usern "." Who-Acctn "," Who-Groupn            100520ma
+185600*       Stop Run.                                                 100520ma
+185700     Move "Vplus Documentation Tool Version C.7.3" To M.          100202ma
+185800     Perform Msg-Process                                          100202ma
+185900     Move "------------------------------------------------" To M.100202ma
+186000     Perform Msg-Process                                          100202ma
+186100     Move "***            Mig805.Pub.J3K                ***" To M.100202ma
+186200     Perform Msg-Process                                          100202ma
+186300     Move "***                                          ***" To M.100202ma
+186400     Perform Msg-Process                                          100202ma
+186500     Move "***       Export Vplus Data To Xml           ***" To M.100202ma
+186600     Perform Msg-Process                                          100202ma
+186700     Move "***                                          ***" To M.100202ma
+186800     Perform Msg-Process                                          100202ma
+186900     Move "------------------------------------------------" To M.100202ma
+187000     Perform Msg-Process                                          100202ma
+187100     Call "Getcurrent" Using Tday Tnumday Tdow.                   100202ma
+187200     Perform Initialization.                                      100202ma
+187300     Perform Extract-Data.                                        100202ma
+187400     Perform Process-Completion.                                  100202ma
+187500     Go To 9999-Return.                                           100202ma
+187600*---------------------------------------------------------------- 100202ma
+187700 Process-Completion.                                              100202ma
+187800     Go To 9999-Return.                                           100202ma
+187900                                                                  100520ma
+188000                                                                  100520ma
+188100                                                                  100520ma
+188200*---------------------------------------------------------------- 100520ma
+188300 Process-Instruction.                                             100520ma
+188400     DISPLAY " ".                                                 100520ma
+188500     DISPLAY "NEXT STEP:".                                        100520ma
+188600     DISPLAY "Copy the XML file to your TARGET platform."         100729ma
+188700     Display "Below you should see the fully qualifie"            100520ma
+188800             "d filename within the FTP commands.    ".           100520ma
+188900     DISPLAY "On your TARGET platform:               ".           100729ma
+189000     DISPLAY "1.CD to 'Program Files\View_to_SP2'    "            100520ma
+189100             "                                       ".           100520ma
+189200     DISPLAY "2.FTP HP929                            "            100520ma
+189300             "                                       ".           100520ma
+189400     DISPLAY "  Enter the username as:               ".           100520ma
+189500     Initialize M                                                 100520ma
+189600     STRING WHO-USERN  DELIMITED BY SPACE                         100520ma
+189700            "."  DELIMITED BY SIZE                                100520ma
+189800            WHO-ACCTN  DELIMITED BY SPACE                         100520ma
+189900            ","  DELIMITED BY SIZE                                100520ma
+190000            WHO-GROUPN DELIMITED BY SIZE INTO M.                  100520ma
+190100     DISPLAY M.                                                   100520ma
+190200     DISPLAY "                                       ".           100520ma
+190300     DISPLAY "  PASSWORD SYNTAX!                     "            100520ma
+190400             "                                       ".           100520ma
+190500     DISPLAY "  Enter the password as:               ".           100520ma
+190600     DISPLAY "  userpass,acctpass                    ".           100520ma
+190700     DISPLAY "                                       ".           100520ma
+190800     DISPLAY "==== Copy/Paste FTP commands below ====".           100520ma
+190900     DISPLAY "ascii".                                             100520ma
+191000     Initialize M                                                 100520ma
+191100     STRING "get /"            DELIMITED BY SIZE                  100520ma
+191200            Who-Acctn          DELIMITED BY SPACE                 100520ma
+191300            "/"                DELIMITED BY SIZE                  100520ma
+191400            Who-Groupn         DELIMITED BY SPACE                 100520ma
+191500            "/panels/"         DELIMITED BY SIZE                  100520ma
+191600            MY-VFIL-NAME       DELIMITED BY SPACE                 100729ma
+191700            ".xml"             DELIMITED BY SIZE                  100729ma
+191710            " "                DELIMITED BY SIZE                  100729ma
+191810            MY-VFIL-NAME   DELIMITED BY SPACE                     100729ma
+191820            ".xml"                                                100729ma
+191830      DELIMITED BY SIZE into M.                                   100520ma
+191900     DISPLAY M.                                                   100520ma
+192000     DISPLAY "quit".                                              100520ma
+192100     DISPLAY " ".                                                 100520ma
+192200     DISPLAY "======== End of FTP commands  =========".           100520ma
+192300     DISPLAY "Final step! ".                                      100520ma
+192400     DISPLAY "AT THE DOS PROMPT,(C:\Program Files\Vi"             100520ma
+192500             "ew_to_SP2) run the view2sp2 utility:   "            100520ma
+192600     DISPLAY " ".                                                 100520ma
+192700     Initialize M.                                                100520ma
+192800     STRING "VIEW2SP2 -FN "     DELIMITED BY SIZE                 100520ma
+192900            MY-VFIL-NAME    DELIMITED BY SPACE                    100520ma
+193000            ".xml"                                                100520ma
+193100      DELIMITED BY SIZE into M.                                   100520ma
+193200     DISPLAY M.                                                   100520ma
+193300     Initialize M.                                                100520ma
+193400                                                                  100520ma
+193500                                                                  100520ma
+193600*=================================================================100202ma
+193700$Page  "Major Subparagraphs"                                      100202ma
+193800*=================================================================100202ma
+193900 Initialization.                                                  100202ma
+194000D    Display "Initialization".                                    100202ma
+194100     Move Function Current-Date To Full-Current-Date.             100202ma
+194200     Move C-Date To Raw-Date.                                     100202ma
+194300     Move Corr Raw-Date To Edited-Date.                           100202ma
+194400     Call   Intrinsic "WHO"                                       100202ma
+194500     Using  Who-Mode Who-Capability Who-Lattr Who-Usern           100202ma
+194600            Who-Groupn Who-Acctn Who-Homen Who-Term-Dev-No.       100202ma
+194700     Initialize Total-Files Total-Forms Total-Fields Cstr.        100202ma
+194800     Perform Showtime.                                            100202ma
+194900     Perform Get-Hpsusan.                                         100202ma
+195000     Initialize Database-Table My-Basename.                       100202ma
+195100     Move 128 To Ginfo-Len.                                       100202ma
+195200     Initialize Ginfo-Str Ginfo-Parm.                             100202ma
+195300     Move 9 To Migdb.                                             100202ma
+195400     Move "Migdb.Pub.J3K" To Dbname(Migdb)                        100202ma
+195500     Move "J3K;" To Search-Item.                                  100202ma
+195600     Call "DBOPEN" Using                                          100202ma
+195700      Data-Base-Name(Migdb) Search-Item Mode-1 Status-Area.       100202ma
+195800     If Image-Errors Perform 9000-Image-Error.                    100202ma
+195900     Move Status-Area To Migdb-Status.                            100202ma
+196000     Initialize Srvmst-Buffer.                                    100202ma
+196100     Move ";" To Null-Item.                                       100202ma
+196200     Move 1 To Search-Key-I2.                                     100202ma
+196300     Perform Get-Srvmst-Keyed.                                    100202ma
+196400     If No-Entry                                                  100202ma
+196500      Display "No Server Record Found"                            100202ma
+196600      Call Intrinsic "QUIT" Using \1\.                            100202ma
+196700     Move Function Current-Date To Full-Current-Date.             100202ma
+196800     Move C-Date To Raw-Date.                                     100202ma
+196900     Move Corr Raw-Date To Edited-Date.                           100202ma
+197000     Perform Get-Hpsusan.                                         100202ma
+197100     If Srvmst-Svr-Susan <> Myhpsusan                             100202ma
+197200      Display "****************************"                      100202ma
+197300      Display "* Installation Problem     *"                      100202ma
+197400      Display "*                          *"                      100202ma
+197500      Display "* Invalid License          *"                      100202ma
+197600      Display "****************************"                      100202ma
+197700      Call Intrinsic "QUIT" Using \1\.                            100202ma
+197800*     Display  "Server: " Srvmst-Svr-Name.                        100202ma
+197900*     Display  "Hpsusan: " Srvmst-Svr-Susan.                      100202ma
+198000*     Display  "Mpe/Ix Version: " Srvmst-Svr-Mpeversion.          100202ma
+198100     Initialize Mycost Mymoney Mybytes Cstr Cerr Cparm Cmsg.      100202ma
+198200     Move 128 To Ginfo-Len.                                       100202ma
+198300     Initialize Ginfo-Str Ginfo-Parm.                             100202ma
+198400     Initialize Ginfo-Str Ginfo-Parm.                             100202ma
+198500     Call Intrinsic "GETINFO" Using Ginfo-Str Ginfo-Len           100202ma
+198600                                    Ginfo-Parm.                   100202ma
+198700     If Ginfo-Len = 0                                             100520ma
+198800      CALL "GETBITS" USING WHO-CAP1 BINARY-VALUE                  100520ma
+198900      IF SM-FALSE AND                                             100520ma
+199000       (WHO-ACCTN(1:3) <> "SYS" and WHO-USERN(1:7) <> "MANAGER")  100520ma
+199100       DISPLAY "You must specify ;INFO="                          100520ma
+199200               QUOTE "formsfile name" QUOTE                       100520ma
+199300       DISPLAY "INFO is optional only "                           100520ma
+199400               "when you logon with (SM) Capability."             100520ma
+199500       DISPLAY " "                                                100520ma
+199600       DISPLAY "EXPLAINATION:"                                    100520ma
+199700       DISPLAY "  The initial run of this process must "          100520ma
+199800               "run with System Manager Capability.  "            100520ma
+199900       Display "  (SM) Capability is required to collec"          100520ma
+200000               "t V/Plus data globally across all      "          100520ma
+200100       DISPLAY "  accounts, and to build the MIGDB.PUB."          100520ma
+200200               "J3K Image database.                    "          100520ma
+200300       DISPLAY "  After the initial run you can logon w"          100520ma
+200400               "ithout (SM) Capability and specify a   "          100520ma
+200500       DISPLAY "  single file using INFO= on the RUN co"          100520ma
+200600               "mand, file system security will apply. "          100520ma
+200700       DISPLAY " "                                                100520ma
+200800       DISPLAY "  Additionally, without (SM) Capability"          100520ma
+200900               " you are limited to an 8 character     "          100520ma
+201000       DISPLAY "  formsfile name."                                100520ma
+201100       DISPLAY " "                                                100520ma
+201200       initialize M                                               100520ma
+201300       STRING "You are currently logged in as " DELIMITED BY SIZE 100520ma
+201400               WHO-USERN  DELIMITED BY SPACE                      100520ma
+201500               "."  DELIMITED BY SIZE                             100520ma
+201600               WHO-ACCTN  DELIMITED BY SPACE                      100520ma
+201700               ","  DELIMITED BY SIZE                             100520ma
+201800               WHO-GROUPN DELIMITED BY SIZE INTO M                100520ma
+201900        END-STRING                                                100520ma
+202000       DISPLAY M                                                  100520ma
+202100       DISPLAY "You are only allowed access to the foll"          100520ma
+202200               "owing forms files:                     "          100520ma
+202300       MOVE "listfile @;seleq=[code=1035];format=2" to CMD        100520ma
+202400       Perform MPE-COMMAND                                        100520ma
+202500       IF CERR <> 0                                               100520ma
+202600        DISPLAY "****************************"                    100520ma
+202700        DISPLAY "*   N O T I C E !          *"                    100520ma
+202800        DISPLAY "*                          *"                    100520ma
+202900        DISPLAY "* This group does NOT have *"                    100520ma
+203000        DISPLAY "* any Source Forms Files!  *"                    100520ma
+203100        DISPLAY "*                          *"                    100520ma
+203200        DISPLAY "****************************"                    100520ma
+203300       END-IF                                                     100520ma
+203400       STOP RUN                                                   100520ma
+203500      END-IF                                                      100520ma
+203600     ELSE                                                         100520ma
+203700      IF SM-FALSE AND                                             100520ma
+203800       (WHO-ACCTN(1:3) <> "SYS" and WHO-USERN(1:7) <> "MANAGER")  100520ma
+203900       INITIALIZE PARSED-STRING Screen-Forms-File                 100520ma
+204000       Move Ginfo-Str(1:Ginfo-Len) To PARSED-STRING               100520ma
+204100       move 0 to my-tally                                         100520ma
+204200       INSPECT PARSED-STRING tallying my-tally for all "."        100520ma
+204300       if my-tally > 0                                            100520ma
+204400        DISPLAY "****************************"                    100520ma
+204500        DISPLAY "*   A B O R T              *"                    100520ma
+204600        DISPLAY "*                          *"                    100520ma
+204700        DISPLAY "* You may not specify group*"                    100520ma
+204800        DISPLAY "* or account, only Files!  *"                    100520ma
+204900        DISPLAY "*                          *"                    100520ma
+205000        DISPLAY "****************************"                    100520ma
+205100        STOP RUN                                                  100520ma
+205200       END-IF                                                     100520ma
+205300                                                                  100520ma
+205400       STRING PARSED-STRING DELIMITED BY SPACE                    100520ma
+205500              "."           DELIMITED BY SIZE                     100520ma
+205600              Who-Groupn    DELIMITED BY SPACE                    100520ma
+205700              "."           DELIMITED BY SIZE                     100520ma
+205800              Who-Acctn                                           100520ma
+205900        DELIMITED BY SIZE INTO Screen-Forms-File                  100520ma
+206000       END-STRING                                                 100520ma
+206100       Perform Extract-Data                                       100520ma
+206200       Perform Process-Instruction                                100520ma
+206300       Go To 9999-Return                                          100520ma
+206400      ELSE                                                        100520ma
+206500       INITIALIZE  Screen-Forms-File                              100520ma
+206600       Move Ginfo-Str(1:Ginfo-Len) To Screen-Forms-File           100520ma
+206700       move 0 to my-tally                                         100520ma
+206800       INSPECT Screen-Forms-File tallying my-tally for all "."    100520ma
+206900       if my-tally < 2                                            100520ma
+207000        DISPLAY "****************************"                    100520ma
+207100        DISPLAY "*   A B O R T              *"                    100520ma
+207200        DISPLAY "*                          *"                    100520ma
+207300        DISPLAY "* You must specify group   *"                    100520ma
+207400        DISPLAY "* and account!             *"                    100520ma
+207500        DISPLAY "*                          *"                    100520ma
+207600        DISPLAY "****************************"                    100520ma
+207700        STOP RUN                                                  100520ma
+207800       END-IF                                                     100520ma
+207900                                                                  100520ma
+208000       DISPLAY "INFO LEN= [" GINFO-LEN  "]"                       100520ma
+208100D      MOVE GINFO-STR(1:GINFO-LEN) TO SCREEN-FORMS-FILE           100520ma
+208200       Perform Extract-Data                                       100520ma
+208300       Perform Process-Instruction                                100520ma
+208400       Go To 9999-Return.                                         100520ma
+208500                                                                  100520ma
+208600                                                                  100520ma
+208700*     INITIALIZE WS-LOGON-DESC WS-ERR WS-ERR-MSG.                 100520ma
+208800*     MOVE "J3KDIAG" TO WS-LD-JOB-NAME.                           100520ma
+208900*     MOVE "MANAGER" TO WS-LD-USER-NAME.                          100520ma
+209000*     MOVE "J3K"     TO WS-LD-ACCT-NAME.                          100520ma
+209100*     MOVE "PUB"     TO WS-LD-GROUP-NAME.                         100520ma
+209200*     CALL "CHGLOGON" USING WS-LOGON-DESC WS-ERR WS-ERR-MSG.      100520ma
+209300*     IF WS-ERR <> 0                                              100520ma
+209400*      DISPLAY "UNABLE TO CHANGE LOGON"                           100520ma
+209500*      DISPLAY WS-ERR-MSG                                         100520ma
+209600*      CALL INTRINSIC "QUIT" USING \3\ END-CALL                   100520ma
+209700*     ELSE                                                        100520ma
+209800*      CALL   INTRINSIC "WHO"                                     100520ma
+209900*       USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN        100520ma
+210000*              WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO     100520ma
+210100*      END-CALL                                                   100520ma
+210200*     END-IF                                                      100520ma
+210300*     INITIALIZE WS-ERR-MSG                                       100520ma
+210400*     STRING "J3KDIAG," DELIMITED BY SIZE                         100520ma
+210500*             WHO-USERN DELIMITED BY SPACE                        100520ma
+210600*             "."       DELIMITED BY SIZE                         100520ma
+210700*             WHO-ACCTN DELIMITED BY SPACE                        100520ma
+210800*             ","       DELIMITED BY SIZE                         100520ma
+210900*             WHO-GROUPN DELIMITED BY SPACES                      100520ma
+211000*         INTO WS-ERR-MSG.                                        100520ma
+211100*     string "Logon: " delimited by size                          100520ma
+211200*            ws-err-msg delimited by size into m                  100520ma
+211300*     PERFORM MSG-PROCESS.                                        100520ma
+211400                                                                  100202ma
+211500     Initialize Mybytes Cstr Cerr Cparm Cmsg.                     100202ma
+211600     Initialize Cstr Cerr Cparm Cmsg.                             100202ma
+211700*-----------------------------------------------------------------100202ma
+211800 Extract-Data.                                                    100202ma
+211900*    Open Server And Filelist Xml Files.                          100202ma
+212000     Initialize Ffmstr-Buffer Ffmidx Srvidx.                      100202ma
+212100*     Perform NEW-SRVXML-SERVER                                   100520ma
+212200*     Move "SRVXML" To Fname.                                     100520ma
+212300*     Perform Open-Xml.                                           100520ma
+212400     Move ";" To Null-Item.                                       100202ma
+212500     Move 1 To Search-Key-I2.                                     100202ma
+212600     Perform Get-Srvmst-Keyed.                                    100202ma
+212700*                                                                 100202ma
+212800*                                                                 100202ma
+212900     Move Srvmst-Svr-Unique To Search-Key-I2.                     100202ma
+213000     Move "SVR-UNIQUE;" To Search-Item.                           100202ma
+213100     Perform Find-Ffmstr.                                         100202ma
+213200     If No-Entry                                                  100202ma
+213300      Display "No Server Record Found"                            100202ma
+213400      Call Intrinsic "QUIT" Using \2\.                            100202ma
+213500     DISPLAY "Searching MIGDB.PUB.J3K"                            100520ma
+213600     DISPLAY "For records matching " Screen-Forms-File.           100520ma
+213700*                                                                 100202ma
+213800* Start collecting File data                                      100202ma
+213900     Move Entries-In-Chain To Ffmcnt.                             100202ma
+214000     Perform Varying Ffmidx From 1 By 1                           100202ma
+214100       Until Ffmidx > Ffmcnt                                      100202ma
+214200      Perform Get-Ffmstr-Chained                                  100202ma
+214300      If Not End-Of-Chain                                         100202ma
+214400       Perform Add-SRVXML-FILE                                    100202ma
+214500       IF ( FFMSTR-VFIL-NAME = Screen-Forms-File ) OR             100402ma
+214600          ( Screen-Forms-File = "@.@.@")                          100402ma
+214700        Perform New-Filxml-File                                   100402ma
+214800        Move Ffmstr-Vfil-Unique To Search-Key-I2                  100402ma
+214900        Move "VFIL-UNIQUE;" To Search-Item                        100402ma
+215000        Perform Find-Fmmstr                                       100402ma
+215100        If Not No-Entry                                           100402ma
+215200         Move Entries-In-Chain To Fmmcnt                          100402ma
+215300         Initialize Fmmidx                                        100402ma
+215400*                                                                 100202ma
+215500* Start collecting Form data                                      100202ma
+215600         Perform Varying Fmmidx From 1 By 1                       100402ma
+215700           Until Fmmidx > Fmmcnt                                  100402ma
+215800          Perform GET-Fmmstr-Chained                              100402ma
+215900          If Not End-Of-Chain                                     100402ma
+216000           If FMMSTR-FRM-NAME > SPACES                            100402ma
+216100            Perform Form-To-Xml                                   100402ma
+216200            Move Fmmstr-Fm-Unique To Search-Key-I2                100402ma
+216300            Move "FM-UNIQUE;" To Search-Item                      100402ma
+216400            Perform Find-Ffflds                                   100402ma
+216500            If Not No-Entry                                       100402ma
+216600             Move Entries-In-Chain To Fffcnt                      100402ma
+216700             Initialize Fffidx                                    100402ma
+216800*                                                                 100302ma
+216900* Start co llecting Field data                                    100302ma
+217000             Perform Varying Fffidx From 1 By 1                   100402ma
+217100               Until Fffidx > Fffcnt                              100402ma
+217200              Perform GET-Ffflds-Chained                          100402ma
+217300              If Not End-Of-Chain                                 100402ma
+217400               If FFFLDS-VFLD-NAME > SPACES                       100402ma
+217500                Perform Field-To-Xml                              100402ma
+217600               End-If                                             100402ma
+217700              End-If                                              100402ma
+217800             End-Perform                                          100402ma
+217900             DISPLAY "Export: " FFMSTR-VFIL-NAME " "              100520ma
+218000                                     FMMSTR-FRM-NAME              100402ma
+218100             Subtract 1 From FILLevel                             100402ma
+218200             Move "FILXML" To FNAME                               100402ma
+218300             Move "</Form>" to XML-data                           100402ma
+218400             PERFORM WRITE-XML                                    100402ma
+218500            End-If                                                100402ma
+218600           End-If                                                 100402ma
+218700          End-If                                                  100402ma
+218800         End-Perform                                              100402ma
+218900         Display "All forms exported successfully"                100520ma
+219000         Subtract 1 From FILLevel                                 100402ma
+219100         Move "FILXML" To FNAME                                   100402ma
+219200         Move "</File>" to XML-data                               100402ma
+219300         PERFORM WRITE-XML                                        100402ma
+219400        End-If                                                    100402ma
+219500       End-If                                                     100402ma
+219600      Else                                                        100202ma
+219700             Display "All forms exported successfully"            100520ma
+219800      End-If                                                      100202ma
+219900     End-Perform.                                                 100202ma
+220000     Move "SRVXML" To Fname.                                      100202ma
+220100     Perform Close-Xml.                                           100202ma
+220200*=================================================================100202ma
+220300$page "MISC SubParagraphs"                                        100202ma
+220400*=================================================================100202ma
+220500 GET-NUM.                                                         100202ma
+220600D    DISPLAY "GET-NUM".                                           100202ma
+220700     INITIALIZE NUM2 NUMDEC NUMERR.                               100202ma
+220800     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 100202ma
+220900     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            100202ma
+221000     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            100202ma
+221100*---------------------------------------------------------        100202ma
+221200 MPE-COMMAND.                                                     100202ma
+221300D    DISPLAY "MPE-COMMAND".                                       100202ma
+221400     INITIALIZE CSTR.                                             100202ma
+221500     STRING CMD DELIMITED BY "  " %15                             100202ma
+221600      DELIMITED BY SIZE INTO CSTR.                                100202ma
+221700     Move 2 To CMSG.                                              100202ma
+221800     DISPLAY CMD(1:79).                                           100520ma
+221900     CALL INTRINSIC "HPCICOMMAND" USING                           100202ma
+222000          CSTR CERR CPARM CMSG.                                   100202ma
+222100*     IF CERR <> 0                                                100520ma
+222200*      DISPLAY CERR                                               100520ma
+222300*      DISPLAY CMD                                                100520ma
+222400*      DISPLAY CMSG.                                              100520ma
+222500     INITIALIZE CMD.                                              100202ma
+222600*---------------------------------------------------------        100202ma
+222700 SHOWTIME.                                                        100202ma
+222800     CALL INTRINSIC "HPCICOMMAND" USING                           100202ma
+222900          SHOWTIME-STR CERR CPARM CMSG.                           100202ma
+223000*--------------------------------------------------------         100202ma
+223100 GET-HPSUSAN.                                                     100202ma
+223200     MOVE "HPSUSAN~" TO HPVAR-NAME.                               100202ma
+223300     MOVE 1 TO HPVAR-ITEMNUM.                                     100202ma
+223400     INITIALIZE MYHPSUSAN HPVAR-ITEM HPVAR-STAT.                  100202ma
+223500     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 100202ma
+223600         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                      100202ma
+223700*     DISPLAY "HPSUSAN: " MYHPSUSAN.                              100202ma
+223800*------------------------------------------------------------     100202ma
+223900 MSG-PROCESS.                                                     100202ma
+224000*      DISPLAY "MSG-PROCESS".                                     100202ma
+224100     DISPLAY M.                                                   100202ma
+224200     INITIALIZE CSTR.                                             100202ma
+224300     STRING "TELLOP " M  %15 DELIMITED BY SIZE INTO CSTR.         100202ma
+224400     Move 2 To CMSG.                                              100202ma
+224500     IF BATCH-PROCESS OR NOT-INTERACTIVE                          100202ma
+224600      CALL INTRINSIC "HPCICOMMAND" USING                          100202ma
+224700           CSTR CERR CPARM CMSG.                                  100202ma
+224800     INITIALIZE M CMD.                                            100202ma
+224900*-----------------------------------------------------------------100202ma
+225000$PAGE "MISC. ERROR CONDITION SUBROUTINES"                         100202ma
+225100 9001-FILE-ERROR.                                                 100202ma
+225200D    DISPLAY "9001-FILE-ERROR".                                   100202ma
+225300     MOVE SPACES TO FILE-ERROR-RECORD.                            100202ma
+225400     MOVE "00" TO ERROR-NUMBER.                                   100202ma
+225500     MOVE XML-STATUS TO ERROR-NUMBER.                             100202ma
+225600     EVALUATE ERROR-NUMBER                                        100202ma
+225700     WHEN "00" MOVE "0" TO ERRORS-SW                              100202ma
+225800     WHEN "04" MOVE "1" TO ERRORS-SW                              100202ma
+225900               STRING "Read length of record  doesn't match "     100202ma
+226000                      FNAME " length."                            100202ma
+226100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+226200     WHEN "05" MOVE "0" TO ERRORS-SW                              100202ma
+226300               STRING "OPEN " FNAME " not present,  created."     100202ma
+226400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+226500     WHEN "07" MOVE "1" TO ERRORS-SW                              100202ma
+226600               STRING FNAME " is not a tape as the OPEN/CLOSE "   100202ma
+226700                      "phrase implies."                           100202ma
+226800                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+226900     WHEN "30" MOVE "1" TO ERRORS-SW                              100202ma
+227000               STRING FNAME " error.  problem unknown! "          100202ma
+227100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+227200     WHEN "34" MOVE "1" TO ERRORS-SW                              100202ma
+227300               STRING FNAME " boundary violation."                100202ma
+227400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+227500     WHEN "35" MOVE "1" TO ERRORS-SW                              100202ma
+227600               STRING FNAME " not found."                         100202ma
+227700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+227800     WHEN "37" MOVE "1" TO ERRORS-SW                              100202ma
+227900               STRING FNAME " error.  Inconsistent operation "    100202ma
+228000                      "during file I/O !"                         100202ma
+228100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+228200     WHEN "39" MOVE "1" TO ERRORS-SW                              100202ma
+228300               STRING "OPEN " FNAME " failed due to fixed file"   100202ma
+228400                      " attribute conflict."                      100202ma
+228500                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+228600     WHEN "41" MOVE "0" TO ERRORS-SW                              100202ma
+228700               STRING FNAME " was already opened."                100202ma
+228800                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+228900     WHEN "42" MOVE "0" TO ERRORS-SW                              100202ma
+229000               STRING "CLOSE " FNAME " without openning first."   100202ma
+229100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+229200     WHEN "44" MOVE "1" TO ERRORS-SW                              100202ma
+229300               STRING FNAME " error.   boundary violation, "      100202ma
+229400                      " Record too big or record too small."      100202ma
+229500                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+229600     WHEN "46" MOVE "1" TO ERRORS-SW                              100202ma
+229700               STRING "READ " FNAME " after AT END  or   after"   100202ma
+229800                      " unsuccessful READ."                       100202ma
+229900                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+230000     WHEN "47" MOVE "1" TO ERRORS-SW                              100202ma
+230100               STRING "READ on " FNAME " not open for INPUT."     100202ma
+230200                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+230300     WHEN "48" MOVE "1" TO ERRORS-SW                              100202ma
+230400               STRING "WRITE on " FNAME " not open for OUTPUT."   100202ma
+230500                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+230600     WHEN "49" MOVE "1" TO ERRORS-SW                              100202ma
+230700               STRING "REWRITE on " FNAME                         100202ma
+230800                      " not open for I-O."                        100202ma
+230900                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD    100202ma
+231000     WHEN OTHER MOVE "1" TO ERRORS-SW                             100202ma
+231100                MOVE ERROR-NUMBER TO DECIMAL-VALUE                100202ma
+231200                STRING FNAME " ERROR #" ERROR-NUMBER              100202ma
+231300                             " MESSAGE UNDEFINED ."               100202ma
+231400                DELIMITED BY SIZE INTO FILE-ERROR-RECORD.         100202ma
+231500     MOVE ERROR-NUMBER TO ASCII-CHARACTER.                        100202ma
+231600     IF ASCII-BYTE1 = "9"                                         100202ma
+231700        MOVE ASCII-BYTE2 TO Ascii-Value                           100202ma
+231800        MOVE Ascii-Value TO DISP-N                                100202ma
+231900        DISPLAY "MPE FILE ERROR #" DISP-N                         100202ma
+232000        MOVE "1" TO ERRORS-SW                                     100202ma
+232100        MOVE SPACES TO FILE-ERROR-RECORD                          100202ma
+232200        CALL INTRINSIC "FERRMSG" USING                            100202ma
+232300            Ascii-Value FILE-ERROR-RECORD I.                      100202ma
+232400     IF NOT ERRORS DISPLAY FILE-ERROR-RECORD                      100202ma
+232500     ELSE GO TO 9900-ABEND.                                       100202ma
+232600     MOVE FILE-ERROR-RECORD TO EDIT-MESSAGE.                      100202ma
+232700     PERFORM 7805-LOG-EDIT-MESSAGE.                               100202ma
+232800*--------------------------                                       100202ma
+232900 7805-LOG-EDIT-MESSAGE.                                           100202ma
+233000     DISPLAY EDIT-MESSAGE.                                        100202ma
+233100***************************************************************** 100202ma
+233200*---------------------------------------------------------------  100202ma
+233300 9900-ABEND.                                                      100202ma
+233400     DISPLAY "----------------------------------------".          100202ma
+233500     DISPLAY "-MIG805- ABNORMAL END OF PROGRAM".                  100202ma
+233600     DISPLAY "----------------------------------------".          100202ma
+233700*---------------------------------------------------------------  100202ma
+233800 9999-RETURN.                                                     100202ma
+233900*     Display " END OF PROGRAM "  WITH NO ADVANCING.              100520ma
+234000*     MOVE "SHOWTIME" TO CMD.                                     100520ma
+234100*     PERFORM MPE-COMMAND.                                        100520ma
+234200     IF FILE-ERROR-RECORD NOT = SPACES DISPLAY FILE-ERROR-RECORD. 100202ma
+234300     GOBACK.                                                      100202ma
+234400                                                                  100202ma
+234500 COPY FFFLDS0 OF J3KLIB.                                          100202ma
+234600 COPY FFFLDS1 OF J3KLIB.                                          100202ma
+234700 COPY FFFLDS2 OF J3KLIB.                                          100202ma
+234800 COPY FFFLDS3 OF J3KLIB.                                          100202ma
+234900 COPY FFFLDS4 OF J3KLIB.                                          100202ma
+235000 COPY FFFLDS5 OF J3KLIB.                                          100202ma
+235100 COPY FFFLDS6 OF J3KLIB.                                          100202ma
+235200 COPY FFFLDS7 OF J3KLIB.                                          100202ma
+235300 COPY FFFLDS8 OF J3KLIB.                                          100202ma
+235400                                                                  100202ma
+235500 COPY FMMSTR0 OF J3KLIB.                                          100202ma
+235600 COPY FMMSTR1 OF J3KLIB.                                          100202ma
+235700 COPY FMMSTR2 OF J3KLIB.                                          100202ma
+235800 COPY FMMSTR3 OF J3KLIB.                                          100202ma
+235900 COPY FMMSTR4 OF J3KLIB.                                          100202ma
+236000 COPY FMMSTR5 OF J3KLIB.                                          100202ma
+236100 COPY FMMSTR6 OF J3KLIB.                                          100202ma
+236200 COPY FMMSTR7 OF J3KLIB.                                          100202ma
+236300 COPY FMMSTR8 OF J3KLIB.                                          100202ma
+236400                                                                  100202ma
+236500 COPY FFMSTR0 OF J3KLIB.                                          100202ma
+236600 COPY FFMSTR1 OF J3KLIB.                                          100202ma
+236700 COPY FFMSTR2 OF J3KLIB.                                          100202ma
+236800 COPY FFMSTR3 OF J3KLIB.                                          100202ma
+236900 COPY FFMSTR4 OF J3KLIB.                                          100202ma
+237000 COPY FFMSTR5 OF J3KLIB.                                          100202ma
+237100 COPY FFMSTR6 OF J3KLIB.                                          100202ma
+237200 COPY FFMSTR7 OF J3KLIB.                                          100202ma
+237300 COPY FFMSTR8 OF J3KLIB.                                          100202ma
+237400                                                                  100202ma
+237500 COPY PRSPEC0 OF J3KLIB.                                          100202ma
+237600 COPY PRSPEC1 OF J3KLIB.                                          100202ma
+237700 COPY PRSPEC2 OF J3KLIB.                                          100202ma
+237800 COPY PRSPEC3 OF J3KLIB.                                          100202ma
+237900 COPY PRSPEC4 OF J3KLIB.                                          100202ma
+238000 COPY PRSPEC5 OF J3KLIB.                                          100202ma
+238100 COPY PRSPEC6 OF J3KLIB.                                          100202ma
+238200 COPY PRSPEC7 OF J3KLIB.                                          100202ma
+238300 COPY PRSPEC8 OF J3KLIB.                                          100202ma
+238400                                                                  100202ma
+238500 COPY SRVMST0 OF J3KLIB.                                          100202ma
+238600 COPY SRVMST1 OF J3KLIB.                                          100202ma
+238700 COPY SRVMST2 OF J3KLIB.                                          100202ma
+238800 COPY SRVMST3 OF J3KLIB.                                          100202ma
+238900 COPY SRVMST4 OF J3KLIB.                                          100202ma
+239000 COPY SRVMST5 OF J3KLIB.                                          100202ma
+239100 COPY SRVMST6 OF J3KLIB.                                          100202ma
+239200 COPY SRVMST7 OF J3KLIB.                                          100202ma
+239300 COPY SRVMST8 OF J3KLIB.                                          100202ma
+239400*---------------------------------------------------------        100202ma
+239500 9000-IMAGE-ERROR.                                                100202ma
+239600D    DISPLAY "9000-IMAGE-ERROR".                                  100202ma
+239700     CALL "DBEXPLAIN" USING STATUS-AREA.                          100202ma
+239800     GO TO 9900-ABEND.                                            100202ma
+239900*---------------------------------------------------------------  100202ma
+240000 NEW-FILXML-FILE.                                                 100202ma
+240100     MOVE "FILXML" TO FNAME.                                      100202ma
+240200     MOVE FFMSTR-VFIL-NAME TO MY-VFIL-NAME.                       100520ma
+240300     IF XML-OPENED                                                100202ma
+240400      PERFORM CLOSE-XML.                                          100202ma
+240500*                                                                 100202ma
+240600     Move Spaces To CMD.                                          100202ma
+240700     STRING "FILE FILXML=/"    DELIMITED BY SIZE                  100520ma
+240800            Who-Acctn          DELIMITED BY SPACE                 100520ma
+240900            "/"                DELIMITED BY SIZE                  100520ma
+241000            Who-Groupn         DELIMITED BY SPACE                 100520ma
+241100            "/panels/"         DELIMITED BY SIZE                  100520ma
+241200            FFMSTR-VFIL-NAME           DELIMITED BY SPACE         100202ma
+241300            ".xml,OLD"                                            100202ma
+241400      DELIMITED BY SIZE INTO CMD.                                 100202ma
+241500     PERFORM MPE-COMMAND.                                         100202ma
+241600     STRING "PURGE /"          DELIMITED BY SIZE                  100520ma
+241700            Who-Acctn          DELIMITED BY SPACE                 100520ma
+241800            "/"                DELIMITED BY SIZE                  100520ma
+241900            Who-Groupn         DELIMITED BY SPACE                 100520ma
+242000            "/panels/"         DELIMITED BY SIZE                  100520ma
+242100            FFMSTR-VFIL-NAME   DELIMITED BY SPACE                 100520ma
+242200            ".xml"                                                100520ma
+242300      DELIMITED BY SIZE INTO CMD.                                 100520ma
+242400     PERFORM MPE-COMMAND.                                         100202ma
+242500     STRING "build /"   DELIMITED BY SIZE                         100520ma
+242600            Who-Acctn          DELIMITED BY SPACE                 100520ma
+242700            "/"                DELIMITED BY SIZE                  100520ma
+242800            Who-Groupn         DELIMITED BY SPACE                 100520ma
+242900            "/panels/"         DELIMITED BY SIZE                  100520ma
+243000            FFMSTR-VFIL-NAME           DELIMITED BY SPACE         100202ma
+243100            ".xml;REC=-256,1,V,ASCII;DISC=1000000"                100202ma
+243200      DELIMITED BY SIZE INTO CMD.                                 100202ma
+243300     PERFORM MPE-COMMAND.                                         100202ma
+243400     IF CERR <> 0                                                 100520ma
+243500        DISPLAY "****************************************"        100520ma
+243600        DISPLAY "*  The group that you are logged on to *"        100520ma
+243700        DISPLAY "*  needs a HFS directory created in it.*"        100520ma
+243800        DISPLAY "*                                      *"        100520ma
+243900        DISPLAY "* Please create the 'panels' directory.*"        100520ma
+244000        DISPLAY "*                                      *"        100520ma
+244100        DISPLAY "****************************************"        100520ma
+244200        STOP RUN                                                  100520ma
+244300     END-IF                                                       100520ma
+244400     PERFORM OPEN-XML.                                            100202ma
+244500     Move 1 to FilLevel.                                          100202ma
+244600     INITIALIZE XML-data                                          100202ma
+244700     STRING "<?xml version="                                      100202ma
+244800              QUOTE "1.0" QUOTE                                   100202ma
+244900              " encoding="                                        100202ma
+245000              QUOTE "ISO-8859-1" QUOTE                            100202ma
+245100              " ?>"                                               100202ma
+245200        DELIMITED BY SIZE INTO XML-data.                          100202ma
+245300     PERFORM WRITE-XML                                            100202ma
+245400     MOVE "<!-- Created by MIG805.PUB.J3K --> "                   100202ma
+245500         TO XML-data                                              100202ma
+245600     Perform Write-Xml.                                           100202ma
+245700     Move "<File>" to XML-data.                                   100202ma
+245800     PERFORM WRITE-XML.                                           100202ma
+245900     Add 1 To FilLevel.                                           100202ma
+246000*                                                                 100202ma
+246100     String "<FormsfileName>" Delimited by size                   100202ma
+246200            FFMSTR-VFIL-NAME Delimited by "  "                    100202ma
+246300            "</FormsfileName>"                                    100202ma
+246400      Delimited by size into XML-data.                            100202ma
+246500     Perform Write-Xml.                                           100202ma
+246600*                                                                 100202ma
+246700     String "<Creator>" Delimited by size                         100202ma
+246800            FFMSTR-VFIL-CREATOR Delimited by "  "                 100202ma
+246900            "</Creator>"                                          100202ma
+247000      Delimited by size into XML-data.                            100202ma
+247100     Perform Write-Xml.                                           100202ma
+247200*                                                                 100202ma
+247300     String "<Account>" Delimited by size                         100202ma
+247400            FFMSTR-VFIL-ACCT Delimited by "  "                    100202ma
+247500            "</Account>"                                          100202ma
+247600      Delimited by size into XML-data.                            100202ma
+247700     Perform Write-Xml.                                           100202ma
+247800*                                                                 100202ma
+247900     String "<Group>" Delimited by size                           100202ma
+248000            FFMSTR-VFIL-GROUP Delimited by "  "                   100202ma
+248100            "</Group>"                                            100202ma
+248200      Delimited by size into XML-data.                            100202ma
+248300     Perform Write-Xml.                                           100202ma
+248400*                                                                 100202ma
+248500     Move FFMSTR-VFIL-BYTES To Disp-n.                            100202ma
+248600     String "<Bytes>" Delimited by size                           100202ma
+248700            Disp-n Delimited by size                              100202ma
+248800            "</Bytes>"                                            100202ma
+248900      Delimited by size into XML-data.                            100202ma
+249000     Perform Write-Xml-Numeric.                                   100202ma
+249100*                                                                 100202ma
+249200     String "<PanelName>" Delimited by size                       100202ma
+249300            FFMSTR-PAN-NAME Delimited by "  "                     100202ma
+249400            "</PanelName>"                                        100202ma
+249500      Delimited by size into XML-data.                            100202ma
+249600     Perform Write-Xml.                                           100202ma
+249700*                                                                 100202ma
+249800     String "<FastName1>" Delimited by size                       100202ma
+249900            FFMSTR-PRODNAME1 Delimited by "  "                    100202ma
+250000            "</FastName1>"                                        100202ma
+250100      Delimited by size into XML-data.                            100202ma
+250200     Perform Write-Xml.                                           100202ma
+250300*                                                                 100202ma
+250400     String "<FastName2>" Delimited by size                       100202ma
+250500            FFMSTR-PRODNAME2 Delimited by "  "                    100202ma
+250600            "</FastName2>"                                        100202ma
+250700      Delimited by size into XML-data.                            100202ma
+250800     Perform Write-Xml.                                           100202ma
+250900*                                                                 100202ma
+251000     String "<FastName3>" Delimited by size                       100202ma
+251100            FFMSTR-PRODNAME3 Delimited by "  "                    100202ma
+251200            "</FastName3>"                                        100202ma
+251300      Delimited by size into XML-data.                            100202ma
+251400     Perform Write-Xml.                                           100202ma
+251500*                                                                 100202ma
+251600     Move FFMSTR-VERSION To Disp-n.                               100202ma
+251700     String "<Version>" Delimited by size                         100202ma
+251800            Disp-n Delimited by size                              100202ma
+251900            "</Version>"                                          100202ma
+252000      Delimited by size into XML-data.                            100202ma
+252100     Perform Write-Xml-Numeric.                                   100202ma
+252200*                                                                 100202ma
+252300     Move FFMSTR-NBR-OF-FORMS To Disp-n.                          100202ma
+252400     String "<FormCnt>" Delimited by size                         100202ma
+252500            Disp-n Delimited by size                              100202ma
+252600            "</FormCnt>"                                          100202ma
+252700      Delimited by size into XML-data.                            100202ma
+252800     Perform Write-Xml-Numeric.                                   100202ma
+252900*                                                                 100202ma
+253000     Move FFMSTR-MAX-FLDS To Disp-n.                              100202ma
+253100     String "<MaxFields>" Delimited by size                       100202ma
+253200            Disp-n Delimited by size                              100202ma
+253300            "</MaxFields>"                                        100202ma
+253400      Delimited by size into XML-data.                            100202ma
+253500     Perform Write-Xml-Numeric.                                   100202ma
+253600*                                                                 100202ma
+253700     Move FFMSTR-MAX-BUF To Disp-n.                               100202ma
+253800     String "<MaximumBuffer>" Delimited by size                   100202ma
+253900            Disp-n Delimited by size                              100202ma
+254000            "</MaximumBuffer>"                                    100202ma
+254100      Delimited by size into XML-data.                            100202ma
+254200     Perform Write-Xml-Numeric.                                   100202ma
+254300*                                                                 100202ma
+254400     Move FFMSTR-SAVE-FLDS To Disp-n.                             100202ma
+254500     String "<SaveFields>" Delimited by size                      100202ma
+254600            Disp-n Delimited by size                              100202ma
+254700            "</SaveFields>"                                       100202ma
+254800      Delimited by size into XML-data.                            100202ma
+254900     Perform Write-Xml-Numeric.                                   100202ma
+255000*                                                                 100202ma
+255100     String "<HeadForm>" Delimited by size                        100202ma
+255200            FFMSTR-HEAD-FRM Delimited by "  "                     100202ma
+255300            "</HeadForm>"                                         100202ma
+255400      Delimited by size into XML-data.                            100202ma
+255500     Perform Write-Xml.                                           100202ma
+255600*                                                                 100202ma
+255700     String "<ErrorEnh>" Delimited by size                        100202ma
+255800            FFMSTR-ERR-ENH Delimited by "  "                      100202ma
+255900            "</ErrorEnh>"                                         100202ma
+256000      Delimited by size into XML-data.                            100202ma
+256100     Perform Write-Xml.                                           100202ma
+256200*                                                                 100202ma
+256300     String "<WindowEnh>" Delimited by size                       100202ma
+256400            FFMSTR-WIN-ENH Delimited by "  "                      100202ma
+256500            "</WindowEnh>"                                        100202ma
+256600      Delimited by size into XML-data.                            100202ma
+256700     Perform Write-Xml.                                           100202ma
+256800*                                                                 100202ma
+256900     Move FFMSTR-WIN-POS To Disp-n.                               100202ma
+257000     String "<WindowPos>" Delimited by size                       100202ma
+257100            Disp-n Delimited by size                              100202ma
+257200            "</WindowPos>"                                        100202ma
+257300      Delimited by size into XML-data.                            100202ma
+257400     Perform Write-Xml-Numeric.                                   100202ma
+257500                                                                  100202ma
+257600                                                                  100202ma
+257700*---------------------------------------------------------------  100202ma
+257800 File-To-Xml.                                                     100202ma
+257900*     Display "File-To-Xml.".                                     100202ma
+258000     MOVE "FILXML" TO FNAME.                                      100202ma
+258100     Move "<Formsfile>" to XML-data.                              100202ma
+258200     PERFORM WRITE-XML.                                           100202ma
+258300     Move "FORM" TO formname-name.                                100202ma
+258400     Move FFMSTR-VFIL-UNIQUE TO formname-number.                  100202ma
+258500     STRING "<XmlFileName>"    DELIMITED BY SIZE                  100202ma
+258600            Formname DELIMITED BY SPACE                           100202ma
+258700            ".XML</XmlFileName>"                                  100202ma
+258800      Delimited by size into XML-data.                            100202ma
+258900     Perform Write-Xml.                                           100202ma
+259000*                                                                 100202ma
+259100     String "<FormsfileName>" Delimited by size                   100202ma
+259200            FFMSTR-VFIL-NAME Delimited by "  "                    100202ma
+259300            "</FormsfileName>"                                    100202ma
+259400      Delimited by size into XML-data.                            100202ma
+259500     Perform Write-Xml.                                           100202ma
+259600*                                                                 100202ma
+259700     String "<Creator>" Delimited by size                         100202ma
+259800            FFMSTR-VFIL-CREATOR Delimited by "  "                 100202ma
+259900            "</Creator>"                                          100202ma
+260000      Delimited by size into XML-data.                            100202ma
+260100     Perform Write-Xml.                                           100202ma
+260200*                                                                 100202ma
+260300     String "<Account>" Delimited by size                         100202ma
+260400            FFMSTR-VFIL-ACCT Delimited by "  "                    100202ma
+260500            "</Account>"                                          100202ma
+260600      Delimited by size into XML-data.                            100202ma
+260700     Perform Write-Xml.                                           100202ma
+260800*                                                                 100202ma
+260900     String "<Group>" Delimited by size                           100202ma
+261000            FFMSTR-VFIL-GROUP Delimited by "  "                   100202ma
+261100            "</Group>"                                            100202ma
+261200      Delimited by size into XML-data.                            100202ma
+261300     Perform Write-Xml.                                           100202ma
+261400*                                                                 100202ma
+261500     Move FFMSTR-VFIL-BYTES To Disp-n.                            100202ma
+261600     String "<Bytes>" Delimited by size                           100202ma
+261700            Disp-n Delimited by size                              100202ma
+261800            "</Bytes>"                                            100202ma
+261900      Delimited by size into XML-data.                            100202ma
+262000     Perform Write-Xml-Numeric.                                   100202ma
+262100*                                                                 100202ma
+262200     String "<PanelName>" Delimited by size                       100202ma
+262300            FFMSTR-PAN-NAME Delimited by "  "                     100202ma
+262400            "</PanelName>"                                        100202ma
+262500      Delimited by size into XML-data.                            100202ma
+262600     Perform Write-Xml.                                           100202ma
+262700*                                                                 100202ma
+262800     String "<FastName1>" Delimited by size                       100202ma
+262900            FFMSTR-PRODNAME1 Delimited by "  "                    100202ma
+263000            "</FastName1>"                                        100202ma
+263100      Delimited by size into XML-data.                            100202ma
+263200     Perform Write-Xml.                                           100202ma
+263300*                                                                 100202ma
+263400     String "<FastName2>" Delimited by size                       100202ma
+263500            FFMSTR-PRODNAME2 Delimited by "  "                    100202ma
+263600            "</FastName2>"                                        100202ma
+263700      Delimited by size into XML-data.                            100202ma
+263800     Perform Write-Xml.                                           100202ma
+263900*                                                                 100202ma
+264000     String "<FastName3>" Delimited by size                       100202ma
+264100            FFMSTR-PRODNAME3 Delimited by "  "                    100202ma
+264200            "</FastName3>"                                        100202ma
+264300      Delimited by size into XML-data.                            100202ma
+264400     Perform Write-Xml.                                           100202ma
+264500*                                                                 100202ma
+264600     Move FFMSTR-VERSION To Disp-n.                               100202ma
+264700     String "<Version>" Delimited by size                         100202ma
+264800            Disp-n Delimited by size                              100202ma
+264900            "</Version>"                                          100202ma
+265000      Delimited by size into XML-data.                            100202ma
+265100     Perform Write-Xml-Numeric.                                   100202ma
+265200*                                                                 100202ma
+265300     Move FFMSTR-NBR-OF-FORMS To Disp-n.                          100202ma
+265400     String "<FormCnt>" Delimited by size                         100202ma
+265500            Disp-n Delimited by size                              100202ma
+265600            "</FormCnt>"                                          100202ma
+265700      Delimited by size into XML-data.                            100202ma
+265800     Perform Write-Xml-Numeric.                                   100202ma
+265900*                                                                 100202ma
+266000     Move FFMSTR-MAX-FLDS To Disp-n.                              100202ma
+266100     String "<MaxFields>" Delimited by size                       100202ma
+266200            Disp-n Delimited by size                              100202ma
+266300            "</MaxFields>"                                        100202ma
+266400      Delimited by size into XML-data.                            100202ma
+266500     Perform Write-Xml-Numeric.                                   100202ma
+266600*                                                                 100202ma
+266700     Move FFMSTR-MAX-BUF To Disp-n.                               100202ma
+266800     String "<MaximumBuffer>" Delimited by size                   100202ma
+266900            Disp-n Delimited by size                              100202ma
+267000            "</MaximumBuffer>"                                    100202ma
+267100      Delimited by size into XML-data.                            100202ma
+267200     Perform Write-Xml-Numeric.                                   100202ma
+267300*                                                                 100202ma
+267400     Move FFMSTR-SAVE-FLDS To Disp-n.                             100202ma
+267500     String "<SaveFields>" Delimited by size                      100202ma
+267600            Disp-n Delimited by size                              100202ma
+267700            "</SaveFields>"                                       100202ma
+267800      Delimited by size into XML-data.                            100202ma
+267900     Perform Write-Xml-Numeric.                                   100202ma
+268000*                                                                 100202ma
+268100     String "<HeadForm>" Delimited by size                        100202ma
+268200            FFMSTR-HEAD-FRM Delimited by "  "                     100202ma
+268300            "</HeadForm>"                                         100202ma
+268400      Delimited by size into XML-data.                            100202ma
+268500     Perform Write-Xml.                                           100202ma
+268600*                                                                 100202ma
+268700     String "<ErrorEnh>" Delimited by size                        100202ma
+268800            FFMSTR-ERR-ENH Delimited by "  "                      100202ma
+268900            "</ErrorEnh>"                                         100202ma
+269000      Delimited by size into XML-data.                            100202ma
+269100     Perform Write-Xml.                                           100202ma
+269200*                                                                 100202ma
+269300     String "<WindowEnh>" Delimited by size                       100202ma
+269400            FFMSTR-WIN-ENH Delimited by "  "                      100202ma
+269500            "</WindowEnh>"                                        100202ma
+269600      Delimited by size into XML-data.                            100202ma
+269700     Perform Write-Xml.                                           100202ma
+269800*                                                                 100202ma
+269900     Move FFMSTR-WIN-POS To Disp-n.                               100202ma
+270000     String "<WindowPos>" Delimited by size                       100202ma
+270100            Disp-n Delimited by size                              100202ma
+270200            "</WindowPos>"                                        100202ma
+270300      Delimited by size into XML-data.                            100202ma
+270400     Perform Write-Xml-Numeric.                                   100202ma
+270500                                                                  100202ma
+270600**--------------------------------------------------------------- 100202ma
+270700* Savefield-To-Xml.                                               100202ma
+270800**                                                                100202ma
+270900*     MOVE "FILXML" TO FNAME.                                     100202ma
+271000*     String "<SaveName>" Delimited by size                       100202ma
+271100*            SF-FLD(SFIDX)  Delimited by space                    100202ma
+271200*            "</SaveName>"                                        100202ma
+271300*      Delimited by size into XML-data.                           100202ma
+271400*     Perform Write-Xml.                                          100202ma
+271500**                                                                100202ma
+271600*     Move SF-LEN(SFIDX) To Disp-n.                               100202ma
+271700*     String "<SaveLength>" Delimited by size                     100202ma
+271800*            Disp-n Delimited by size                             100202ma
+271900*            "</SaveLength>"                                      100202ma
+272000*      Delimited by size into XML-data.                           100202ma
+272100*     Perform Write-Xml-Numeric.                                  100202ma
+272200**                                                                100202ma
+272300*     String "<SaveType>" Delimited by size                       100202ma
+272400*            SF-TYPE(SFIDX) Delimited by space                    100202ma
+272500*            "</SaveType>"                                        100202ma
+272600*      Delimited by size into XML-data.                           100202ma
+272700*     Perform Write-Xml.                                          100202ma
+272800**                                                                100202ma
+272900*     String "<SaveValue><![CDATA[" Delimited by size             100202ma
+273000*            SF-INIT(SFIDX) Delimited by space                    100202ma
+273100*            "]]></SaveValue>"                                    100202ma
+273200*      Delimited by size into XML-data.                           100202ma
+273300*     Perform Write-Xml.                                          100202ma
+273400**                                                                100202ma
+273500*---------------------------------------------------------------  100202ma
+273600 Form-To-Xml.                                                     100202ma
+273700*     Display "Form-To-Xml".                                      100202ma
+273800     MOVE "FILXML" TO FNAME.                                      100202ma
+273900     Move "<Form>" to XML-data.                                   100202ma
+274000     Perform Write-Xml.                                           100202ma
+274100     Add 1 To FilLevel.                                           100202ma
+274200     String "<FmName>" Delimited by size                          100202ma
+274300            FMMSTR-FRM-NAME Delimited by space                    100202ma
+274400            "</FmName>"                                           100202ma
+274500      Delimited by size into XML-data.                            100202ma
+274600     Perform Write-Xml.                                           100202ma
+274700**                                                                100202ma
+274800*     String "<FmPanelName>" Delimited by size                    100202ma
+274900*            FMMSTR-PAN-NAME Delimited by space                   100202ma
+275000*            "</FmPanelName>"                                     100202ma
+275100*      Delimited by size into XML-data.                           100202ma
+275200*     Perform Write-Xml.                                          100202ma
+275300**                                                                100202ma
+275400     Move FMMSTR-FRM-NUMBER To Disp-n.                            100202ma
+275500     String "<FmNumber>" Delimited by size                        100202ma
+275600            Disp-n Delimited by size                              100202ma
+275700            "</FmNumber>"                                         100202ma
+275800      Delimited by size into XML-data.                            100202ma
+275900     Perform Write-Xml-Numeric.                                   100202ma
+276000*                                                                 100202ma
+276100     Move Fmmstr-Fm-Unique To Disp-n.                             100505ma
+276200     String "<FmUnique>" Delimited by size                        100505ma
+276300            Disp-n Delimited by size                              100505ma
+276400            "</FmUnique>"                                         100505ma
+276500      Delimited by size into XML-data.                            100505ma
+276600     Perform Write-Xml-Numeric.                                   100505ma
+276700*                                                                 100505ma
+276800                                                                  100505ma
+276900                                                                  100505ma
+277000     Move FMMSTR-FLDCNT To Disp-n.                                100202ma
+277100     String "<FmFieldCnt>" Delimited by size                      100202ma
+277200            Disp-n Delimited by size                              100202ma
+277300            "</FmFieldCnt>"                                       100202ma
+277400      Delimited by size into XML-data.                            100202ma
+277500     Perform Write-Xml-Numeric.                                   100202ma
+277600*                                                                 100202ma
+277700     Move FMMSTR-BUF-LEN To Disp-n.                               100202ma
+277800     String "<FmBufLen>" Delimited by size                        100202ma
+277900            Disp-n Delimited by size                              100202ma
+278000            "</FmBufLen>"                                         100202ma
+278100      Delimited by size into XML-data.                            100202ma
+278200     Perform Write-Xml-Numeric.                                   100202ma
+278300*                                                                 100202ma
+278400     String "<FmNextFrm>" Delimited by size                       100202ma
+278500            FMMSTR-NEXT-FRM Delimited by space                    100202ma
+278600            "</FmNextFrm>"                                        100202ma
+278700      Delimited by size into XML-data.                            100202ma
+278800     Perform Write-Xml.                                           100202ma
+278900*                                                                 100202ma
+279000     String "<FmRepeatOpt>" Delimited by size                     100202ma
+279100            FMMSTR-REPEAT-OPT Delimited by space                  100202ma
+279200            "</FmRepeatOpt>"                                      100202ma
+279300      Delimited by size into XML-data.                            100202ma
+279400     Perform Write-Xml.                                           100202ma
+279500*                                                                 100202ma
+279600     String "<FmNformOpt>" Delimited by size                      100202ma
+279700            FMMSTR-NFORM-OPT Delimited by space                   100202ma
+279800            "</FmNformOpt>"                                       100202ma
+279900      Delimited by size into XML-data.                            100202ma
+280000     Perform Write-Xml.                                           100202ma
+280100*                                                                 100202ma
+280200     String "<FmReproduced>" Delimited by size                    100202ma
+280300            FMMSTR-REPRODUCED-FR Delimited by space               100202ma
+280400            "</FmReproduced>"                                     100202ma
+280500      Delimited by size into XML-data.                            100202ma
+280600     Perform Write-Xml.                                           100202ma
+280700*                                                                 100202ma
+280800     String "<FmKeyDef>" Delimited by size                        100202ma
+280900            FMMSTR-FKEY-DEF Delimited by space                    100202ma
+281000            "</FmKeyDef>"                                         100202ma
+281100      Delimited by size into XML-data.                            100202ma
+281200     Perform Write-Xml.                                           100202ma
+281300*                                                                 100202ma
+281400     String "<FmComment><![CDATA[" Delimited by size              100202ma
+281500            FMMSTR-COMMENT Delimited by "  "                      100202ma
+281600            "]]></FmComment>"                                     100202ma
+281700      Delimited by size into XML-data.                            100202ma
+281800     Perform Write-Xml.                                           100202ma
+281900*                                                                 100627ma
+282000     String "<FmDefaultFtype><![CDATA[" Delimited by size         100627ma
+282100            FMMSTR-DEFAULT-FTYPE Delimited by "  "                100627ma
+282200            "]]></FmDefaultFtype>"                                100627ma
+282300      Delimited by size into XML-data.                            100627ma
+282400     Perform Write-Xml.                                           100627ma
+282500*                                                                 100627ma
+282510     String "<FmDefaultDtype><![CDATA[" Delimited by size         100627ma
+282520            FMMSTR-DEFAULT-DTYPE Delimited by "  "                100627ma
+282530            "]]></FmDefaultDtype>"                                100627ma
+282540      Delimited by size into XML-data.                            100627ma
+282550     Perform Write-Xml.                                           100627ma
+282560                                                                  100627ma
+282600*--------------------------------------------------------------   100202ma
+282700 Field-To-Xml.                                                    100202ma
+282800*                                                                 100202ma
+282900*     Display "Field-To-Xml".                                     100202ma
+283000     MOVE "FILXML" TO FNAME.                                      100202ma
+283100     Move "<Field>" To Xml-Data.                                  100202ma
+283200     if FFFLDS-VFLD-NAME = "FKEY"                                 100202ma
+283300      Move "<FunctionKey>" To Xml-Data.                           100202ma
+283400     if FFFLDS-VFLD-NAME = "TEXT"                                 100202ma
+283500      Move "<StaticText>" To Xml-Data.                            100202ma
+283600     if FFFLDS-VFLD-NAME = "ENHANCEMENT"                          100202ma
+283700      Move "<Enhancement>" To Xml-Data.                           100202ma
+283800     if FFFLDS-VFLD-NAME = "Line"                                 100202ma
+283900      Move "<LineDraw>" To Xml-Data.                              100202ma
+284000     Perform Write-Xml.                                           100202ma
+284100     Add 1 To FilLevel.                                           100202ma
+284200*                                                                 100202ma
+284300     String "<FldName>" Delimited by size                         100202ma
+284400            FFFLDS-VFLD-NAME Delimited by "  "                    100202ma
+284500            "</FldName>"                                          100202ma
+284600      Delimited by size into XML-data.                            100202ma
+284700     Perform Write-Xml.                                           100202ma
+284800*                                                                 100202ma
+284900     Move FFFLDS-BUF-X To Disp-n.                                 100202ma
+285000     String "<FldBufStart>" Delimited by size                     100202ma
+285100            Disp-n Delimited by size                              100202ma
+285200            "</FldBufStart>"                                      100202ma
+285300      Delimited by size into XML-data.                            100202ma
+285400     Perform Write-Xml-Numeric.                                   100202ma
+285500*                                                                 100202ma
+285600     Move FFFLDS-BUF-Y To Disp-n.                                 100202ma
+285700     String "<FldBufEnd>" Delimited by size                       100202ma
+285800            Disp-n Delimited by size                              100202ma
+285900            "</FldBufEnd>"                                        100202ma
+286000      Delimited by size into XML-data.                            100202ma
+286100     Perform Write-Xml-Numeric.                                   100202ma
+286200*                                                                 100202ma
+286300     Move FFFLDS-SRN-X To Disp-n.                                 100202ma
+286400     String "<FldColumn>" Delimited by size                       100202ma
+286500            Disp-n Delimited by size                              100202ma
+286600            "</FldColumn>"                                        100202ma
+286700      Delimited by size into XML-data.                            100202ma
+286800     Perform Write-Xml-Numeric.                                   100202ma
+286900*                                                                 100202ma
+287000     Move FFFLDS-SRN-Y To Disp-n.                                 100202ma
+287100     String "<FldRow>" Delimited by size                          100202ma
+287200            Disp-n Delimited by size                              100202ma
+287300            "</FldRow>"                                           100202ma
+287400      Delimited by size into XML-data.                            100202ma
+287500     Perform Write-Xml-Numeric.                                   100202ma
+287600*                                                                 100202ma
+287700     Move FFFLDS-SRN-ORD-NUM To Disp-n.                           100202ma
+287800     String "<FldScreenOrder>" Delimited by size                  100202ma
+287900            Disp-n Delimited by size                              100202ma
+288000            "</FldScreenOrder>"                                   100202ma
+288100      Delimited by size into XML-data.                            100202ma
+288200     Perform Write-Xml-Numeric.                                   100202ma
+288300*                                                                 100202ma
+288400     Move FFFLDS-VFLD-NUM To Disp-n.                              100202ma
+288500     String "<FldNumber>" Delimited by size                       100202ma
+288600            Disp-n Delimited by size                              100202ma
+288700            "</FldNumber>"                                        100202ma
+288800      Delimited by size into XML-data.                            100202ma
+288900     Perform Write-Xml-Numeric.                                   100202ma
+289000*                                                                 100202ma
+289100     Move FFFLDS-VFLD-LENGTH To Disp-n.                           100202ma
+289200     String "<FldLength>" Delimited by size                       100202ma
+289300            Disp-n Delimited by size                              100202ma
+289400            "</FldLength>"                                        100202ma
+289500      Delimited by size into XML-data.                            100202ma
+289600     Perform Write-Xml-Numeric.                                   100202ma
+289700*                                                                 100202ma
+289800     Move FFFLDS-VFLD-POSITION To Disp-n.                         100202ma
+289900     String "<FldPosition>" Delimited by size                     100202ma
+290000            Disp-n Delimited by size                              100202ma
+290100            "</FldPosition>"                                      100202ma
+290200      Delimited by size into XML-data.                            100202ma
+290300     Perform Write-Xml-Numeric.                                   100202ma
+290400*                                                                 100202ma
+290500     String "<FldEnhance>" Delimited by size                      100202ma
+290600            FFFLDS-VFLD-ENHANCE Delimited by "  "                 100202ma
+290700            "</FldEnhance>"                                       100202ma
+290800      Delimited by size into XML-data.                            100202ma
+290900     Perform Write-Xml.                                           100202ma
+291000*                                                                 100202ma
+291100     String "<FldFtype>" Delimited by size                        100202ma
+291200            FFFLDS-VFLD-TYPE Delimited by "  "                    100202ma
+291300            "</FldFtype>"                                         100202ma
+291400      Delimited by size into XML-data.                            100202ma
+291500     Perform Write-Xml.                                           100202ma
+291600*                                                                 100202ma
+291700     String "<FldDataType>" Delimited by size                     100202ma
+291800            FFFLDS-VFLD-DATATYPE Delimited by "  "                100202ma
+291900            "</FldDataType>"                                      100202ma
+292000      Delimited by size into XML-data.                            100202ma
+292100     Perform Write-Xml.                                           100202ma
+292200*                                                                 100202ma
+292300     If FFFLDS-VFLD-INITVAL > Spaces                              100202ma
+292400      MOVE FFFLDS-VFLD-LENGTH TO XMLIDX                           100302ma
+292500      IF XMLIDX > 80                                              100302ma
+292600       MOVE 80 TO XMLIDX                                          100302ma
+292700      END-IF                                                      100302ma
+292800      MOVE "<FldInit><![CDATA[" TO XML-data                       100302ma
+292900      MOVE FFFLDS-VFLD-INITVAL(1:XMLIDX) TO XML-data(19:)         100302ma
+293000      ADD 20 TO XMLIDX                                            100302ma
+293100      MOVE "]]></FldInit>" TO XML-data(XMLIDX:)                   100302ma
+293200      Perform Write-Xml                                           100202ma
+293300     Else                                                         100202ma
+293400      Move "<FldInit></FldInit>"                                  100202ma
+293500        To Xml-Data                                               100202ma
+293600      Perform Write-Xml.                                          100202ma
+293700*                                                                 100202ma
+293800     If FFFLDS-SPECS > Spaces                                     100202ma
+293900      Move "<FldProcessingSpecs><![CDATA[" To Xml-Data            100202ma
+294000      Perform Write-Xml                                           100202ma
+294100      Add 1 To FilLevel                                           100202ma
+294200      Perform Varying xmlidx from 1 by 1                          100202ma
+294300        until xmlidx > 15                                         100202ma
+294400       If FFFLDS-PROCSPECS(xmlidx) > spaces                       100202ma
+294500        Move FFFLDS-PROCSPECS(xmlidx) to XML-data                 100202ma
+294600        Perform Write-Xml                                         100202ma
+294700       End-If                                                     100202ma
+294800      End-Perform                                                 100202ma
+294900      Subtract 1 From FilLevel                                    100202ma
+295000      Move "]]></FldProcessingSpecs>" To Xml-Data                 100202ma
+295100      Perform Write-Xml                                           100202ma
+295200     Else                                                         100202ma
+295300      Move "<FldProcessingSpecs></FldProcessingSpecs>"            100202ma
+295400        To Xml-Data                                               100202ma
+295500      Perform Write-Xml.                                          100202ma
+295600                                                                  100202ma
+295700     Subtract 1 From FilLevel.                                    100202ma
+295800     Move "</Field>" To Xml-Data.                                 100202ma
+295900     if FFFLDS-VFLD-NAME = "FKEY"                                 100202ma
+296000      Move "</FunctionKey>" To Xml-Data.                          100202ma
+296100     if FFFLDS-VFLD-NAME = "TEXT"                                 100202ma
+296200      Move "</StaticText>" To Xml-Data.                           100202ma
+296300     if FFFLDS-VFLD-NAME = "ENHANCEMENT"                          100202ma
+296400      Move "</Enhancement>" To Xml-Data.                          100202ma
+296500     if FFFLDS-VFLD-NAME = "Line"                                 100202ma
+296600      Move "</LineDraw>" To Xml-Data.                             100202ma
+296700                                                                  100202ma
+296800     Perform Write-Xml.                                           100202ma
+296900*--------------------------------                                 100202ma
+297000 OPEN-XML.                                                        100202ma
+297100     Display "OPEN-XML: " FNAME.                                  100202ma
+297200     If FNAME = "FILXML"                                          100202ma
+297300      OPEN OUTPUT FILXML-FILE                                     100202ma
+297400      MOVE ZERO TO XML-RCOUNT XML-COUNT                           100202ma
+297500      MOVE "02" TO XML-FLAG                                       100202ma
+297600     Else                                                         100202ma
+297700      OPEN OUTPUT SRVXML-FILE.                                    100202ma
+297800                                                                  100202ma
+297900     IF XML-STATUS <> "00" PERFORM 9001-FILE-ERROR.               100202ma
+298000*--------------------------------                                 100202ma
+298100 Write-Xml.                                                       100202ma
+298200*     Display "Write-Xml: " FNAME.                                100202ma
+298300     move LOW-VALUE To SRVXML-STR FILXML-STR.                     100202ma
+298400     If FNAME = "FILXML"                                          100202ma
+298500      Move FILLEVEL to XMLLEVEL                                   100202ma
+298600     Else                                                         100202ma
+298700      Move SRVLEVEL to XMLLEVEL.                                  100202ma
+298800*     Display "Write-Xml: " XMLLEVEL.                             100202ma
+298900     perform Varying XmlLen From 255 By -1                        100202ma
+299000       Until Xml-Data(XmlLen:1) > Space                           100202ma
+299100          or ( XmlLen < 2 )                                       100202ma
+299200      Continue                                                    100202ma
+299300     End-Perform.                                                 100202ma
+299400     Move Spaces To SRVXML-STR FILXML-STR.                        100202ma
+299500     if XmlLevel < 1 move 1 to XmlLevel.                          100202ma
+299600     If FNAME = "FILXML"                                          100202ma
+299700      Move Xml-Data(1:XmlLen) To FILXML-STR(XmlLevel:XmlLen)      100202ma
+299800      WRITE FILXML-REC                                            100202ma
+299900     Else                                                         100202ma
+300000      MOVE "00" TO XML-STATUS                                     100520ma
+300100      Move Xml-Data(1:XmlLen) To SRVXML-STR(XmlLevel:XmlLen).     100520ma
+300200*     WRITE SRVXML-REC.                                           100520ma
+300300                                                                  100202ma
+300400     IF XML-STATUS <> "00" PERFORM 9001-FILE-ERROR.               100202ma
+300500     ADD 1 TO XML-COUNT.                                          100202ma
+300600     INITIALIZE Xml-Data.                                         100202ma
+300700*--------------------------------                                 100202ma
+300800 CLOSE-XML.                                                       100202ma
+300900     Display "CLOSE-XML: " FNAME.                                 100202ma
+301000     If FNAME = "FILXML"                                          100202ma
+301100      CLOSE FILXML-FILE                                           100202ma
+301200      MOVE SPACES TO XML-FLAG                                     100202ma
+301300     Else                                                         100202ma
+301400      CLOSE SRVXML-FILE.                                          100202ma
+301500*--------------------------------                                 100202ma
+301600 Write-Xml-Numeric.                                               100202ma
+301700*     Display "Write-Xml-Numeric: " FNAME.                        100202ma
+301800     move LOW-VALUE To SRVXML-STR FILXML-STR.                     100202ma
+301900     If FNAME = "FILXML"                                          100202ma
+302000      Move FILLEVEL to XMLLEVEL                                   100202ma
+302100     Else                                                         100202ma
+302200      Move SRVLEVEL to XMLLEVEL.                                  100202ma
+302300     perform Varying XmlLen From 255 By -1                        100202ma
+302400       Until Xml-Data(XmlLen:1) > Space                           100202ma
+302500          or ( XmlLen < 2 )                                       100202ma
+302600      Continue                                                    100202ma
+302700     End-Perform.                                                 100202ma
+302800     Move Spaces To SRVXML-STR FILXML-STR.                        100202ma
+302900     Move 0 To XmlPtr.                                            100202ma
+303000     perform Varying Xmlidx From 1 By 1                           100202ma
+303100       Until Xmlidx > XmlLen                                      100202ma
+303200          or ( Xmlidx > 255 )                                     100202ma
+303300      If Xml-Data(Xmlidx:1) > Space                               100202ma
+303400       Add 1 to XmlPtr                                            100202ma
+303500       Move Xml-Data(Xmlidx:1) TO FILXML-STR(XmlPtr:1)            100202ma
+303600      End-If                                                      100202ma
+303700     End-Perform.                                                 100202ma
+303800     Move FILXML-STR To Xml-Data.                                 100202ma
+303900     Move Spaces To FILXML-STR.                                   100202ma
+304000     Move XmlPtr To XmlLen.                                       100202ma
+304100     if XmlLevel < 1 move 1 to XmlLevel.                          100202ma
+304200     If FNAME = "FILXML"                                          100202ma
+304300      Move Xml-Data(1:XmlLen) To FILXML-STR(XmlLevel:XmlLen)      100202ma
+304400      WRITE FILXML-REC                                            100202ma
+304500     Else                                                         100202ma
+304600      MOVE "00" TO XML-STATUS                                     100520ma
+304700      Move Xml-Data(1:XmlLen) To SRVXML-STR(XmlLevel:XmlLen).     100520ma
+304800*     WRITE SRVXML-REC.                                           100520ma
+304900     IF XML-STATUS <> "00" PERFORM 9001-FILE-ERROR.               100202ma
+305000     ADD 1 TO XML-COUNT.                                          100202ma
+305100     INITIALIZE Xml-Data.                                         100202ma
+305200*---------------------------------------------------------------  100202ma
+305300 NEW-SRVXML-SERVER.                                               100202ma
+305400*                                                                 100202ma
+305500*     Display "NEW-SRVXML-SERVER".                                100202ma
+305600     INITIALIZE CMD.                                              100202ma
+305700     MOVE "SRVXML" TO FNAME.                                      100202ma
+305800     MOVE "FILE SRVXML=SERVER.XML.J3K,OLD" TO CMD.                100202ma
+305900     PERFORM MPE-COMMAND.                                         100202ma
+306000     MOVE "PURGE SERVER.XML.J3K" TO CMD.                          100202ma
+306100     PERFORM MPE-COMMAND.                                         100202ma
+306200     MOVE "BUILD SERVER.XML.J3K;REC=-256,1,V,ASCII;DISC=10000"    100202ma
+306300      TO CMD.                                                     100202ma
+306400     PERFORM MPE-COMMAND.                                         100202ma
+306500     PERFORM OPEN-XML.                                            100202ma
+306600     Move 1 to SRVLEVEL.                                          100202ma
+306700     INITIALIZE XML-data                                          100202ma
+306800     STRING "<?xml version="                                      100202ma
+306900              QUOTE "1.0" QUOTE                                   100202ma
+307000              " encoding="                                        100202ma
+307100              QUOTE "ISO-8859-1" QUOTE                            100202ma
+307200              " ?>"                                               100202ma
+307300        DELIMITED BY SIZE INTO XML-data.                          100202ma
+307400     PERFORM WRITE-XML                                            100202ma
+307500     MOVE "<!-- SRVXML Created by MIG805.PUB.J3K --> "            100202ma
+307600         TO XML-data                                              100202ma
+307700     Perform Write-Xml.                                           100202ma
+307800     Move "<Server>" to XML-data.                                 100202ma
+307900     PERFORM WRITE-XML.                                           100202ma
+308000     Add 1 To SRVLevel.                                           100202ma
+308100                                                                  100202ma
+308200     Move SRVMST-SVR-UNIQUE To Disp-n.                            100202ma
+308300     String "<ServerNo>" Delimited by size                        100202ma
+308400            Disp-n Delimited by size                              100202ma
+308500            "</ServerNo>"                                         100202ma
+308600      Delimited by size into XML-data.                            100202ma
+308700     Perform Write-Xml-Numeric.                                   100202ma
+308800*                                                                 100202ma
+308900     String "<ServerName>" Delimited by size                      100202ma
+309000            SRVMST-SVR-NAME Delimited by "  "                     100202ma
+309100            "</ServerName>"                                       100202ma
+309200      Delimited by size into XML-data.                            100202ma
+309300     Perform Write-Xml.                                           100202ma
+309400*                                                                 100202ma
+309500     String "<ServerIpaddr>" Delimited by size                    100202ma
+309600            SRVMST-SVR-IPADDR Delimited by "  "                   100202ma
+309700            "</ServerIpaddr>"                                     100202ma
+309800      Delimited by size into XML-data.                            100202ma
+309900     Perform Write-Xml.                                           100202ma
+310000*                                                                 100202ma
+310100     Move SRVMST-SVR-VFILCNT To Disp-n.                           100202ma
+310200     String "<FormsFileCnt>" Delimited by size                    100202ma
+310300            Disp-n Delimited by size                              100202ma
+310400            "</FormsFileCnt>"                                     100202ma
+310500      Delimited by size into XML-data.                            100202ma
+310600     Perform Write-Xml-Numeric.                                   100202ma
+310700*                                                                 100202ma
+310800     Move SRVMST-SVR-VFRMCNT To Disp-n.                           100202ma
+310900     String "<FormCnt>" Delimited by size                         100202ma
+311000            Disp-n Delimited by size                              100202ma
+311100            "</FormCnt>"                                          100202ma
+311200      Delimited by size into XML-data.                            100202ma
+311300     Perform Write-Xml-Numeric.                                   100202ma
+311400*                                                                 100202ma
+311500     Move SRVMST-SVR-VFLDCNT To Disp-n.                           100202ma
+311600     String "<FieldCnt>" Delimited by size                        100202ma
+311700            Disp-n Delimited by size                              100202ma
+311800            "</FieldCnt>"                                         100202ma
+311900      Delimited by size into XML-data.                            100202ma
+312000     Perform Write-Xml-Numeric.                                   100202ma
+312100*                                                                 100202ma
+312200     String "<Susan>" Delimited by size                           100202ma
+312300            SRVMST-SVR-SUSAN Delimited by "  "                    100202ma
+312400            "</Susan>"                                            100202ma
+312500      Delimited by size into XML-data.                            100202ma
+312600     Perform Write-Xml.                                           100202ma
+312700*                                                                 100202ma
+312800     String "<MPEVersion><![CDATA[" Delimited by size             100202ma
+312900            SRVMST-SVR-MPEVERSION Delimited by "  "               100202ma
+313000            "]]></MPEVersion>"                                    100202ma
+313100      Delimited by size into XML-data                             100202ma
+313200     End-String                                                   100202ma
+313300     Perform Write-Xml.                                           100202ma
+313400*-----------------------------------------------------------------100202ma
+313500 Add-SRVXML-FILE.                                                 100202ma
+313600*     Display "Add-SRVXML-FILE.".                                 100202ma
+313700     MOVE "SRVXML" TO FNAME.                                      100202ma
+313800     Move "<Formsfile>" to XML-data.                              100202ma
+313900     PERFORM WRITE-XML.                                           100202ma
+314000     Add 1 To SRVLevel.                                           100202ma
+314100     STRING "<XmlFileName>"    DELIMITED BY SIZE                  100202ma
+314200            FFMSTR-VFIL-NAME   Delimited by SPACE                 100202ma
+314300            ".xml"             DELIMITED BY SIZE                  100202ma
+314400            "</XmlFileName>"                                      100202ma
+314500      Delimited by size into XML-data.                            100202ma
+314600     Perform Write-Xml.                                           100202ma
+314700*                                                                 100202ma
+314800     String "<FormsfileName>" Delimited by size                   100202ma
+314900            FFMSTR-VFIL-NAME Delimited by "  "                    100202ma
+315000            "</FormsfileName>"                                    100202ma
+315100      Delimited by size into XML-data.                            100202ma
+315200     Perform Write-Xml.                                           100202ma
+315300*                                                                 100202ma
+315400     String "<Creator>" Delimited by size                         100202ma
+315500            FFMSTR-VFIL-CREATOR Delimited by "  "                 100202ma
+315600            "</Creator>"                                          100202ma
+315700      Delimited by size into XML-data.                            100202ma
+315800     Perform Write-Xml.                                           100202ma
+315900*                                                                 100202ma
+316000     String "<Account>" Delimited by size                         100202ma
+316100            FFMSTR-VFIL-ACCT Delimited by "  "                    100202ma
+316200            "</Account>"                                          100202ma
+316300      Delimited by size into XML-data.                            100202ma
+316400     Perform Write-Xml.                                           100202ma
+316500*                                                                 100202ma
+316600     String "<Group>" Delimited by size                           100202ma
+316700            FFMSTR-VFIL-GROUP Delimited by "  "                   100202ma
+316800            "</Group>"                                            100202ma
+316900      Delimited by size into XML-data.                            100202ma
+317000     Perform Write-Xml.                                           100202ma
+317100*                                                                 100202ma
+317200     Move FFMSTR-VFIL-BYTES To Disp-n.                            100202ma
+317300     String "<Bytes>" Delimited by size                           100202ma
+317400            Disp-n Delimited by size                              100202ma
+317500            "</Bytes>"                                            100202ma
+317600      Delimited by size into XML-data.                            100202ma
+317700     Perform Write-Xml-Numeric.                                   100202ma
+317800*                                                                 100202ma
+317900     String "<PanelName>" Delimited by size                       100202ma
+318000            FFMSTR-PAN-NAME Delimited by "  "                     100202ma
+318100            "</PanelName>"                                        100202ma
+318200      Delimited by size into XML-data.                            100202ma
+318300     Perform Write-Xml.                                           100202ma
+318400*                                                                 100202ma
+318500     String "<FastName1>" Delimited by size                       100202ma
+318600            FFMSTR-PRODNAME1 Delimited by "  "                    100202ma
+318700            "</FastName1>"                                        100202ma
+318800      Delimited by size into XML-data.                            100202ma
+318900     Perform Write-Xml.                                           100202ma
+319000*                                                                 100202ma
+319100     String "<FastName2>" Delimited by size                       100202ma
+319200            FFMSTR-PRODNAME2 Delimited by "  "                    100202ma
+319300            "</FastName2>"                                        100202ma
+319400      Delimited by size into XML-data.                            100202ma
+319500     Perform Write-Xml.                                           100202ma
+319600*                                                                 100202ma
+319700     String "<FastName3>" Delimited by size                       100202ma
+319800            FFMSTR-PRODNAME3 Delimited by "  "                    100202ma
+319900            "</FastName3>"                                        100202ma
+320000      Delimited by size into XML-data.                            100202ma
+320100     Perform Write-Xml.                                           100202ma
+320200     SUBTRACT 1 From SRVLevel.                                    100202ma
+320300     Move "</Formsfile>" to XML-data.                             100202ma
+320400     PERFORM WRITE-XML.                                           100202ma
+320500                                                                  100202ma

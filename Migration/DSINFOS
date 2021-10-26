@@ -1,0 +1,592 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST                                   
+001100******************************************************************        
+001200 IDENTIFICATION DIVISION.                                                 
+001300 PROGRAM-ID.     DSINFO.                                                  
+001400 AUTHOR.     MICHAEL ANDERSON.                                            
+001500 ENVIRONMENT DIVISION.                                                    
+001600 CONFIGURATION SECTION.                                                   
+001700 SOURCE-COMPUTER.  HP-3000.                                               
+001800*SOURCE-COMPUTER.  HP-3000 WITH DEBUGGING MODE.                           
+001900 OBJECT-COMPUTER.  HP-3000.                                               
+002000 DATA DIVISION.                                                           
+002100$PAGE  "MISC WORKING STORAGE"                                             
+002200 WORKING-STORAGE SECTION.                                                 
+002300 01  HPVAR-NAME        PIC X(20) VALUE "DSINFOS_STATUS~  ".               
+002400 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                           
+002500 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                            
+002600 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                            
+002700 01  GETINFO-DATA.                                                        
+002800    05  GINFO-LEN                PIC S9(4) COMP.                          
+002900    05  GINFO-STR                PIC X(128).                              
+003000    05  GINFO-PARM               PIC S9(4) COMP.                          
+003100                                                                          
+003200 01  X12-DATE        PIC X(12) VALUE SPACES.                              
+003300 01  X12-TIME        PIC X(12) VALUE SPACES.                              
+003400                                                                          
+003500 01  PARSED-DATA.                                                         
+003600    05  ITEMS-PARSED             PIC S9(4) COMP.                          
+003700        88 PARSE-IS-COMPLETE VALUES ARE 3 THRU 99.                        
+003800    05  PARSED-STRING            PIC X(128).                              
+003900    05  NEXT-STRING              PIC X(128).                              
+004000    05  STRING-POINTER             PIC S9(4) COMP.                        
+004100    05  GX                       PIC S9(4) COMP.                          
+004200    05  GY                       PIC S9(4) COMP.                          
+004300    05  PX                       PIC S9(4) COMP.                          
+004400                                                                          
+004500 01  FULL-CURRENT-DATE.                                                   
+004600         05  C-DATE.                                                      
+004700             10  C-YEAR       PIC 9(4).                                   
+004800             10  C-MONTH      PIC 99.                                     
+004900             10  C-DAY        PIC 99.                                     
+005000         05  C-TIME.                                                      
+005100             10  C-HOUR       PIC 99.                                     
+005200             10  C-MINUTES    PIC 99.                                     
+005300             10  C-SECONDS    PIC 99.                                     
+005400             10  C-SEC-HUND   PIC 99.                                     
+005500         05  C-TIME-DIFF.                                                 
+005600             10  C-GMT-DIR    PIC X.                                      
+005700             10  C-HOUR       PIC 99.                                     
+005800             10  C-MINUTES    PIC 99.                                     
+005900 01 ERROR-MSG                PIC X(80) VALUE SPACES.                      
+006000 01 NUM1                PIC X(14) VALUE SPACES.                           
+006010 01 NUM2                PIC 9(14) VALUE ZERO.                             
+006020 01 NUMDEC              PIC S9(4) COMP VALUE 0.                           
+006030 01 NUMERR              PIC S9(4) COMP VALUE 0.                           
+006100     COPY SWITCHES  OF J3KLIB.                                            
+006200 01 A-TABLE-SW               PIC X VALUE "0".                             
+006300    88 ITS-A-TABLE    VALUE "1".                                          
+006400 01 DOW                      PIC S9(4) COMP  VALUE 0.                     
+006500 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.                     
+006600 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.                     
+006700 01 CSTR                     PIC X(255)      VALUE SPACES.                
+006800 01 CERR                     PIC S9(4) COMP  VALUE 0.                     
+006900 01 CPARM                    PIC S9(4) COMP  VALUE 0.                     
+007000 01 CMSG                     PIC S9(4) COMP  VALUE 0.                     
+007100 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.                     
+007200 01 PICTURE-COLUMN           PIC S9(4) COMP  VALUE 42.                    
+007300 01 PIC999                   PIC 999.                                     
+007400 01 PIC99                    PIC 99.                                      
+007500 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.                     
+007600 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.                     
+007700 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.                     
+007800 01 NUM-X                    PIC S9(4) COMP  VALUE 0.                     
+007900 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.                     
+008000 01 VAR-LEN                  PIC S9(4) COMP  VALUE 0.                     
+008100 01 DSITEM-IDX               PIC S9(9) COMP  VALUE 0.                     
+008200 01 DSETINFO-BUFF.                                                        
+008300    02 DSETINFO-ITEM-CNT     PIC S9(4) COMP  VALUE 0.                     
+008400    02 DSINFO-ITEM-TBL.                                                   
+008500       05 DSETINFO-ITEM-NBR  PIC S9(4) COMP OCCURS 1024.                  
+008600 01 DSITEMINFO-BUFF.                                                      
+008700    02 DSITEMINFO-NAME       PIC X(16) VALUE SPACES.                      
+008800    02 DSITEMINFO-TYPE       PIC X(2)  VALUE SPACES.                      
+008900    02 DSITEMINFO-LEN        PIC S9(4) COMP VALUE 0.                      
+009000    02 DSITEMINFO-CNT        PIC S9(4) COMP VALUE 0.                      
+009100    02 DSITEMINFO-FILL       PIC X(4)  VALUE SPACES.                      
+009200 01 DSITEMINFO-MODE          PIC S9(4) COMP VALUE 102.                    
+009300 01 DSETINFO-MODE            PIC S9(4) COMP VALUE 104.                    
+009400 01 DSINFO-RECNBR            PIC S9(9) COMP  VALUE 0.                     
+009500 01 WORK-TBL.                                                             
+009600    02 WORK-CNT          PIC S9(4) COMP.                                  
+009700    02 WORK-IDX          PIC S9(4) COMP.                                  
+009800    02 WORK-ENTRY OCCURS  2048.                                           
+009900       05 WORK-NAME      PIC X(48).                                       
+010000       05 WORK-TYPE      PIC X.                                           
+010100       05 WORK-LEN       PIC S9(4) COMP.                                  
+010200 01 TABLE-MAKER.                                                          
+010300    02 TM-PTR            PIC S9(4) COMP.                                  
+010400    02 TM-IDX            PIC S9(4) COMP.                                  
+010500    02 TM-CNT            PIC S9(4) COMP.                                  
+010600    02 TM-OCCURANCES     PIC S9(4) COMP.                                  
+010700    02 TM-ABBR           PIC X(6).                                        
+010800    02 TM-NAME           PIC X(48).                                       
+010900    02 TM-TYPE           PIC X(2).                                        
+011000    02 TM-LEN            PIC S9(4) COMP.                                  
+011100 01 COBOL-LINE.                                                           
+011200    02 CL-SEQ-NBR        PIC 999999.                                      
+011300    02 CL-CODE           PIC X(72).                                       
+011400    02 CL-VER            PIC XX.                                          
+011500 01 COBOL-BUFFER.                                                         
+011600    02 COB-CNT           PIC S9(4) COMP.                                  
+011700    02 COB-IDX           PIC S9(4) COMP.                                  
+011800    02 COB-PTR           PIC S9(4) COMP.                                  
+011900    02 COBOL-BUFFER-ENTRY OCCURS 4096.                                    
+012000       05 COB-LEVEL      PIC 99.                                          
+012100       05 COB-VARNAME    PIC X(48).                                       
+012200       05 COB-PICTURE    PIC X(10).                                       
+012300       05 COB-VALUE      PIC X(26).                                       
+012400 01 SAVE-DBPOINTER           PIC S9(4) COMP  VALUE 0.                     
+012500 01 SHOWTIME-STR.                                                         
+012600    02 FILLER PIC X(8) VALUE "SHOWTIME".                                  
+012700    02 FILLER PIC X    VALUE %15.                                         
+012800 COPY AMSMODE  OF J3KLIB.                                                 
+012900 COPY DBEX     OF J3KLIB.                                                 
+013000 COPY IMAGE   OF J3KLIB.                                                  
+013100 COPY USERX   OF J3KLIB.                                                  
+013200 01 LINK-DSETNAME          PIC X(16).                                     
+013300 01 LINK-DBASENAME         PIC X(28).                                     
+013400 01 LINK-DSETABBR     PIC X(6).                                           
+013500 01 LINK-DSINFO-RETURN.                                                   
+013600    02 LINK-BEGIN-DATE    PIC X(8).                                       
+013700    02 LINK-BEGIN-NUMDATE PIC S9(9) COMP.                                 
+013800    02 LINK-BEGIN-DOW     PIC S9(4) COMP.                                 
+013900    02 LINK-BEGIN-TYPE    PIC X(2).                                       
+014000    02 LINK-END-DATE      PIC X(8).                                       
+014100    02 LINK-END-NUMDATE   PIC S9(9) COMP.                                 
+014200    02 LINK-END-DOW       PIC S9(4) COMP.                                 
+014300    02 LINK-END-TYPE      PIC X(2).                                       
+014400    02 LINK-ERR           PIC S9(4) COMP.                                 
+014500    02 LINK-MESSAGE       PIC X(80).                                      
+014600$PAGE  "Main logical flow"                                                
+014700 PROCEDURE DIVISION.                                                      
+014800 BEGIN-0000.                                                              
+014900*                                                                         
+015000     INITIALIZE USER-AREA DATA-BASE-COMMON                                
+015100                MODE-N SEARCH-ITEM SEARCH-KEY.                            
+015200     INITIALIZE LINK-DSETNAME LINK-DSETABBR LINK-DSINFO-RETURN            
+015300                WORK-TBL TABLE-MAKER COBOL-BUFFER.                        
+015400     MOVE 1 TO RE-READ MODE-1.                                            
+015500     MOVE 2 TO SERIAL.                                                    
+015600     MOVE 3 TO BACKWARD MODE-3.                                           
+015700     MOVE 4 TO DIRECT MODE-4.                                             
+015800     MOVE 5 TO CHAINED MODE-5.                                            
+015900     MOVE 6 TO BACK-CHAINED.                                              
+016000     MOVE 7 TO KEYED.                                                     
+016100     MOVE "; " TO NULL-ITEM.                                              
+016200     MOVE "@;" TO ALL-ITEMS.                                              
+016300     MOVE 128 TO GINFO-LEN.                                               
+016500     MOVE "J3K;" TO DATA-BASE-PASS(1).                                    
+016600     INITIALIZE GINFO-STR GINFO-PARM.                                     
+016700     CALL INTRINSIC "GETINFO" USING GINFO-STR GINFO-LEN                   
+016800                                    GINFO-PARM.                           
+016900     IF GINFO-LEN > 0                                                     
+017000D       DISPLAY "INFO LEN= [" GINFO-LEN  "]"                              
+017100        PERFORM 7500-INFO-PARSE                                           
+017200     ELSE                                                                 
+017300        INITIALIZE LINK-DBASENAME                                         
+017400        DISPLAY "Database Name? " WITH NO ADVANCING                       
+017500        ACCEPT LINK-DBASENAME                                             
+017600        DISPLAY "SET NAME? "  WITH NO ADVANCING                           
+017700        ACCEPT LINK-DSETNAME                                              
+017800        DISPLAY "6 CHAR ABBR?  " WITH NO ADVANCING                        
+017900        ACCEPT LINK-DSETABBR.                                             
+018000                                                                          
+018100     MOVE LINK-DBASENAME TO DBNAME(1).                                    
+018200     CALL "DBOPEN"   USING DATA-BASE-NAME (1)                             
+018300                 DATA-BASE-PASS(1)                                        
+018400                  MODE-5                                                  
+018500                  STATUS-AREA.                                            
+018600                                                                          
+018700                                                                          
+018800     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+018900     MOVE 1 TO SAVE-DBPOINTER.                                            
+019000                                                                          
+019100     INITIALIZE LINK-DSINFO-RETURN.                                       
+019200     CALL "DBINFO" USING DATA-BASE-NAME(1) LINK-DSETNAME                  
+019300                   DSETINFO-MODE  STATUS-AREA DSETINFO-BUFF.              
+019400     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+019500     INITIALIZE DSITEM-IDX.                                               
+019600     PERFORM VARYING DSITEM-IDX FROM 1 BY 1                               
+019700       UNTIL ( IMAGE-ERRORS )                                             
+019800          OR ( DSITEM-IDX > DSETINFO-ITEM-CNT )                           
+019900      IF DSETINFO-ITEM-NBR(DSITEM-IDX) < 0                                
+020000         COMPUTE DSETINFO-ITEM-NBR(DSITEM-IDX)                            
+020100          = ( DSETINFO-ITEM-NBR(DSITEM-IDX) * -1 )                        
+020200         END-COMPUTE                                                      
+020300      END-IF                                                              
+020400      CALL "DBINFO" USING DATA-BASE-NAME(1)                               
+020500                          DSETINFO-ITEM-NBR(DSITEM-IDX)                   
+020600         DSITEMINFO-MODE STATUS-AREA DSITEMINFO-BUFF                      
+020700      IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR END-IF                       
+020800      PERFORM 7400-ADD-TO-WORK                                            
+020900D     DISPLAY LINK-DSETABBR "-" DSITEMINFO-NAME DSITEMINFO-TYPE           
+021000D             DSITEMINFO-LEN DSITEMINFO-CNT " " WORK-IDX                  
+021100     END-PERFORM.                                                         
+021200     PERFORM IMAGE-TO-COBOL.                                              
+021300     PERFORM FORMAT-COBOL-BUFFER.                                         
+021400     GO TO 9999-RETURN.                                                   
+021500*------------------------------------------------                         
+021600$PAGE "IMAGE TO COBOL"                                                    
+021700 IMAGE-TO-COBOL.                                                          
+021800    INITIALIZE COB-IDX WORK-IDX TM-IDX COBOL-BUFFER.                      
+021900    ADD 1 TO COB-IDX.                                                     
+022000    MOVE 1 TO COB-LEVEL(COB-IDX)                                          
+022100    MOVE LINK-DSETABBR TO COB-VARNAME(COB-IDX).                           
+022200    MOVE "PIC X(16)" TO COB-PICTURE(COB-IDX).                             
+022300    STRING "VALUE " QUOTE  DELIMITED BY SIZE                              
+022400           LINK-DSETNAME   DELIMITED BY " "                               
+022500           QUOTE DELIMITED BY SIZE INTO COB-VALUE(COB-IDX).               
+022600                                                                          
+022700    ADD 1 TO COB-IDX                                                      
+022800    MOVE 1 TO COB-LEVEL(COB-IDX)                                          
+022900    STRING LINK-DSETABBR "-BUFFER"                                        
+023000          DELIMITED BY SIZE INTO COB-VARNAME(COB-IDX).                    
+023100                                                                          
+023200                                                                          
+023300    PERFORM VARYING WORK-IDX FROM 1 BY 1                                  
+023400      UNTIL ( WORK-IDX > WORK-CNT )                                       
+023500     ADD 1 TO COB-IDX                                                     
+023600     PERFORM CHECK-FOR-TABLE                                              
+023700     IF ITS-A-TABLE                                                       
+023800        INITIALIZE COBOL-BUFFER-ENTRY(COB-IDX)                            
+023900        MOVE 2 TO COB-LEVEL(COB-IDX)                                      
+024000        STRING LINK-DSETABBR "-"    DELIMITED BY SIZE                     
+024100               TM-NAME              DELIMITED BY " "                      
+024200               "-LIST."                                                   
+024300         DELIMITED BY SIZE INTO COB-VARNAME(COB-IDX)                      
+024400        END-STRING                                                        
+024500        MOVE SPACES TO COB-PICTURE(COB-IDX)                               
+024600        MOVE SPACES TO COB-VALUE(COB-IDX)                                 
+024700        PERFORM VARYING TM-IDX FROM 1 BY 1                                
+024800          UNTIL ( TM-IDX > TM-OCCURANCES )                                
+024900         ADD 1 TO COB-IDX                                                 
+025000         COMPUTE COB-PTR                                                  
+025100             = ( WORK-IDX - ( TM-OCCURANCES - TM-IDX))                    
+025200         END-COMPUTE                                                      
+025300D        DISPLAY                                                          
+025400D            "WK=" WORK-IDX " "                                           
+025500D            "TM=" TM-IDX " "                                             
+025600D            "TM OCCUR=" TM-OCCURANCES " "                                
+025700D            "CPTR=" COB-PTR                                              
+025800         MOVE 5 TO COB-LEVEL(COB-IDX)                                     
+025900         STRING LINK-DSETABBR "-"   DELIMITED BY " "                      
+026000                WORK-NAME(COB-PTR)  DELIMITED BY " "                      
+026100                                INTO COB-VARNAME(COB-IDX)                 
+026200         MOVE WORK-LEN(COB-PTR)  TO PIC999                                
+026300         STRING "PIC " WORK-TYPE(WORK-IDX) "(" PIC999 ")"                 
+026400          DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                     
+026500         END-STRING                                                       
+026600         MOVE " VALUE SPACES." TO COB-VALUE(COB-IDX)                      
+026700        END-PERFORM                                                       
+026800        ADD 1 TO COB-IDX                                                  
+026900        MOVE 2 TO COB-LEVEL(COB-IDX)                                      
+027000        STRING LINK-DSETABBR "-"    DELIMITED BY SIZE                     
+027100               TM-NAME              DELIMITED BY " "                      
+027200               "-TBL REDEFINES "    DELIMITED BY SIZE                     
+027300                           INTO COB-VARNAME(COB-IDX)                      
+027400        ADD 1 TO COB-IDX                                                  
+027500        STRING LINK-DSETABBR "-"    DELIMITED BY SIZE                     
+027600               TM-NAME              DELIMITED BY " "                      
+027700               "-LIST"              DELIMITED BY SIZE                     
+027800                           INTO COB-VARNAME(COB-IDX)                      
+027900        ADD 1 TO COB-IDX                                                  
+028000        MOVE 5 TO COB-LEVEL(COB-IDX)                                      
+028100                                                                          
+028200        STRING LINK-DSETABBR "-"    DELIMITED BY SIZE                     
+028300               TM-NAME              DELIMITED BY " "                      
+028400                           INTO COB-VARNAME(COB-IDX)                      
+028500        STRING "PIC " WORK-TYPE(WORK-IDX) "(" PIC999 ")"                  
+028600         DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                      
+028700        MOVE TM-OCCURANCES TO PIC99                                       
+028800        STRING " OCCURS " PIC99                                           
+028900         DELIMITED BY SIZE INTO COB-VALUE(COB-IDX)                        
+029000                                                                          
+029100     ELSE                                                                 
+029200        MOVE 2 TO COB-LEVEL(COB-IDX)                                      
+029300        STRING LINK-DSETABBR "-"    DELIMITED BY SIZE                     
+029400               WORK-NAME(WORK-IDX)  DELIMITED BY " "                      
+029500                           INTO COB-VARNAME(COB-IDX)                      
+029600        EVALUATE WORK-TYPE(WORK-IDX)                                      
+029700         WHEN "I"                                                         
+030410           COMPUTE PIC99                                                  
+030420            = WORK-LEN(WORK-IDX) * 4.5                                    
+030430           END-COMPUTE                                                    
+030440           STRING "PIC S9(" PIC99 ")"                                     
+030450           DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                    
+030460           MOVE " COMP VALUE 0." TO COB-VALUE(COB-IDX)                    
+030461         WHEN "J"                                                         
+030471           COMPUTE PIC99                                                  
+030472            = WORK-LEN(WORK-IDX) * 4.5                                    
+030473           END-COMPUTE                                                    
+030474           STRING "PIC S9(" PIC99 ")"                                     
+030475           DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                    
+030476           MOVE " COMP VALUE 0." TO COB-VALUE(COB-IDX)                    
+030477        WHEN "R"                                                          
+030500           MOVE WORK-LEN(WORK-IDX) TO PIC999                              
+030600           COMPUTE PIC99                                                  
+030700            = WORK-LEN(WORK-IDX) * 2                                      
+030800           END-COMPUTE                                                    
+030900           STRING "PIC X(" PIC99 ")"                                      
+031000            DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                   
+031100           MOVE " VALUE SPACES." TO COB-VALUE(COB-IDX)                    
+031110        WHEN "E"                                                          
+031210           MOVE WORK-LEN(WORK-IDX) TO PIC999                              
+031220           COMPUTE PIC99                                                  
+031230            = WORK-LEN(WORK-IDX) * 2                                      
+031240           END-COMPUTE                                                    
+031250           STRING "PIC X(" PIC99 ")"                                      
+031260            DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                   
+031270           MOVE " VALUE SPACES." TO COB-VALUE(COB-IDX)                    
+031280        WHEN OTHER                                                        
+031300           MOVE WORK-LEN(WORK-IDX) TO PIC999                              
+031400           STRING "PIC X(" PIC999 ")"                                     
+031500            DELIMITED BY SIZE INTO COB-PICTURE(COB-IDX)                   
+031600           MOVE " VALUE SPACES." TO COB-VALUE(COB-IDX)                    
+031700        END-EVALUATE                                                      
+031800     END-IF                                                               
+031900    END-PERFORM.                                                          
+032000    MOVE COB-IDX TO COB-CNT.                                              
+032100*---------------------------------------------------                      
+032200$PAGE "CHECK FOR A TABLE"                                                 
+032300 CHECK-FOR-TABLE.                                                         
+032400     MOVE "0" TO A-TABLE-SW.                                              
+032500     INITIALIZE VAR-LEN OCCURS-VALUE OCCURS-LAST OCCURS-PTR               
+032600                NUM-X DASH-PTR TM-IDX TM-PTR.                             
+032700     COMPUTE VAR-LEN                                                      
+032800       =  VAR-LEN + (FUNCTION LENGTH(WORK-NAME(WORK-IDX))).               
+032900     MOVE VAR-LEN TO DASH-PTR.                                            
+033000     PERFORM VARYING DASH-PTR FROM VAR-LEN BY -1                          
+033100       UNTIL ( WORK-NAME(WORK-IDX)(DASH-PTR:1) NOT = " ")                 
+033200      CONTINUE                                                            
+033300     END-PERFORM.                                                         
+033400     MOVE DASH-PTR TO VAR-LEN.                                            
+033500     COMPUTE DASH-PTR = VAR-LEN - 2.                                      
+033600     COMPUTE NUM-X = VAR-LEN - 1.                                         
+033700D    DISPLAY "TABLE CHK FOR: "                                            
+033800D            WORK-NAME(WORK-IDX)                                          
+033900     IF ( WORK-NAME(WORK-IDX)(NUM-X:2) = "01" ) AND                       
+034000        ( WORK-NAME(WORK-IDX)(DASH-PTR:1) = "-" )  AND                    
+034100        ( LINK-DSETNAME <> "STU-HOUSEHOLD   "   )                         
+034200D       DISPLAY "NEW TABLE: " WORK-NAME(WORK-IDX)                         
+034300        MOVE WORK-NAME(WORK-IDX)(1:DASH-PTR - 1) TO TM-NAME               
+034400        MOVE WORK-IDX TO TM-IDX                                           
+034500        MOVE WORK-TYPE(WORK-IDX) TO TM-TYPE                               
+034600        MOVE WORK-LEN(WORK-IDX) TO TM-LEN                                 
+034700        MOVE 0 TO OCCURS-LAST                                             
+034800        MOVE 1 TO OCCURS-VALUE                                            
+034900        PERFORM VARYING TM-IDX FROM WORK-IDX BY 1                         
+035000          UNTIL ( (OCCURS-VALUE - OCCURS-LAST) NOT = 1 )                  
+035100         COMPUTE TM-PTR = TM-IDX + 1 END-COMPUTE                          
+035200         MOVE WORK-NAME(TM-PTR)(NUM-X:2) TO NUM1                          
+035300         PERFORM 7300-GET-NUM                                             
+035400         MOVE OCCURS-VALUE TO OCCURS-LAST                                 
+035500         MOVE NUM2 TO OCCURS-VALUE                                        
+035600D        DISPLAY "-- CRITICAL TABLE DATA"                                 
+035700D        DISPLAY WORK-NAME(TM-PTR)                                        
+035800D        DISPLAY WORK-NAME(TM-PTR)(NUM-X:2)                               
+035900D        DISPLAY "OCCURS VALUE: " OCCURS-VALUE                            
+036000D        DISPLAY "LAST OCCURS : " OCCURS-LAST                             
+036100         IF OCCURS-VALUE > 1                                              
+036200            MOVE OCCURS-VALUE TO TM-OCCURANCES                            
+036300         END-IF                                                           
+036400        END-PERFORM                                                       
+036500        IF TM-OCCURANCES > 1                                              
+036600           COMPUTE WORK-IDX = ( TM-IDX - 1 ) END-COMPUTE                  
+036700           MOVE "1" TO A-TABLE-SW.                                        
+036800D       DISPLAY "WK=" WORK-IDX " TM=" TM-IDX " COB=" COB-IDX.             
+036900*-----------------------------------------------------                    
+037000$PAGE "FORMAT COBOL BUFFER"                                               
+037100 FORMAT-COBOL-BUFFER.                                                     
+037200     INITIALIZE COBOL-LINE.                                               
+037300     MOVE 1 TO CL-SEQ-NBR.                                                
+037400     MOVE "*******************************" TO CL-CODE.                   
+037500     DISPLAY COBOL-LINE.                                                  
+037600                                                                          
+037700     INITIALIZE COBOL-LINE.                                               
+037800     MOVE 2 TO CL-SEQ-NBR.                                                
+037900     MOVE "* Image Buffer" TO CL-CODE.                                    
+038000     DISPLAY COBOL-LINE.                                                  
+038100                                                                          
+038200     INITIALIZE COBOL-LINE.                                               
+038300     MOVE 3 TO CL-SEQ-NBR.                                                
+038400     MOVE "* Created by DSINFO" TO CL-CODE.                               
+038500     DISPLAY COBOL-LINE.                                                  
+038600                                                                          
+038700     INITIALIZE COBOL-LINE.                                               
+038800     MOVE 4 TO CL-SEQ-NBR.                                                
+038900     MOVE "* " TO CL-CODE.                                                
+039000     DISPLAY COBOL-LINE.                                                  
+039100                                                                          
+039200     INITIALIZE COBOL-LINE.                                               
+039300     MOVE 5 TO CL-SEQ-NBR.                                                
+039400     ACCEPT X12-DATE FROM DATE.                                           
+039500     ACCEPT X12-TIME FROM TIME.                                           
+039600     STRING  "* " X12-DATE " "  X12-TIME                                  
+039700      DELIMITED BY SIZE INTO CL-CODE.                                     
+039800     DISPLAY COBOL-LINE.                                                  
+039900                                                                          
+040000     INITIALIZE COBOL-LINE.                                               
+040100     MOVE 6 TO CL-SEQ-NBR.                                                
+040200     MOVE "* J3K Solutions " TO CL-CODE.                                  
+040300     DISPLAY COBOL-LINE.                                                  
+040400                                                                          
+040500     INITIALIZE COBOL-LINE.                                               
+040600     MOVE 7 TO CL-SEQ-NBR.                                                
+040700     MOVE "*******************************" TO CL-CODE.                   
+040800     DISPLAY COBOL-LINE.                                                  
+040900     MOVE 0 TO COB-IDX.                                                   
+041000     PERFORM VARYING COB-IDX FROM 1 BY 1                                  
+041100       UNTIL ( COB-IDX > COB-CNT )                                        
+041200      INITIALIZE COBOL-LINE                                               
+041300      MOVE COB-IDX TO CL-SEQ-NBR                                          
+041310      ADD 10 TO CL-SEQ-NBR                                                
+041400      MOVE 1 TO STR-PTR                                                   
+041500      EVALUATE  COB-LEVEL(COB-IDX)                                        
+041600*--                                                                       
+041700*----------- LEVEL 0                                                      
+041800          WHEN 0                                                          
+041900          MOVE 8 TO STR-PTR                                               
+042000          STRING COB-VARNAME(COB-IDX)                                     
+042100                 DELIMITED BY " " INTO CL-CODE                            
+042200                 WITH POINTER STR-PTR                                     
+042300          END-STRING                                                      
+042400          STRING "." DELIMITED BY SIZE INTO CL-CODE                       
+042500           WITH POINTER STR-PTR                                           
+042600          END-STRING                                                      
+042700*--                                                                       
+042800*----------- LEVEL 1                                                      
+042900          WHEN 1                                                          
+043000          MOVE 2 TO STR-PTR                                               
+043100          STRING COB-LEVEL(COB-IDX) " "                                   
+043200                 DELIMITED BY SIZE INTO CL-CODE                           
+043300                 WITH POINTER STR-PTR                                     
+043400          END-STRING                                                      
+043500          STRING COB-VARNAME(COB-IDX)                                     
+043600                 DELIMITED BY " "  INTO CL-CODE                           
+043700                 WITH POINTER STR-PTR                                     
+043800          END-STRING                                                      
+043900          MOVE 0 TO INSPECT-IDX                                           
+044000          INSPECT COB-VARNAME(COB-IDX) TALLYING INSPECT-IDX               
+044100                  FOR ALL "BUFFER"                                        
+044200          IF INSPECT-IDX = 0                                              
+044300             MOVE 20             TO STR-PTR                               
+044400             STRING COB-PICTURE(COB-IDX)                                  
+044500                    DELIMITED BY SIZE                                     
+044600                    COB-VALUE(COB-IDX)                                    
+044700                    DELIMITED BY SIZE                                     
+044800                    INTO CL-CODE WITH POINTER STR-PTR                     
+044900             END-STRING                                                   
+045000          END-IF                                                          
+045100*--                                                                       
+045200*----------- LEVEL 2                                                      
+045300          WHEN 2                                                          
+045400          MOVE 5 TO STR-PTR                                               
+045500          STRING COB-LEVEL(COB-IDX) " "                                   
+045600                 DELIMITED BY SIZE INTO CL-CODE                           
+045700                 WITH POINTER STR-PTR                                     
+045800          END-STRING                                                      
+045900          STRING COB-VARNAME(COB-IDX)                                     
+046000                 DELIMITED BY SIZE  INTO CL-CODE                          
+046100                 WITH POINTER STR-PTR                                     
+046200          END-STRING                                                      
+046300          MOVE PICTURE-COLUMN TO STR-PTR                                  
+046400          STRING COB-PICTURE(COB-IDX)                                     
+046500                 DELIMITED BY SIZE                                        
+046600                 COB-VALUE(COB-IDX)                                       
+046700                 DELIMITED BY SIZE                                        
+046800                 INTO CL-CODE WITH POINTER STR-PTR                        
+046900          END-STRING                                                      
+047000*--                                                                       
+047100*----------- LEVEL 5                                                      
+047200          WHEN 5                                                          
+047300          MOVE 8 TO STR-PTR                                               
+047400          STRING COB-LEVEL(COB-IDX) " "                                   
+047500                 DELIMITED BY SIZE INTO CL-CODE                           
+047600                 WITH POINTER STR-PTR                                     
+047700          END-STRING                                                      
+047800          STRING COB-VARNAME(COB-IDX)                                     
+047900                 DELIMITED BY " "  INTO CL-CODE                           
+048000                 WITH POINTER STR-PTR                                     
+048100          END-STRING                                                      
+048200          MOVE PICTURE-COLUMN TO STR-PTR                                  
+048300          STRING COB-PICTURE(COB-IDX)                                     
+048400                 DELIMITED BY SIZE                                        
+048500                 COB-VALUE(COB-IDX)                                       
+048600                 DELIMITED BY SIZE                                        
+048700                                                                          
+048800                                   INTO CL-CODE                           
+048900                 WITH POINTER STR-PTR                                     
+049000          END-STRING                                                      
+049100      END-EVALUATE                                                        
+049200      MOVE 0 TO DOW                                                       
+049300      COMPUTE DOW                                                         
+049400       = DOW + FUNCTION LENGTH(COBOL-LINE)                                
+049500      END-COMPUTE                                                         
+049600      PERFORM VARYING STR-PTR FROM DOW BY -1                              
+049700        UNTIL ( STR-PTR < 2 )                                             
+049800           OR ( COBOL-LINE(STR-PTR:1) NOT = " " )                         
+049900       CONTINUE                                                           
+050000      END-PERFORM                                                         
+050100      MOVE 0 TO INSPECT-IDX                                               
+050200      INSPECT COBOL-LINE TALLYING INSPECT-IDX                             
+050300          FOR ALL "REDEFINES"                                             
+050400      IF ( COBOL-LINE(STR-PTR:1) NOT = "." ) AND                          
+050500         ( INSPECT-IDX = 0 )                                              
+050600         ADD 1 TO STR-PTR                                                 
+050700         MOVE "." TO COBOL-LINE(STR-PTR:1)                                
+050800      END-IF                                                              
+050900      DISPLAY COBOL-LINE(1:78)                                            
+051000     END-PERFORM.                                                         
+051100                                                                          
+051200*---------------------------------------------------------                
+051300$page "MISC Routines"                                                     
+051400*---------------------------------------------------------                
+051500*----------------------------------------------------------------         
+051600 7300-GET-NUM.                                                            
+051700     INITIALIZE NUM2 NUMDEC NUMERR.                                       
+051800     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                         
+051900     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                                    
+052000     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                                    
+052100*---------------------------------------------------------                
+052200 7350-MPE-COMMAND.                                                        
+052300D    DISPLAY "7350-MPE-COMMAND".                                          
+052400     CALL INTRINSIC "HPCICOMMAND" USING                                   
+052500          CSTR CERR CPARM CMSG.                                           
+052600     IF CERR < 0                                                          
+052700        DISPLAY "FATAL COMMAND ERROR. "                                   
+052800        GO TO 9999-RETURN.                                                
+052900*---------------------------------------------------------                
+053000 7375-SHOWTIME.                                                           
+053100D    DISPLAY "7375-SHOWTIME".                                             
+053200     CALL INTRINSIC "HPCICOMMAND" USING                                   
+053300          SHOWTIME-STR CERR CPARM CMSG.                                   
+053400*------------------------------------------------                         
+053500 7400-ADD-TO-WORK.                                                        
+053600    ADD 1 TO WORK-CNT WORK-IDX.                                           
+053700    MOVE DSITEMINFO-NAME TO WORK-NAME(WORK-IDX).                          
+053800    MOVE DSITEMINFO-TYPE TO WORK-TYPE(WORK-IDX).                          
+053900    MOVE DSITEMINFO-LEN  TO WORK-LEN(WORK-IDX).                           
+054000*------------------------------------------------                         
+054100 7500-INFO-PARSE.                                                         
+054200     INITIALIZE STRING-POINTER PARSED-STRING NEXT-STRING                  
+054300               GX GY PX  ITEMS-PARSED.                                    
+054400     PERFORM VARYING STRING-POINTER FROM 1 BY 1                           
+054500       UNTIL ( PARSE-IS-COMPLETE )                                        
+054600          OR ( STRING-POINTER > GINFO-LEN )                               
+054700      IF GINFO-STR(STRING-POINTER:1) = "~"                                
+054800         MOVE 1 TO GX                                                     
+054900         COMPUTE GY = ( STRING-POINTER - 1 ) END-COMPUTE                  
+055000         COMPUTE PX = ( STRING-POINTER + 1 ) END-COMPUTE                  
+055100         MOVE GINFO-STR(GX:GY) TO PARSED-STRING                           
+055200         MOVE GINFO-STR(PX:) TO NEXT-STRING                               
+055300         MOVE NEXT-STRING TO GINFO-STR                                    
+055400         ADD 1 TO ITEMS-PARSED                                            
+055500D        DISPLAY "POINTER:" STRING-POINTER                                
+055600D        DISPLAY "PARSED: " ITEMS-PARSED                                  
+055700D         DISPLAY "STRING [" PARSED-STRING(1:GINFO-LEN) "]"               
+055800D        DISPLAY "NEXT   [" NEXT-STRING(1:GINFO-LEN) "]"                  
+055900         EVALUATE ITEMS-PARSED                                            
+056000          WHEN 1 MOVE PARSED-STRING TO LINK-DBASENAME                     
+056100          WHEN 2 MOVE PARSED-STRING TO LINK-DSETNAME                      
+056200          WHEN 3 MOVE PARSED-STRING TO LINK-DSETABBR                      
+056300         END-EVALUATE                                                     
+056400         MOVE 1 TO STRING-POINTER                                         
+056500      END-IF                                                              
+056600     END-PERFORM.                                                         
+056700D    DISPLAY "BASE=[" LINK-DBASENAME "]".                                 
+056800D    DISPLAY " SET=[" LINK-DSETNAME "]".                                  
+056900D    DISPLAY "ABBR=[" LINK-DSETABBR "]".                                  
+057000*----------------------------------*                                      
+057100$PAGE "End of program & error processing"                                 
+057200*----------------------------------*                                      
+057300 9000-IMAGE-ERROR.                                                        
+057400     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+057500*---------------------------------------------------------                
+057600*---------------------------------------------------------                
+057700 9999-RETURN.                                                             
+057800     IF LINK-ERR NOT = 0                                                  
+057900        DISPLAY "DSINFO ERROR = " LINK-ERR                                
+058000        DISPLAY LINK-MESSAGE.                                             
+058100     CALL "DBCLOSE" USING DATA-BASE-NAME(1) NULL-ITEM                     
+058200                          MODE-1 STATUS-AREA.                             
+058300     GOBACK.                                                              

@@ -1,0 +1,125 @@
+051700$TITLE "SUB4"                                                     090805ma
+051800$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+051900 IDENTIFICATION DIVISION.                                         090805ma
+052000 PROGRAM-ID. SUB4.                                                090805ma
+052100 ENVIRONMENT DIVISION.                                            090805ma
+052200 DATA DIVISION.                                                   090805ma
+052300 WORKING-STORAGE SECTION.                                         090805ma
+052400 PROCEDURE DIVISION.                                              090805ma
+052500 0-BEGIN.                                                         090805ma
+052600     DISPLAY "SUB4 FROM XLGRP CALLING SUB10".                     090805ma
+052700     CALL "SUB10".                                                090805ma
+052800     GOBACK.                                                      090805ma
+052900 END PROGRAM SUB4.                                                090805ma
+053000***************************************************************** 090805ma
+053100$TITLE "SUB5"                                                     090805ma
+053200$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+053300 IDENTIFICATION DIVISION.                                         090805ma
+053400 PROGRAM-ID. SUB5.                                                090805ma
+053500 ENVIRONMENT DIVISION.                                            090805ma
+053600 DATA DIVISION.                                                   090805ma
+053700 WORKING-STORAGE SECTION.                                         090805ma
+053800 PROCEDURE DIVISION.                                              090805ma
+053900 0-BEGIN.                                                         090805ma
+054000     DISPLAY "SUB5 FROM XLGRP CALLING SUB2".                      090805ma
+054100     CALL "SUB2".                                                 090805ma
+054200     GOBACK.                                                      090805ma
+054300 END PROGRAM SUB5.                                                090805ma
+054400***************************************************************** 090805ma
+054500$TITLE "SUB6"                                                     090805ma
+054600$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+054700 IDENTIFICATION DIVISION.                                         090805ma
+054800 PROGRAM-ID. SUB6.                                                090805ma
+054900 ENVIRONMENT DIVISION.                                            090805ma
+055000 DATA DIVISION.                                                   090805ma
+055100 WORKING-STORAGE SECTION.                                         090805ma
+055200 PROCEDURE DIVISION.                                              090805ma
+055300 0-BEGIN.                                                         090805ma
+055400     DISPLAY "SUB6 FROM XLGRP".                                   090805ma
+055500     GOBACK.                                                      090805ma
+055600 END PROGRAM SUB6.                                                090805ma
+055700***************************************************************** 090805ma
+055800$TITLE "SUB7"                                                     090805ma
+055900$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+056000 IDENTIFICATION DIVISION.                                         090805ma
+056100 PROGRAM-ID. SUB7.                                                090805ma
+056200 ENVIRONMENT DIVISION.                                            090805ma
+056300 DATA DIVISION.                                                   090805ma
+056400 WORKING-STORAGE SECTION.                                         090805ma
+056500 PROCEDURE DIVISION.                                              090805ma
+056600 0-BEGIN.                                                         090805ma
+056700     DISPLAY "SUB7 FROM XLGRP".                                   090805ma
+056800     GOBACK.                                                      090805ma
+056900 END PROGRAM SUB7.                                                090805ma
+058310***************************************************************** 090805ma
+058410$TITLE "SUB0"                                                     090805ma
+058500$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+058600 IDENTIFICATION DIVISION.                                         090805ma
+058700 PROGRAM-ID. SUB0.                                                090805ma
+058800 ENVIRONMENT DIVISION.                                            090805ma
+058900 DATA DIVISION.                                                   090805ma
+059000 WORKING-STORAGE SECTION.                                         090805ma
+059100 PROCEDURE DIVISION.                                              090805ma
+059200 0-BEGIN.                                                         090805ma
+059300     DISPLAY "SUB0 FROM XLGRP CALLING SUB10".                     090805ma
+059400     CALL "SUB10".                                                090805ma
+059500     GOBACK.                                                      090805ma
+059600 END PROGRAM SUB0.                                                090805ma
+059700***************************************************************** 090805ma
+059800$TITLE "SUB1"                                                     090805ma
+059900$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+060000 IDENTIFICATION DIVISION.                                         090805ma
+060100 PROGRAM-ID. SUB1.                                                090805ma
+060200 ENVIRONMENT DIVISION.                                            090805ma
+060300 DATA DIVISION.                                                   090805ma
+060400 WORKING-STORAGE SECTION.                                         090805ma
+060500 PROCEDURE DIVISION.                                              090805ma
+060600 0-BEGIN.                                                         090805ma
+060700     DISPLAY "SUB1 FROM XLGRP CALLING SUB10".                     090805ma
+060800     CALL "SUB10".                                                090805ma
+060900     GOBACK.                                                      090805ma
+061000 END PROGRAM SUB1.                                                090805ma
+061100***************************************************************** 090805ma
+061200$TITLE "SUB2"                                                     090805ma
+061300$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+061400 IDENTIFICATION DIVISION.                                         090805ma
+061500 PROGRAM-ID. SUB2.                                                090805ma
+061600 ENVIRONMENT DIVISION.                                            090805ma
+061700 DATA DIVISION.                                                   090805ma
+061800 WORKING-STORAGE SECTION.                                         090805ma
+061900 PROCEDURE DIVISION.                                              090805ma
+062000 0-BEGIN.                                                         090805ma
+062100     DISPLAY "SUB2 FROM XLGRP CALLING SUB10".                     090805ma
+062200     CALL "SUB10".                                                090805ma
+062300     GOBACK.                                                      090805ma
+062400 END PROGRAM SUB2.                                                090805ma
+062500***************************************************************** 090805ma
+062600$TITLE "SUB3"                                                     090805ma
+062700$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+062800 IDENTIFICATION DIVISION.                                         090805ma
+062900 PROGRAM-ID. SUB3.                                                090805ma
+063000 ENVIRONMENT DIVISION.                                            090805ma
+063100 DATA DIVISION.                                                   090805ma
+063200 WORKING-STORAGE SECTION.                                         090805ma
+063300 PROCEDURE DIVISION.                                              090805ma
+063400 0-BEGIN.                                                         090805ma
+063500     DISPLAY "SUB3 FROM XLGRP CALLING SUB10".                     090805ma
+063600     CALL "SUB10".                                                090805ma
+063700     GOBACK.                                                      090805ma
+063800 END PROGRAM SUB3.                                                090805ma
+063900***************************************************************** 090805ma
+064000$TITLE "SUB11"                                                    090805ma
+064100$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+064200 IDENTIFICATION DIVISION.                                         090805ma
+064300 PROGRAM-ID. SUB11.                                               090805ma
+064400 ENVIRONMENT DIVISION.                                            090805ma
+064500 DATA DIVISION.                                                   090805ma
+064600 WORKING-STORAGE SECTION.                                         090805ma
+064700 PROCEDURE DIVISION.                                              090805ma
+064800 0-BEGIN.                                                         090805ma
+064900     DISPLAY "SUB11 FROM XLGRP CALLING SUB10".                    090805ma
+065000     CALL "SUB10".                                                090805ma
+065100     GOBACK.                                                      090805ma
+065200 END PROGRAM SUB11.                                               090805ma
+065300***************************************************************** 090805ma
+065400                                                                  090805ma

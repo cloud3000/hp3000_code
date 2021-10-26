@@ -1,0 +1,2136 @@
+001000$PAGE "--MAIN-- Main routine"                                             
+001100$CONTROL USLINIT,LIST,OPTFEATURES=LINKALIGNED16                   060726MA
+001300 IDENTIFICATION DIVISION.                                                 
+001900$SET X1=OFF                                                       060831MA
+002100 PROGRAM-ID. TIDBC.                                                       
+002200 AUTHOR.     Michael J Anderson.                                  060725MA
+002300 DATE-COMPILED.                                                           
+002400 ENVIRONMENT DIVISION.                                                    
+003700 CONFIGURATION SECTION.                                                   
+003800$IF X1=OFF                                                                
+003900 SOURCE-COMPUTER. HP3000.                                                 
+004000$IF X1=ON                                                                 
+004100 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+004200$IF                                                                       
+004300 OBJECT-COMPUTER. HP3000.                                                 
+004400 SPECIAL-NAMES.                                                           
+004500     CONDITION-CODE IS CC.                                                
+004800 DATA DIVISION.                                                           
+005000 WORKING-STORAGE SECTION.                                                 
+005200 01  I                     PIC S9(4) COMP.                                
+005300 01  I2                    PIC S9(9) COMP.                                
+005400 01  N                     PIC S9(4) COMP.                                
+005500 01  N2                    PIC S9(9) COMP.                                
+005600                                                                          
+005700 01  LONG-FNUM             PIC S9(9) COMP.                                
+005800 01  FILLER REDEFINES LONG-FNUM.                                          
+005900     02  FILLER            PIC XX.                                        
+006000     02  SHORT-FNUM        PIC S9(4) COMP.                                
+006100                                                                          
+006200 01  DISP-SN4              PIC ----9.                                     
+006300                                                                          
+006400 COPY SERVCOM OF J3KLIB.                                                  
+006500 COPY CSTABLE OF J3KLIB.                                                  
+006760 COPY VCTABLE OF J3KLIB.                                                  
+006800 PROCEDURE DIVISION.                                                      
+007300 0000-STARTUP.                                                            
+007301     DISPLAY "TIDBC: Turbo Image DataBase Connectivity server".           
+007410     DISPLAY "J3K Solutions All Rights reserved.".                        
+007700     DISPLAY " ".                                                 060725MA
+007800     MOVE "TIDBC" TO THIS-PROG.                                           
+007900D    DISPLAY THIS-PROG "0000-STARTUP".                                    
+008300D    DISPLAY THIS-PROG "Get server no. from PARM".                        
+008400     CALL INTRINSIC "GETINFO" USING \\ \\ N.                              
+008500     IF N LESS THAN 1 OR GREATER THAN 9                                   
+008600         DISPLAY THIS-PROG                                                
+008700             "Must be run with PARM=n (where n = 1 through 9)"            
+008800         GO TO 9800-ABORT.                                                
+008900         MOVE N TO SERVER-NO.                                     060828MA
+009000     MOVE SERVER-NO TO THIS-PROG(7:).                                     
+009400     CALL "STARTUP".                                                      
+009500     DISPLAY THIS-PROG "Started...".                                      
+009900 1000-MAIN.                                                               
+010000D    DISPLAY THIS-PROG "1000-MAIN".                                       
+010400     CALL "SETUPCS".                                                      
+010800D    DISPLAY "--------------------------".                                
+010900D    DISPLAY THIS-PROG " Ready for Migration Requests ".                  
+011000D    DISPLAY "--------------------------".                                
+011100     MOVE ZERO TO LONG-FNUM I.                                            
+011200     CALL INTRINSIC "IOWAIT" USING                                        
+011300         \0\ CMD-RECORD I GIVING SHORT-FNUM.                              
+011700     IF CC > ZERO MOVE  1 TO COND-CODE.                                   
+011800     IF CC < ZERO MOVE -1 TO COND-CODE.                                   
+011900     IF CC = ZERO MOVE  0 TO COND-CODE.                                   
+012000D    MOVE SHORT-FNUM TO DISP-SN4.                                         
+012100D    DISPLAY THIS-PROG "I/O completed on" DISP-SN4.                       
+012200D    MOVE COND-CODE TO DISP-SN4.                                          
+012300D    DISPLAY THIS-PROG "Condition code=" DISP-SN4.                        
+012400D                                                                         
+012700D    DISPLAY THIS-PROG "See if command file".                             
+012800     IF SHORT-FNUM = CMD-FILE                                             
+012900D        DISPLAY THIS-PROG "Go process command file record"               
+013000         CALL "PROCCMD"                                                   
+013100         GO TO 1000-MAIN.                                                 
+013200D                                                                         
+013500D    DISPLAY THIS-PROG "See if call descriptor".                          
+013600     MOVE 1 TO CS.                                                        
+013700     PERFORM UNTIL CS > CS-END OR LONG-FNUM = CS-DESCRIPTOR (CS)          
+013800         ADD 1 TO CS                                                      
+013900     END-PERFORM.                                                         
+014000     IF CS NOT GREATER THAN CS-END                                        
+014100D        MOVE SHORT-FNUM TO DISP-SN4                                      
+014200D        DISPLAY THIS-PROG "Process call descriptor" DISP-SN4             
+014300         CALL "PROCCS"                                                    
+014400         GO TO 1000-MAIN.                                                 
+014500D                                                                         
+014800D    DISPLAY THIS-PROG "See if virtual connection".                       
+014900     MOVE 1 TO VC.                                                        
+015000     PERFORM UNTIL VC > VC-END OR LONG-FNUM = VC-DESCRIPTOR (VC)          
+015100         ADD 1 TO VC                                                      
+015200     END-PERFORM.                                                         
+015300     IF VC NOT GREATER THAN VC-END                                        
+015400D        MOVE SHORT-FNUM TO DISP-SN4                                      
+015500D        DISPLAY THIS-PROG "Process virtual connection" DISP-SN4          
+015600         CALL "PROCVC"                                                    
+015700         GO TO 1000-MAIN.                                                 
+015800D                                                                         
+016100     MOVE SHORT-FNUM TO DISP-SN4.                                         
+016200     MOVE SPACES TO LOG-TEXT.                                             
+016300     STRING "Unknown I/O completion on" DISP-SN4                          
+016400         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+016500     CALL "WRITELOG".                                                     
+016600D    DISPLAY THIS-PROG "Ignored I/O completion for" DISP-SN4.             
+016700     GO TO 1000-MAIN.                                                     
+017100 9800-ABORT.                                                              
+017200D    DISPLAY THIS-PROG "9100-ABORT".                                      
+017300     DISPLAY THIS-PROG "Aborted...".                                      
+017400     STOP RUN.                                                            
+017500                                                                          
+017600 END PROGRAM TIDBC.                                                       
+017700$PAGE "--PROCCMD-- Process commands in command file"                      
+017800$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+017900*================================================================*        
+018000 IDENTIFICATION DIVISION.                                                 
+018100*================================================================*        
+018200                                                                          
+018300 PROGRAM-ID. PROCCMD.                                                     
+018400                                                                          
+018500******************************************************************        
+018600*                                                                *        
+018700*  Process commands in command file.                             *        
+018800*                                                                *        
+018900*  Valid commands:                                               *        
+019000*                                                                *        
+019100*      REFRESH - Shutdown all call sockets, re-read the SERVICES *        
+019200*          file, and create new call sockets.                    *        
+019300*                                                                *        
+019400*      STOP - Stop running if there are no active processes.     *        
+019500*                                                                *        
+019600*      ABORT - Abort all active processes and stop running.      *        
+019700*                                                                *        
+019800******************************************************************        
+019900                                                                          
+020000*================================================================*        
+020100 ENVIRONMENT DIVISION.                                                    
+020200*================================================================*        
+020300                                                                          
+020400 CONFIGURATION SECTION.                                                   
+020500$IF X1=OFF                                                                
+020600 SOURCE-COMPUTER. HP3000.                                                 
+020700$IF X1=ON                                                                 
+020800 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+020900$IF                                                                       
+021000 OBJECT-COMPUTER. HP3000.                                                 
+021100 SPECIAL-NAMES.                                                           
+021200     CONDITION-CODE IS CC.                                                
+021300                                                                          
+021400*================================================================*        
+021500 DATA DIVISION.                                                           
+021600*================================================================*        
+021700 WORKING-STORAGE SECTION.                                                 
+021800                                                                          
+021900 01  I                     PIC S9(4) COMP.                                
+022000 01  I2                    PIC S9(9) COMP.                                
+022100 01  N                     PIC S9(4) COMP.                                
+022200 01  N2                    PIC S9(9) COMP.                                
+022300 01  NUM-1                 PIC X(14).                                     
+022400 01  NUM-2                 PIC S9(14).                                    
+022500 01  E1                    PIC S9(4) COMP.                                
+022600 01  E2                    PIC S9(4) COMP.                                
+022700 01  PROG                  PIC X(28).                                     
+022800                                                                          
+022900 01  PREV-SUB-PROG         PIC X(9).                                      
+023000                                                                          
+023100 01  DISP-SN4              PIC ----9.                                     
+023200 01  DISP-SN5              PIC -----9.                                    
+023300                                                                          
+023400 01  MSG-FILE              PIC S9(4) COMP.                                
+023500 01  MSG-FILE-NAME         PIC X(10) VALUE "MESSAGE  ".                   
+023600 01  MSG-RECORD            PIC X(80).                                     
+023700                                                                          
+023800 COPY SERVCOM OF J3KLIB.                                                  
+023900 COPY CSTABLE OF J3KLIB.                                                  
+024016 COPY VCTABLE OF J3KLIB.                                                  
+024100*================================================================*        
+024200 PROCEDURE DIVISION.                                                      
+024300*================================================================*        
+024400                                                                          
+024500 0000-BEGIN.                                                              
+024600     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+024700     MOVE "PROCCMD" TO SUB-PROG.                                          
+024800D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+024900                                                                          
+025000*-----Open the message file-----*                                         
+025100                                                                          
+025200D    DISPLAY THIS-PROG SUB-PROG "Open message file".                      
+025300     MOVE SERVER-NO TO MSG-FILE-NAME(8:).                                 
+025400     CALL INTRINSIC "FOPEN" USING                                         
+025500         MSG-FILE-NAME \%30005\ \%2101\ GIVING MSG-FILE.                  
+025600     IF CC <> ZERO                                                        
+025700         MOVE SPACES TO LOG-TEXT                                          
+025800         STRING "Error opening " MSG-FILE-NAME                            
+025900             DELIMITED BY SIZE INTO LOG-TEXT                              
+026000         CALL "WRITELOG"                                                  
+026100         MOVE "FOPEN" TO ERROR-CALL                                       
+026200         CALL "FILERROR" USING MSG-FILE                                   
+026300         GO TO 9900-END.                                                  
+026400                                                                          
+026500*-----See if file error on command file-----*                             
+026600                                                                          
+026700D    MOVE COND-CODE TO DISP-SN4.                                          
+026800D    DISPLAY THIS-PROG SUB-PROG "COND-CODE=" DISP-SN4.                    
+026900     IF COND-CODE NOT = ZERO                                              
+027000         MOVE "FREAD" TO ERROR-CALL                                       
+027100         CALL "FILERROR" USING CMD-FILE                                   
+027200         STRING "* ERROR - UNABLE TO READ COMMAND FILE"                   
+027300             DELIMITED BY SIZE INTO MSG-RECORD                            
+027400         PERFORM 8000-WRITE-MESSAGE                                       
+027500         GO TO 9900-END.                                                  
+027600                                                                          
+027700*-----See what command we have-----*                                      
+027800                                                                          
+027900D    DISPLAY THIS-PROG SUB-PROG "See what command we have".               
+028000D    MOVE 80 TO I.                                                        
+028100D    PERFORM UNTIL I = 1 OR CMD-RECORD(I:1) <> SPACE                      
+028200D        SUBTRACT 1 FROM I                                                
+028300D    END-PERFORM.                                                         
+028400D    DISPLAY THIS-PROG SUB-PROG "-----Command-----".                      
+028500D    DISPLAY CMD-RECORD(1:I).                                             
+028600     MOVE SPACES TO LOG-TEXT.                                             
+028700     STRING "Command: " CMD-RECORD                                        
+028800         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+028900     CALL "WRITELOG".                                                     
+029000     IF CMD-RECORD = "REFRESH" GO TO 1000-REFRESH.                        
+029100     IF CMD-RECORD = "STOP" GO TO 2000-STOP.                              
+029200     IF CMD-RECORD = "ABORT" GO TO 3000-ABORT.                            
+029300     IF CMD-RECORD(1:5) = "KILL " GO TO 4000-KILL.                        
+029400     IF CMD-RECORD = "SHOW PROCS" GO TO 4100-SHOW-PROCS.                  
+029500     MOVE CMD-RECORD TO MSG-RECORD.                                       
+029600     PERFORM 8000-WRITE-MESSAGE.                                          
+029700     MOVE "* ERROR - UNKNOWN COMMAND *" TO MSG-RECORD.                    
+029800     PERFORM 8000-WRITE-MESSAGE.                                          
+029900     GO TO 9900-END.                                                      
+030000                                                                          
+030100*========== REFRESH command ==========*                                   
+030200                                                                          
+030300 1000-REFRESH.                                                            
+030400D    DISPLAY THIS-PROG SUB-PROG "1000-REFRESH".                           
+030500     PERFORM VARYING VC FROM 1 BY 1 UNTIL VC > VC-END                     
+030600         CALL "SHUTVC"                                                    
+030700     END-PERFORM.                                                         
+030800     PERFORM VARYING CS FROM 1 BY 1 UNTIL CS > CS-END                     
+030900         CALL "SHUTCS"                                                    
+031000     END-PERFORM.                                                         
+031100     CALL "INITCS" USING MSG-RECORD.                                      
+031200     IF MSG-RECORD = SPACES                                               
+031300         MOVE "REFRESH complete..." TO MSG-RECORD.                        
+031400     PERFORM 8000-WRITE-MESSAGE.                                          
+031500     GO TO 9900-END.                                                      
+031600                                                                          
+031700*========== STOP command ==========*                                      
+031800                                                                          
+031900 2000-STOP.                                                               
+032000D    DISPLAY THIS-PROG SUB-PROG "2000-STOP".                              
+032100     CALL INTRINSIC "GETPROCID" USING \0\ GIVING N.                       
+032200D    MOVE N TO DISP-SN4.                                                  
+032300D    DISPLAY THIS-PROG SUB-PROG "N=" DISP-SN4.                            
+032400     IF N NOT = ZERO                                                      
+032500         MOVE "* ERROR - HAS ACTIVE PROCESSES *" TO MSG-RECORD            
+032600         PERFORM 8000-WRITE-MESSAGE                                       
+032700         GO TO 9900-END.                                                  
+032800     PERFORM VARYING VC FROM 1 BY 1 UNTIL VC > VC-END                     
+032900         CALL "SHUTVC"                                                    
+033000     END-PERFORM.                                                         
+033100     PERFORM VARYING CS FROM 1 BY 1 UNTIL CS > CS-END                     
+033200         CALL "SHUTCS"                                                    
+033300     END-PERFORM.                                                         
+033400     MOVE SPACES TO LOG-TEXT.                                             
+033500     STRING THIS-PROG "Stopped..."                                        
+033600         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+033700     CALL "WRITELOG".                                                     
+033800     MOVE LOG-TEXT TO MSG-RECORD.                                         
+033900     PERFORM 8000-WRITE-MESSAGE.                                          
+034000     DISPLAY THIS-PROG SUB-PROG "Stopped...".                             
+034100     STOP RUN.                                                            
+034200                                                                          
+034300*========== ABORT command ==========*                                     
+034400                                                                          
+034500 3000-ABORT.                                                              
+034600D    DISPLAY THIS-PROG SUB-PROG "3000-ABORT".                             
+034700     PERFORM WITH TEST AFTER UNTIL N = ZERO                               
+034800         CALL INTRINSIC "GETPROCID" USING \0\ GIVING N                    
+034900D        MOVE N TO DISP-SN4                                               
+035000D        DISPLAY THIS-PROG SUB-PROG "N=" DISP-SN4                         
+035100         IF N NOT = ZERO                                                  
+035200             CALL INTRINSIC "KILL" USING N                                
+035300             MOVE N TO DISP-SN4                                           
+035400             MOVE SPACES TO LOG-TEXT                                      
+035500             STRING "Killed PIN no." DISP-SN4                             
+035600                 DELIMITED BY SIZE INTO LOG-TEXT                          
+035700             CALL "WRITELOG"                                              
+035800D            DISPLAY THIS-PROG SUB-PROG "PIN" DISP-SN4 "  killed"         
+035900         END-IF                                                           
+036000     END-PERFORM.                                                         
+036100     PERFORM VARYING VC FROM 1 BY 1 UNTIL VC > VC-END                     
+036200         CALL "SHUTVC"                                                    
+036300     END-PERFORM.                                                         
+036400     PERFORM VARYING CS FROM 1 BY 1 UNTIL CS > CS-END                     
+036500         CALL "SHUTCS"                                                    
+036600     END-PERFORM.                                                         
+036700     MOVE SPACES TO LOG-TEXT.                                             
+036800     STRING THIS-PROG "Aborted..."                                        
+036900         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+037000     CALL "WRITELOG".                                                     
+037100     MOVE LOG-TEXT TO MSG-RECORD.                                         
+037200     PERFORM 8000-WRITE-MESSAGE.                                          
+037300     DISPLAY THIS-PROG SUB-PROG "aborted...".                             
+037400     STOP RUN.                                                            
+037500                                                                          
+037600*========== KILL command ==========*                                      
+037700                                                                          
+037800 4000-KILL.                                                               
+037900D    DISPLAY THIS-PROG SUB-PROG "4000-KILL".                              
+038000     MOVE CMD-RECORD(6:) TO NUM-1.                                        
+038100     CALL "NUMGET" USING NUM-1 NUM-2 I N.                         060725MA
+038200     IF N NOT = 0 OR I NOT = 0 OR NUM-2 NEGATIVE                          
+038300         MOVE "* ERROR - INVALID NUMBER *" TO MSG-RECORD                  
+038400         PERFORM 8000-WRITE-MESSAGE                                       
+038500         GO TO 9900-END.                                                  
+038600     MOVE NUM-2 TO N DISP-SN4.                                            
+038700     CALL INTRINSIC "KILL" USING N.                                       
+038800     IF CC < ZERO                                                         
+038900         MOVE "* ERROR - INVALID PIN NUMBER *" TO MSG-RECORD              
+039000         PERFORM 8000-WRITE-MESSAGE                                       
+039100         GO TO 9900-END.                                                  
+039200     MOVE SPACES TO LOG-TEXT.                                             
+039300     STRING "Killed PIN no." DISP-SN4                                     
+039400         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+039500     CALL "WRITELOG".                                                     
+039600     MOVE LOG-TEXT TO MSG-RECORD.                                         
+039700     PERFORM 8000-WRITE-MESSAGE.                                          
+039800     GO TO 9900-END.                                                      
+039900                                                                          
+040000*========== SHOW PROCS command ==========*                                
+040100                                                                          
+040200 4100-SHOW-PROCS.                                                         
+040300D    DISPLAY THIS-PROG SUB-PROG "4100-SHOW-PROCS".                        
+040400     MOVE "  PIN             PROGRAM           " TO MSG-RECORD.           
+040500     PERFORM 8000-WRITE-MESSAGE.                                          
+040600     MOVE " -----  ----------------------------" TO MSG-RECORD.           
+040700     PERFORM 8000-WRITE-MESSAGE.                                          
+040800     PERFORM WITH TEST AFTER VARYING I FROM 1 BY 1 UNTIL N = ZERO         
+040900         CALL INTRINSIC "GETPROCID" USING I GIVING N                      
+041000         IF N NOT = ZERO                                                  
+041100             CALL INTRINSIC "PROCINFO" USING E1 E2 N \10\ PROG            
+041200             MOVE N TO DISP-SN4                                           
+041300             MOVE SPACES TO MSG-RECORD                                    
+041400             STRING DISP-SN4 "   " PROG                                   
+041500                 DELIMITED BY SIZE INTO MSG-RECORD                        
+041600             PERFORM 8000-WRITE-MESSAGE                                   
+041700         END-IF                                                           
+041800     END-PERFORM.                                                         
+041900     GO TO 9900-END.                                                      
+042000                                                                          
+042100*========== Write message to message file ==========*                     
+042200                                                                          
+042300 8000-WRITE-MESSAGE.                                                      
+042400D    DISPLAY THIS-PROG SUB-PROG "8000-WRITE-MESSAGE".                     
+042500D    MOVE 80 TO I.                                                        
+042600D    PERFORM UNTIL I = 1 OR MSG-RECORD(I:1) <> " "                        
+042700D        SUBTRACT 1 FROM I                                                
+042800D    END-PERFORM.                                                         
+042900D    DISPLAY THIS-PROG SUB-PROG "----------Message----------".            
+043000D    DISPLAY MSG-RECORD(1:I).                                             
+043100     CALL INTRINSIC "FWRITE" USING MSG-FILE MSG-RECORD \-80\ \0\.         
+043200     IF CC <> ZERO                                                        
+043300         MOVE "FWRITE" TO ERROR-CALL                                      
+043400         CALL "FILERROR" USING MSG-FILE                                   
+043500         GO TO 9900-END.                                                  
+043600                                                                          
+043700*========== End of subroutine ==========*                                 
+043800                                                                          
+043900 9900-END.                                                                
+044000D    DISPLAY THIS-PROG SUB-PROG "9900-END".                               
+044100                                                                          
+044200*    Close message file                                                   
+044300                                                                          
+044400D    DISPLAY THIS-PROG SUB-PROG "Close message file".                     
+044500     CALL INTRINSIC "FCLOSE" USING MSG-FILE \0\ \0\.                      
+044600                                                                          
+044700*    Issue another read on command file                                   
+044800                                                                          
+044900D    DISPLAY THIS-PROG SUB-PROG "Issue read on command file".             
+045000     CALL INTRINSIC "FREAD" USING CMD-FILE CMD-RECORD \-80\.              
+045100     IF CC <> ZERO                                                        
+045200         MOVE "FREAD" TO ERROR-CALL                                       
+045300         CALL "FILERROR" USING CMD-FILE.                                  
+045400     GO TO 9999-RETURN.                                                   
+045500                                                                          
+045600*========== Return to caller ==========*                                  
+045700                                                                          
+045800 9999-RETURN.                                                             
+045900D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+046000     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+046100     GOBACK.                                                              
+046200                                                                          
+046300 END PROGRAM PROCCMD.                                                     
+046400$PAGE "--PROCCS-- Process a request for connection on call socket"        
+046500$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+046600*================================================================*        
+046700 IDENTIFICATION DIVISION.                                                 
+046800*================================================================*        
+046900                                                                          
+047000 PROGRAM-ID. PROCCS.                                                      
+047100                                                                          
+047200******************************************************************        
+047300*                                                                *        
+047400*  Process a request for connection on a call socket.            *        
+047500*                                                                *        
+047600******************************************************************        
+047700                                                                          
+047800*================================================================*        
+047900 ENVIRONMENT DIVISION.                                                    
+048000*================================================================*        
+048100                                                                          
+048200 CONFIGURATION SECTION.                                                   
+048300$IF X1=OFF                                                                
+048400 SOURCE-COMPUTER. HP3000.                                                 
+048500$IF X1=ON                                                                 
+048600 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+048700$IF                                                                       
+048800 OBJECT-COMPUTER. HP3000.                                                 
+048900 SPECIAL-NAMES.                                                           
+049000     CONDITION-CODE IS CC.                                                
+049100                                                                          
+049200*================================================================*        
+049300 DATA DIVISION.                                                           
+049400*================================================================*        
+049500 WORKING-STORAGE SECTION.                                                 
+049600                                                                          
+049700 01  I                     PIC S9(4) COMP.                                
+049800 01  I2                    PIC S9(9) COMP.                                
+049900 01  N                     PIC S9(4) COMP.                                
+050000 01  N2                    PIC S9(9) COMP.                                
+050100 01  X                     PIC 9.                                         
+050200                                                                          
+050300 01  TEMP-DESCRIPTOR       PIC S9(9) COMP.                                
+050400                                                                          
+050500 01  PREV-SUB-PROG         PIC X(9).                                      
+050600                                                                          
+050700 01  HOST-ADDRESS          PIC X(16).                                     
+050800 01  HOST-NAME             PIC X(8).                                      
+050900                                                                          
+051000 01  UNKNOWN-HOST-ADDRESS PIC X(4) VALUE SPACES.                          
+051100                                                                          
+051200 01  ASCII-BYTES          PIC S9(4) COMP VALUE 0.                         
+051300                                                                          
+051400 01  FILLER REDEFINES ASCII-BYTES.                                        
+051500     02  ASCII-BYTE-1     PIC X.                                          
+051600     02  ASCII-BYTE-2     PIC X.                                          
+051700                                                                          
+051800 01  OCT-DISP              PIC X(8) VALUE SPACE.                          
+051960                                                                  060818MA
+052000 01  WORK-X                PIC X(80).                                     
+052100                                                                          
+052200 01  WORK-X1.                                                             
+052300     02  WORK-N1           PIC S9(4) COMP.                                
+052400                                                                          
+052500 01  WORK-X2.                                                             
+052600     02  WORK-N2           PIC S9(9) COMP.                                
+052700                                                                          
+052800 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+052900 01  FILLER REDEFINES TCP-ADDR-N.                                         
+053000     02  FILLER            PIC XX.                                        
+053100     02  TCP-ADDR-X        PIC XX.                                        
+053200                                                                          
+053300 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+053400 01  FILLER REDEFINES LONG-ERROR.                                         
+053500     02  FILLER            PIC XX.                                        
+053600     02  SHORT-ERROR       PIC S9(4) COMP.                                
+053700                                                                          
+053800 01  ERROR-OCCURRED-SW     PIC X.                                         
+053900     88  ERROR-OCCURRED      VALUE "1".                                   
+054000                                                                          
+054100 01  DISP-N4A              PIC 9(4).                                      
+054200 01  DISP-N4B              PIC 9(4).                                      
+054300 01  DISP-N5               PIC 9(5).                                      
+054400 01  DISP-SN3              PIC ---9.                                      
+054500 01  DISP-SN4              PIC ----9.                                     
+054600 01  DISP-SN5              PIC -----9.                                    
+054700                                                                          
+054800 COPY SERVCOM OF J3KLIB.                                                  
+054900 COPY CSTABLE OF J3KLIB.                                                  
+055016 COPY VCTABLE OF J3KLIB.                                                  
+055100 COPY HOSTTAB OF J3KLIB.                                                  
+055200 COPY SECURITY OF J3KLIB.                                                 
+055300*================================================================*        
+055400 PROCEDURE DIVISION.                                                      
+055500*================================================================*        
+055600                                                                          
+055700 1000-BEGIN.                                                              
+055800     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+055900     MOVE "PROCCS" TO SUB-PROG.                                           
+056000D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+056100                                                                          
+056200*-----See if error occurred-----*                                         
+056300                                                                          
+056400D    MOVE COND-CODE TO DISP-SN4.                                          
+056500D    DISPLAY THIS-PROG SUB-PROG "See if error occurred  "                 
+056600D        "COND-CODE=" DISP-SN4.                                           
+056700     MOVE "0" TO ERROR-OCCURRED-SW.                                       
+056800     IF COND-CODE NOT = ZERO                                              
+056900         MOVE "IPCRECVCNa" TO ERROR-CALL                                  
+057000         CALL "IPCERROR" USING NEW-DESCRIPTOR                             
+057100         MOVE "1" TO ERROR-OCCURRED-SW.                                   
+057200                                                                          
+057300*-----Post another IPCRECVCN on this call socket-----*                    
+057400                                                                          
+057500D    MOVE CS-DESCRIPTOR (CS) TO DISP-SN4.                                 
+057600D    DISPLAY THIS-PROG SUB-PROG                                           
+057700D        " Post another IPCRECVCN on call socket" DISP-SN4.               
+057800     MOVE NEW-DESCRIPTOR TO TEMP-DESCRIPTOR.                              
+057900     CALL INTRINSIC "IPCRECVCN" USING                                     
+058000         CS-DESCRIPTOR (CS) NEW-DESCRIPTOR \\ \\ LONG-ERROR.              
+058100     IF LONG-ERROR NOT = ZERO                                             
+058200         MOVE "IPCRECVCNb" TO ERROR-CALL                                  
+058300         MOVE ZERO TO N2                                                  
+058400         CALL "IPCERROR" USING N2                                         
+058500     IF ERROR-OCCURRED GO TO 9999-RETURN.                                 
+058600                                                                          
+058700*-----Write a log record-----*                                            
+058800                                                                          
+058900*    Get host name                                                        
+059000                                                                          
+059100     MOVE 16 TO N2.                                                       
+059200D    DISPLAY THIS-PROG SUB-PROG "LONG-ERROR=" LONG-ERROR.                 
+059300     MOVE ZERO TO I2.                                                     
+059400     CALL INTRINSIC "IPCCONTROL" USING TEMP-DESCRIPTOR \514\              
+059500         \\ \\ HOST-ADDRESS N2 I2 LONG-ERROR.                             
+059600     IF LONG-ERROR NOT = ZERO                                             
+059700D        DISPLAY THIS-PROG SUB-PROG " LONG-ERROR=" LONG-ERROR             
+059800D        MOVE LONG-ERROR TO I2                                            
+059900D        CALL INTRINSIC "IPCERRMSG" USING I2 WORK-X N2 LONG-ERROR         
+060000D        DISPLAY WORK-X (1:N2)                                            
+060100         MOVE "IPCCONTROL" TO ERROR-CALL                                  
+060200         CALL "IPCERROR" USING TEMP-DESCRIPTOR                            
+060300         MOVE "????" TO HOST-ADDRESS.                                     
+060400D    PERFORM VARYING I FROM 1 BY 2 UNTIL I > N2                           
+060500D        MOVE HOST-ADDRESS(I:2) TO WORK-X1                                
+060600D        COMPUTE N = (I - 1) * 2 + 1                                      
+060700D        CALL INTRINSIC "ASCII" USING WORK-N1 \16\ WORK-X(N:)             
+060800D    END-PERFORM                                                          
+060900D    DISPLAY THIS-PROG SUB-PROG "HOST-ADDRESS=["                          
+061000D        WORK-X(1:12) "]".                                                
+061100     MOVE 1 TO HT.                                                        
+061200     PERFORM UNTIL HT GREATER THAN HT-END                                 
+061300                       OR HT-HOST-ADDRESS (HT) = HOST-ADDRESS(3:4)        
+061400         ADD 1 TO HT                                                      
+061500     END-PERFORM.                                                         
+061600     IF HT GREATER THAN HT-END                                            
+061700         MOVE "Unknown" TO HOST-NAME                                      
+061800         DISPLAY "The following host address was not found "              
+061900                 "in the Host Table"                                      
+062000                                                                          
+062100         MOVE HOST-ADDRESS(3:4)    TO UNKNOWN-HOST-ADDRESS                
+062200                                                                          
+062300         PERFORM VARYING X FROM 1 BY 1 UNTIL X > 4                        
+062400          INITIALIZE ASCII-BYTES                                          
+062500          MOVE UNKNOWN-HOST-ADDRESS(X:1) TO ASCII-BYTE-2                  
+062600          MOVE ASCII-BYTES TO DISP-SN4                                    
+062700          CALL INTRINSIC "ASCII" USING ASCII-BYTES \8\ OCT-DISP           
+062800          DISPLAY "        Host address byte " X                          
+062900                  " %" OCT-DISP                                           
+063000         END-PERFORM                                                      
+063100                                                                          
+063200     ELSE                                                                 
+063300         MOVE HT-HOST-NAME (HT) TO HOST-NAME.                             
+063400D    DISPLAY THIS-PROG SUB-PROG "Host name=[" HOST-NAME "]".              
+063500                                                                          
+063600*    Get rest of stuff and write log                                      
+063700                                                                          
+063800     MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X.                              
+063900     MOVE TCP-ADDR-N TO DISP-N5.                                          
+064000     MOVE CS-DESCRIPTOR (CS) TO DISP-N4A.                                 
+064100     MOVE TEMP-DESCRIPTOR TO DISP-N4B.                                    
+064200     MOVE SPACES TO LOG-TEXT.                                             
+064300     STRING DISP-N4A "/" DISP-N4B " Request " DISP-N5 "/"                 
+064400             DELIMITED BY SIZE                                            
+064500         CS-SERVICE-NAME (CS) DELIMITED BY SPACE                          
+064600         " from " HOST-NAME                                               
+064700             DELIMITED BY SIZE INTO LOG-TEXT.                             
+064800     CALL "WRITELOG".                                                     
+064900                                                                          
+065000*-----Add to VC-TABLE-----*                                               
+065100                                                                          
+065200D    DISPLAY THIS-PROG SUB-PROG "Add to VC-TABLE".                        
+065300     IF VC-END = VC-MAX                                                   
+065400         MOVE VC-MAX TO DISP-SN4                                          
+065500         MOVE SPACES TO LOG-TEXT                                          
+065600         STRING "Exceeded VC-TABLE maximum of" DISP-SN4                   
+065700             DELIMITED BY SIZE INTO LOG-TEXT                              
+065800         CALL "WRITELOG"                                                  
+065900D        DISPLAY THIS-PROG SUB-PROG "VC-TABLE exceeded maximum of"        
+066000D            DISP-SN4 " entries"                                          
+066100         CALL "SHUTVC"                                                    
+066200         GO TO 9999-RETURN.                                               
+066300     ADD 1 TO VC-END.                                                     
+066400     MOVE VC-END TO VC.                                                   
+066500     MOVE CS TO VC-CS (VC).                                               
+066600     MOVE TEMP-DESCRIPTOR TO VC-DESCRIPTOR (VC).                          
+066700     MOVE HOST-NAME TO VC-HOST-NAME (VC).                                 
+066800                                                                          
+066900*-----Enable NOWAIT IO-----                                               
+067000                                                                          
+067100D    DISPLAY THIS-PROG SUB-PROG "Enable NOWAIT IO".                       
+067200     CALL INTRINSIC "IPCCONTROL" USING                                    
+067300         VC-DESCRIPTOR (VC) \1\ \\ \\ \\ \\ \\ LONG-ERROR.                
+067400     IF LONG-ERROR NOT = ZERO                                             
+067500D        DISPLAY THIS-PROG SUB-PROG "LONG-ERROR=" LONG-ERROR              
+067600         MOVE "IPCCONTROLb" TO ERROR-CALL                                 
+067700         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                         
+067800         GO TO 9999-RETURN.                                               
+067900                                                                          
+068000*-----Issue a read for security record-----*                              
+068100*                                                                 060828MA
+068200*    Set timeout to 60 seconds                                            
+068300*                                                                 060828MA
+068400D    DISPLAY THIS-PROG SUB-PROG "Set timeout to 60 seconds".      060829MA
+068500     MOVE 600 TO WORK-N1.                                         060829MA
+068600     CALL INTRINSIC "IPCCONTROL" USING                            060829MA
+068700         VC-DESCRIPTOR (VC) \3\ WORK-X1 \2\ \\ \\ \\ LONG-ERROR.  060829MA
+068800     IF LONG-ERROR NOT = ZERO                                     060829MA
+068900         MOVE "IPCCONTROL" TO ERROR-CALL                          060829MA
+069000         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                 060829MA
+069100         GO TO 9999-RETURN.                                       060829MA
+069200                                                                  060829MA
+069300*    Issue read                                                   060829MA
+069400                                                                  060829MA
+069500D    DISPLAY THIS-PROG SUB-PROG "Issue read".                     060829MA
+069600     MOVE SPACES TO SECURITY-RECORD.                              060829MA
+069700     CALL INTRINSIC ".LEN." USING                                 060829MA
+069800        SECURITY-RECORD GIVING SECURITY-LEN.                      060829MA
+069900     CALL INTRINSIC "IPCRECV" USING VC-DESCRIPTOR (VC)            060829MA
+070000         SECURITY-RECORD SECURITY-LEN \\ \\ LONG-ERROR.           060829MA
+070100     IF LONG-ERROR NOT = ZERO                                     060829MA
+070200         MOVE "IPCRECV" TO ERROR-CALL                             060829MA
+070300         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                 060829MA
+070400         GO TO 9999-RETURN.                                       060829MA
+072600                                                                  060818MA
+072700                                                                          
+072800*========== Return to caller ==========*                                  
+072900                                                                          
+073000 9999-RETURN.                                                             
+073100D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+073200     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+073300     GOBACK.                                                              
+073400                                                                          
+073500 END PROGRAM PROCCS.                                                      
+073600$PAGE "--PROCVC-- Process a virtual connection"                           
+073700$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+073800*================================================================*        
+073900 IDENTIFICATION DIVISION.                                                 
+074000*================================================================*        
+074100                                                                          
+074200 PROGRAM-ID. PROCVC.                                                      
+074300                                                                          
+074400******************************************************************        
+074500*                                                                *        
+074600*  Process a virtual connection.                                 *        
+074700*                                                                *        
+074800*  1.  Get the security data and check security.                 *        
+074900*                                                                *        
+075000*  2.  Start the son process that handles this service.          *        
+075100*                                                                *        
+075200*  3.  Hand off the connection to the son process.               *        
+075300*                                                                *        
+075400******************************************************************        
+075500                                                                          
+075600*================================================================*        
+075700 ENVIRONMENT DIVISION.                                                    
+075800*================================================================*        
+075900                                                                          
+076000 CONFIGURATION SECTION.                                                   
+076100$IF X1=OFF                                                                
+076200 SOURCE-COMPUTER. HP3000.                                                 
+076300$IF X1=ON                                                                 
+076400 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+076500$IF                                                                       
+076600 OBJECT-COMPUTER. HP3000.                                                 
+076700 SPECIAL-NAMES.                                                           
+076800     CONDITION-CODE IS CC.                                                
+076900                                                                          
+077000*================================================================*        
+077100 DATA DIVISION.                                                           
+077200*================================================================*        
+077300 WORKING-STORAGE SECTION.                                                 
+077400                                                                          
+077500 01  I                     PIC S9(4) COMP.                                
+077600 01  I2                    PIC S9(9) COMP.                                
+077700 01  N                     PIC S9(4) COMP.                                
+077800 01  N2                    PIC S9(9) COMP.                                
+077900 01  ACKTIMEOUT            PIC S9(4) COMP VALUE 0.                        
+078000 01  ACKBUF                PIC X VALUE " ".                               
+078100     88 BAD-ACK            VALUE "N".                                     
+078200     88 GOOD-ACK           VALUE "Y".                                     
+078300                                                                          
+078400 01  PREV-SUB-PROG         PIC X(9).                                      
+078500                                                                          
+078600 01  FAILED-SECURITY-SW    PIC X.                                         
+078700     88  FAILED-SECURITY     VALUE "1".                                   
+078800                                                                          
+078900 01  CONNECT-NAME          PIC X(16) VALUE SPACES.                        
+079000                                                                          
+079100 01  HOST-ADDRESS          PIC X(16).                                     
+079200                                                                          
+079300 01  RECV-LEN              PIC S9(4) COMP.                                
+079400 01  RECV-LOC              PIC S9(4) COMP.                                
+079500                                                                          
+079600 01  WORK-X1.                                                             
+079700     02  WORK-N1           PIC S9(4) COMP.                                
+079800                                                                          
+079900 01  WORK-X                PIC X(100).                                    
+080000                                                                          
+080100 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+080200 01  FILLER REDEFINES TCP-ADDR-N.                                         
+080300     02  FILLER            PIC XX.                                        
+080400     02  TCP-ADDR-X        PIC XX.                                        
+080500                                                                          
+080600 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+080700 01  FILLER REDEFINES LONG-ERROR.                                         
+080800     02  FILLER            PIC XX.                                        
+080900     02  SHORT-ERROR       PIC S9(4) COMP.                                
+081000                                                                          
+081100 01  SON-PROC-DATA.                                                       
+081200     02  PIN-NO            PIC S9(4) COMP.                                
+081300     02  ITEMNUMS.                                                        
+081400         03  FILLER        PIC S9(9) COMP VALUE 2.                060725MA
+081500         03  FILLER        PIC S9(9) COMP VALUE 3.                060725MA
+081600         03  FILLER        PIC S9(9) COMP VALUE 10.               060725MA
+081700         03  FILLER        PIC S9(9) COMP VALUE 11.               060725MA
+081800         03  FILLER        PIC S9(9) COMP VALUE 12.               060725MA
+081900         03  FILLER        PIC S9(9) COMP VALUE 0.                060725MA
+082000     02  ITEMS.                                                           
+082100         03  PARM          PIC S9(9) COMP.                        060725MA
+082200         03  FILLER        PIC S9(9) COMP VALUE %0.               060726MA
+082300         03  FILLER        PIC S9(9) COMP VALUE %0.               060725MA
+082400         03  INFO          PIC S9(9) COMP.                        060725MA
+082500         03  INFO-LEN      PIC S9(9) COMP VALUE 16.               060725MA
+082600                                                                          
+082700 01  DISP-N4A              PIC 9(4).                                      
+082800 01  DISP-N4B              PIC 9(4).                                      
+082900 01  DISP-SN4              PIC ----9.                                     
+083000 01  DISP-SN5              PIC -----9.                                    
+083100                                                                          
+083200 COPY SERVCOM  OF J3KLIB.                                         060725MA
+083300 COPY CSTABLE  OF J3KLIB.                                         060725MA
+083400 COPY VCTABLE  OF J3KLIB.                                         060725MA
+083500 COPY HOSTTAB  OF J3KLIB.                                         060725MA
+083600 COPY SECURITY OF J3KLIB.                                                 
+083700 COPY INFOSTR  OF J3KLIB.                                         060725MA
+083800 COPY GETPROC  OF J3KLIB.                                         060725MA
+083900*================================================================*        
+084000 PROCEDURE DIVISION.                                                      
+084100*================================================================*        
+084200                                                                          
+084300 1000-BEGIN.                                                              
+084400     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+084500     MOVE "PROCVC" TO SUB-PROG.                                           
+084600D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+084700     MOVE VC-CS (VC) TO CS.                                               
+084800D    MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X.                              
+084900D    MOVE TCP-ADDR-N TO DISP-SN5.                                         
+085000D    DISPLAY THIS-PROG SUB-PROG "Virtual connection for "                 
+085100D        DISP-SN5 "/" CS-SERVICE-NAME (CS).                               
+085200                                                                          
+085300*-----See if error occurred-----*                                         
+085400                                                                          
+085500D    MOVE COND-CODE TO DISP-SN4.                                          
+085600D    DISPLAY THIS-PROG SUB-PROG "See if error occurred  "                 
+085700D        "COND-CODE=" DISP-SN4.                                           
+085800     IF COND-CODE NOT = ZERO                                              
+085900         MOVE "IPCRECV" TO ERROR-CALL                                     
+086000         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                         
+086100         GO TO 9900-END.                                                  
+086200                                                                          
+086300                                                                          
+086400*    Disable NOWAIT IO                                                    
+086500                                                                          
+086600D    DISPLAY THIS-PROG SUB-PROG "Disable NOWAIT IO".                      
+086700     CALL INTRINSIC "IPCCONTROL" USING                                    
+086800         VC-DESCRIPTOR (VC) \2\ \\ \\ \\ \\ \\ LONG-ERROR.                
+086900     IF LONG-ERROR NOT = ZERO                                             
+087000         MOVE "IPCCONTROLa" TO ERROR-CALL                                 
+087100         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                         
+087200         GO TO 9999-RETURN.                                               
+087300                                                                          
+092800*/\/\/\/\/\/\                                                     060828MA
+092810* H E R E    I S   W H E R E    I   R E M O V E D   T H E         060828MA
+092820* S E C U R I T Y - R E C O R D    R E C E I V E   C O D E        060828MA
+092830*\/\/\/\/\/\/                                                     060828MA
+092840*                                                                 060828MA
+092900*-----Hand off the connection-----*                                       
+093000*    Set timeout to infinity                                              
+093100                                                                          
+093200D    DISPLAY THIS-PROG SUB-PROG "Set timeout to infinity".                
+093300     MOVE ZERO TO WORK-N1.                                                
+093400     CALL INTRINSIC "IPCCONTROL" USING                                    
+093500         VC-DESCRIPTOR (VC) \3\ WORK-X1 \2\ \\ \\ \\ LONG-ERROR.          
+093600     IF LONG-ERROR NOT = ZERO                                             
+093700         MOVE "IPCCONTROLb" TO ERROR-CALL                                 
+093800         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                         
+093900         GO TO 1800-FAILED.                                               
+094000                                                                          
+094100*    GIVE the connection away.                                            
+094200                                                                          
+094300D    DISPLAY THIS-PROG SUB-PROG "Call IPCGIVE".                           
+094400     MOVE ZERO TO I2 N2.                                                  
+094500     CALL INTRINSIC "IPCGIVE" USING                                       
+094600         VC-DESCRIPTOR (VC) CONNECT-NAME I2 N2 LONG-ERROR.                
+094700     IF LONG-ERROR NOT = ZERO                                             
+094800         MOVE "IPCCONTROL" TO ERROR-CALL                                  
+094900         CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                         
+095000         GO TO 1800-FAILED.                                               
+095100D    DISPLAY THIS-PROG SUB-PROG "CONNECT-NAME=["                          
+095200D        CONNECT-NAME(1:8) "]".                                           
+095300                                                                          
+095400*-----Start the son process-----*                                         
+095500                                                                          
+095600D    DISPLAY THIS-PROG SUB-PROG "Start son process "                      
+095700D        CS-PROG-NAME (CS).                                               
+095800     MOVE SERVER-NO TO PARM.                                              
+095900     MOVE SPACES TO INFO-STRING.                                          
+096000     MOVE CS-SERVICE-NAME (CS) TO INFO-SERVICE-NAME.                      
+096100     MOVE VC-HOST-NAME (VC) TO INFO-HOST-NAME.                            
+096200     MOVE CONNECT-NAME(1:8) TO INFO-CONNECT-NAME.                         
+096300     MOVE "SERVER" TO INFO-MODE.                                          
+096400     CALL INTRINSIC ".LEN." USING INFO-STRING GIVING INFO-LEN.    060725MA
+096500     CALL INTRINSIC ".LOC." USING @INFO-STRING GIVING INFO.       060725MA
+096600     CALL INTRINSIC "CREATEPROCESS" USING                         060725MA
+096700         LONG-ERROR PIN-NO CS-PROG-NAME (CS) ITEMNUMS ITEMS.      060725MA
+096800     IF LONG-ERROR NOT = ZERO                                     060725MA
+096900         MOVE LONG-ERROR TO DISP-SN4                              060725MA
+097000D        DISPLAY THIS-PROG SUB-PROG "Error" DISP-SN4 " starting "         
+097100D            CS-PROG-NAME (CS)                                            
+097200         MOVE CS-DESCRIPTOR (CS) TO DISP-N4A                              
+097300         MOVE VC-DESCRIPTOR (VC) TO DISP-N4B                              
+097400         MOVE SPACES TO LOG-TEXT                                          
+097500         STRING DISP-N4A "/" DISP-N4B " Son proc err" DISP-SN4            
+097600             " starting " CS-PROG-NAME (CS)                               
+097700             DELIMITED BY SIZE INTO LOG-TEXT                              
+097800         CALL "WRITELOG"                                                  
+097900         GO TO 1800-FAILED.                                               
+098000D    MOVE PIN-NO TO DISP-SN4.                                             
+098100D    DISPLAY THIS-PROG "Son process started - PIN=" DISP-SN4.             
+098200                                                                          
+098300*-----Successful connection-----*                                         
+098400                                                                          
+098500D    DISPLAY THIS-PROG SUB-PROG "Success!".                               
+098600     MOVE PIN-NO TO DISP-SN4.                                             
+098700     MOVE CS-DESCRIPTOR (CS) TO DISP-N4A.                                 
+098800     MOVE VC-DESCRIPTOR (VC) TO DISP-N4B.                                 
+098900     MOVE SPACES TO LOG-TEXT.                                             
+099000     STRING DISP-N4A "/" DISP-N4B " Passed  PIN/prog"                     
+099100         DISP-SN4 "/" CS-PROG-NAME (CS)                                   
+099200         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+099300     CALL "WRITELOG".                                                     
+099400D    DISPLAY THIS-PROG SUB-PROG DISP-N4A "/" DISP-N4B                     
+099500D        " started " CS-PROG-NAME (CS).                                   
+099600     GO TO 9900-END.                                                      
+099700                                                                          
+099800*========== Unsuccessful connection ==========*                           
+099900                                                                          
+100000 1800-FAILED.                                                             
+100100D    DISPLAY THIS-PROG SUB-PROG "1800-FAILED".                            
+100200*    Get the connection back if we've given it away                       
+100300     IF CONNECT-NAME NOT = SPACES                                         
+100400D        DISPLAY THIS-PROG SUB-PROG "Calling IPCGET"                      
+100500D            " - CONNECT-NAME=[" INFO-CONNECT-NAME "]"                    
+100600         MOVE 8 TO I2                                                     
+100700         MOVE ZERO TO N2                                                  
+100800         CALL INTRINSIC "IPCGET" USING                                    
+100900             CONNECT-NAME I2 N2 VC-DESCRIPTOR (VC) LONG-ERROR             
+101000         IF LONG-ERROR NOT = ZERO                                         
+101100             MOVE "IPCGET" TO ERROR-CALL                                  
+101200             CALL "IPCERROR" USING VC-DESCRIPTOR (VC)                     
+101300         END-IF                                                           
+101400     END-IF.                                                              
+101500                                                                          
+101600*    Respond to client                                                    
+101700                                                                          
+101800D    DISPLAY THIS-PROG SUB-PROG "Respond to client".                      
+101900     IF FAILED-SECURITY                                                   
+102000         MOVE "FAILED00000001" TO WORK-X                                  
+102100     ELSE                                                                 
+102200         MOVE "FAILED00000002" TO WORK-X.                                 
+102300     MOVE 14 TO I2.                                                       
+102400D    MOVE I2 TO DISP-SN4.                                                 
+102500D    DISPLAY THIS-PROG SUB-PROG "Sending" DISP-SN4 " bytes".              
+102600D    CALL "SHOWDATA" USING WORK-X I2.                                     
+102700     CALL INTRINSIC "IPCSEND" USING                                       
+102800         VC-DESCRIPTOR (VC) WORK-X I2 \\ \\ LONG-ERROR.                   
+102900     IF LONG-ERROR NOT = ZERO                                             
+103000         MOVE "IPCSEND" TO ERROR-CALL                                     
+103100         CALL "IPCERROR" USING VC-DESCRIPTOR (VC).                        
+103200                                                                          
+103300*----- Wait for ACK from remote process -----*                            
+103400     MOVE 60 TO ACKTIMEOUT.                                               
+103500     CALL "J3KREADACK" USING VC-DESCRIPTOR(VC) ACKTIMEOUT                 
+103510                             ACKBUF N.                                    
+103800*    Write to log and shutdown the virtual socket                         
+103900                                                                          
+104000D    DISPLAY THIS-PROG SUB-PROG "Write log & shutdown".                   
+104100     MOVE CS-DESCRIPTOR (CS) TO DISP-N4A.                                 
+104200     MOVE VC-DESCRIPTOR (VC) TO DISP-N4B.                                 
+104300     MOVE SPACES TO LOG-TEXT.                                             
+104400     IF FAILED-SECURITY                                                   
+104500         STRING DISP-N4A "/" DISP-N4B " Failed security"                  
+104600             DELIMITED BY SIZE INTO LOG-TEXT                              
+104700     ELSE                                                                 
+104800         STRING DISP-N4A "/" DISP-N4B " Failed due to error"              
+104900             DELIMITED BY SIZE INTO LOG-TEXT.                             
+105000     CALL "WRITELOG".                                                     
+105100     CALL "SHUTVC".                                                       
+105200                                                                          
+105300*========== End of subroutine ==========*                                 
+105400                                                                          
+105500 9900-END.                                                                
+105600D    DISPLAY THIS-PROG SUB-PROG "9900-ALL-DONE".                          
+105700                                                                          
+105800*    Remove entry from VC-TABLE                                           
+105900                                                                          
+106000     PERFORM VARYING I FROM 1 BY 1 UNTIL I > VC-END                       
+106100         IF I GREATER THAN VC                                             
+106200             MOVE VC-ENTRY (I) TO VC-ENTRY (I - 1)                        
+106300         END-IF                                                           
+106400     END-PERFORM.                                                         
+106500     SUBTRACT 1 FROM VC-END.                                              
+106600                                                                          
+106700*========== Return to caller ==========*                                  
+106800                                                                          
+106900 9999-RETURN.                                                             
+107000D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+107100     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+107200     GOBACK.                                                              
+107300                                                                          
+107400 END PROGRAM PROCVC.                                                      
+107500$PAGE "--STARTUP-- Setup call sockets"                                    
+107600$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+107700*================================================================*        
+107800 IDENTIFICATION DIVISION.                                                 
+107900*================================================================*        
+108000                                                                          
+108100 PROGRAM-ID. STARTUP.                                                     
+108200                                                                          
+108300******************************************************************        
+108400*                                                                *        
+108500*  First time processing.                                        *        
+108600*                                                                *        
+108700*  1.  Opens and empties the command file and issues the         *        
+108800*      first read (it uses NOWAIT I/O).                          *        
+108900*  2.  Intiializes VC-TABLE (virtual connection table).          *        
+109000*  3.  Calls INITCS (initialize call socket table).              *        
+109100*                                                                *        
+109200******************************************************************        
+109300                                                                          
+109400*================================================================*        
+109500 ENVIRONMENT DIVISION.                                                    
+109600*================================================================*        
+109700                                                                          
+109800 CONFIGURATION SECTION.                                                   
+109900$IF X1=OFF                                                                
+110000 SOURCE-COMPUTER. HP3000.                                                 
+110100$IF X1=ON                                                                 
+110200 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+110300$IF                                                                       
+110400 OBJECT-COMPUTER. HP3000.                                                 
+110500 SPECIAL-NAMES.                                                           
+110600     CONDITION-CODE IS CC.                                                
+110700                                                                          
+110800*================================================================*        
+110900 DATA DIVISION.                                                           
+111000*================================================================*        
+111100 WORKING-STORAGE SECTION.                                                 
+111200                                                                          
+111300 01  I                     PIC S9(4) COMP.                                
+111400 01  I2                    PIC S9(9) COMP.                                
+111500 01  N                     PIC S9(4) COMP.                                
+111600 01  N2                    PIC S9(9) COMP.                                
+111700                                                                          
+111800 01  PREV-SUB-PROG         PIC X(9).                                      
+111900                                                                          
+112000 01  DISP-SN4              PIC ----9.                                     
+112100 01  DISP-SN5              PIC -----9.                                    
+112200                                                                          
+112300 01  CMD-FILE-NAME         PIC X(10) VALUE "COMMAND   ".                  
+112400 01  LOG-FILE-NAME         PIC X(10) VALUE "SERVLOG   ".                  
+112500                                                                          
+112600 01  ERROR-MSG             PIC X(80).                                     
+112700                                                                          
+112800 COPY SERVCOM OF J3KLIB.                                                  
+112900 COPY CSTABLE OF J3KLIB.                                                  
+113000 COPY VCTABLE OF J3KLIB.                                                  
+113100*================================================================*        
+113200 PROCEDURE DIVISION.                                                      
+113300*================================================================*        
+113400                                                                          
+113500 1000-BEGIN.                                                              
+113600     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+113700     MOVE "STARTUP" TO SUB-PROG.                                          
+113800D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+113900                                                                          
+114000*-----Open the log file-----*                                             
+114100                                                                          
+114200D    DISPLAY THIS-PROG SUB-PROG "Open log file".                          
+114300     MOVE SERVER-NO TO LOG-FILE-NAME(8:).                                 
+114310                                                                          
+114400     CALL INTRINSIC "FOPEN" USING                                         
+114500         LOG-FILE-NAME \%30005\ \%2103\ GIVING LOG-FILE.                  
+114600     IF CC <> ZERO                                                        
+114700         MOVE SPACES TO LOG-TEXT                                          
+114800         STRING "Error opening " LOG-FILE-NAME                            
+114900             DELIMITED BY SIZE INTO LOG-TEXT                              
+115000         CALL "WRITELOG"                                                  
+115100         MOVE "FOPEN" TO ERROR-CALL                                       
+115200         CALL "FILERROR" USING LOG-FILE                                   
+115300         GO TO 9999-ABORT.                                                
+115400     MOVE SPACES TO LOG-TEXT.                                             
+115500     STRING THIS-PROG "Started..."                                        
+115600         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+115700     CALL "WRITELOG".                                                     
+115800                                                                          
+115900*-----Open and empty the command file-----*                               
+116000                                                                          
+116100*    Open the command file                                                
+116200                                                                          
+116300D    DISPLAY THIS-PROG SUB-PROG "Open command file".                      
+116400     MOVE SERVER-NO TO CMD-FILE-NAME(8:).                                 
+116500     CALL INTRINSIC "FOPEN" USING                                         
+116600         CMD-FILE-NAME \%30005\ \%6100\ GIVING CMD-FILE.                  
+116700     IF CC <> ZERO                                                        
+116800         MOVE SPACES TO LOG-TEXT                                          
+116900         STRING "Error opening " CMD-FILE-NAME                            
+117000             DELIMITED BY SIZE INTO LOG-TEXT                              
+117100         CALL "WRITELOG"                                                  
+117200         MOVE "FOPEN" TO ERROR-CALL                                       
+117300         CALL "FILERROR" USING CMD-FILE                                   
+117400         GO TO 9999-ABORT.                                                
+117500                                                                          
+117600*    Set extended wait on so we don't get EOF's                           
+117700                                                                          
+117800     MOVE 45 TO I.                                                        
+117900     CALL INTRINSIC "FCONTROL" USING CMD-FILE \45\ I.                     
+118000     IF CC <> ZERO                                                        
+118100         MOVE "FCONTROL" TO ERROR-CALL                                    
+118200         CALL "FILERROR" USING CMD-FILE                                   
+118300         GO TO 9999-ABORT.                                                
+118400                                                                          
+118500*    Empty the command file & issue first read                            
+118600                                                                          
+118700D    DISPLAY THIS-PROG SUB-PROG "Empty the command file "                 
+118800D        "and issue the first read".                                      
+118900     CALL INTRINSIC "FFILEINFO" USING CMD-FILE \10\ N2.                   
+119000     IF CC <> ZERO                                                        
+119100         MOVE "FFILEINFO" TO ERROR-CALL                                   
+119200         CALL "FILERROR" USING CMD-FILE                                   
+119300         GO TO 9999-ABORT.                                                
+119400D    MOVE N2 TO DISP-SN4.                                                 
+119500D    DISPLAY THIS-PROG SUB-PROG "Command file contains"                   
+119600D        DISP-SN4 " records".                                             
+119700     PERFORM UNTIL N2 < ZERO                                              
+119800D        DISPLAY THIS-PROG SUB-PROG "Read CMD-FILE"                       
+119900         CALL INTRINSIC "FREAD" USING CMD-FILE CMD-RECORD \-80\           
+120000         IF CC <> ZERO                                                    
+120100             MOVE "FREADa" TO ERROR-CALL                                  
+120200             CALL "FILERROR" USING CMD-FILE                               
+120300             GO TO 9999-ABORT                                             
+120400         END-IF                                                           
+120500         IF N2 NOT = ZERO                                                 
+120600D            DISPLAY THIS-PROG SUB-PROG "Wait for CMD-FILE"               
+120700             CALL INTRINSIC "IOWAIT" USING                                
+120800                 CMD-FILE CMD-RECORD I                                    
+120900             IF CC <> ZERO                                                
+121000D                IF CC > ZERO                                             
+121100D                    DISPLAY THIS-PROG SUB-PROG "CCG"                     
+121200D                ELSE                                                     
+121300D                    DISPLAY THIS-PROG SUB-PROG "CCL"                     
+121400D                END-IF                                                   
+121500                 MOVE "FREADb" TO ERROR-CALL                              
+121600                 CALL "FILERROR" USING CMD-FILE                           
+121700                 GO TO 9999-ABORT                                         
+121800             END-IF                                                       
+121900         END-IF                                                           
+122000         SUBTRACT 1 FROM N2                                               
+122100     END-PERFORM.                                                         
+122200                                                                          
+122300*-----Initialize VC-TABLE-----*                                           
+122400                                                                          
+122500D    DISPLAY THIS-PROG SUB-PROG "Initialize VC-TABLE".                    
+122600     CALL INTRINSIC ".LEN." USING VC-ENTRIES GIVING I.                    
+122700     CALL INTRINSIC ".LEN." USING VC-ENTRY (1) GIVING N.                  
+122800     COMPUTE VC-MAX = I / N.                                              
+122900D    MOVE VC-MAX TO DISP-SN4.                                             
+123000D    DISPLAY THIS-PROG SUB-PROG "VC-TABLE capacity "                      
+123100D        DISP-SN4 " entries".                                             
+123200     MOVE ZERO TO VC VC-END.                                              
+123300                                                                          
+123400*-----Call INITCS to initialize CS-TABLE-----*                            
+123500                                                                          
+123600D    DISPLAY THIS-PROG SUB-PROG "Call INITCS".                            
+123700     CALL "INITCS" USING ERROR-MSG.                                       
+123800     IF ERROR-MSG NOT = SPACES                                            
+123900D        MOVE 80 TO I                                                     
+124000D        PERFORM UNTIL ERROR-MSG(I:1) NOT = SPACE                         
+124100D            SUBTRACT 1 FROM I                                            
+124200D        END-PERFORM                                                      
+124300D        DISPLAY THIS-PROG SUB-PROG "-----INITCS error-----"              
+124400D        DISPLAY ERROR-MSG(1:I)                                           
+124500         GO TO 9999-ABORT.                                                
+124600                                                                          
+124700*========== All done - return to caller ==========*                       
+124800                                                                          
+124900 9998-RETURN.                                                             
+125000D    DISPLAY THIS-PROG SUB-PROG "9998-RETURN".                            
+125100     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+125200     GOBACK.                                                              
+125300                                                                          
+125400*========== Abort program ==========*                                     
+125500                                                                          
+125600 9999-ABORT.                                                              
+125700D    DISPLAY THIS-PROG SUB-PROG "9999-ABORT".                             
+125800     DISPLAY THIS-PROG SUB-PROG "Aborted...".                             
+125900     MOVE SPACES TO LOG-TEXT.                                             
+126000     STRING THIS-PROG "Aborted... (STARTUP)"                              
+126100         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+126200     CALL "WRITELOG".                                                     
+126300     STOP RUN.                                                            
+126400                                                                          
+126500 END PROGRAM STARTUP.                                                     
+126600$PAGE "--INITCS-- Initialize call socket table"                           
+126700$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+126800*================================================================*        
+126900 IDENTIFICATION DIVISION.                                                 
+127000*================================================================*        
+127100                                                                          
+127200 PROGRAM-ID. INITCS.                                                      
+127300                                                                          
+127400******************************************************************        
+127500*                                                                *        
+127600*  Initialize the call socket table from SERVICES file.          *        
+127700*                                                                *        
+127800******************************************************************        
+127900                                                                          
+128000*================================================================*        
+128100 ENVIRONMENT DIVISION.                                                    
+128200*================================================================*        
+128300                                                                          
+128400 CONFIGURATION SECTION.                                                   
+128500$IF X1=OFF                                                                
+128600 SOURCE-COMPUTER. HP3000.                                                 
+128700$IF X1=ON                                                                 
+128800 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+128900$IF                                                                       
+129000 OBJECT-COMPUTER. HP3000.                                                 
+129100 SPECIAL-NAMES.                                                           
+129200     CONDITION-CODE IS CC.                                                
+129300                                                                          
+129400*================================================================*        
+129500 DATA DIVISION.                                                           
+129600*================================================================*        
+129700 WORKING-STORAGE SECTION.                                                 
+129800                                                                          
+129900 01  I                     PIC S9(4) COMP.                                
+130000 01  N                     PIC S9(4) COMP.                                
+130100                                                                          
+130200 01  PREV-SUB-PROG         PIC X(9).                                      
+130300                                                                          
+130400 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+130500 01  FILLER REDEFINES TCP-ADDR-N.                                         
+130600     02  FILLER            PIC XX.                                        
+130700     02  TCP-ADDR-X        PIC XX.                                        
+130800                                                                          
+130900 01  SERVICES-FILE-NAME  PIC X(21) VALUE "SERVICES.PUB.J3K ".     060725MA
+131000 01  SERVICES-FILE         PIC S9(4) COMP.                                
+131100 01  SERVICES-LEN          PIC S9(4) COMP.                                
+131200                                                                          
+131300 01  DISP-SN4              PIC ----9.                                     
+131400 01  DISP-SN5              PIC -----9.                                    
+131500                                                                          
+131600 COPY SERVCOM OF J3KLIB.                                                  
+131700                                                                          
+131800 COPY CSTABLE OF J3KLIB.                                                  
+131900                                                                          
+132000 COPY SERVICES OF J3KLIB.                                                 
+132100 LINKAGE SECTION.                                                         
+132200                                                                          
+132300 01  ERROR-MSG             PIC X(80).                                     
+132400                                                                          
+132500*================================================================*        
+132600 PROCEDURE DIVISION USING ERROR-MSG.                                      
+132700*================================================================*        
+132800                                                                          
+132900 1000-BEGIN.                                                              
+133000     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+133100     MOVE "INITCS" TO SUB-PROG.                                           
+133200D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+133300     MOVE SPACES TO ERROR-MSG.                                            
+133400     INITIALIZE CS-ENTRIES.                                               
+133500     MOVE ZERO TO CS-END.                                                 
+133600                                                                          
+133700*-----Open SERVICES file-----*                                            
+133800                                                                          
+133900     CALL INTRINSIC "FOPEN" USING                                         
+134000         SERVICES-FILE-NAME \%5\ \%2300\ GIVING SERVICES-FILE.            
+134100     IF CC NOT = ZERO                                                     
+134200         MOVE SPACES TO LOG-TEXT                                          
+134300         STRING "Error opening " SERVICES-FILE-NAME                       
+134400             DELIMITED BY SIZE INTO LOG-TEXT                              
+134500         CALL "WRITELOG"                                                  
+134600         MOVE "FOPEN" TO ERROR-CALL                                       
+134700         CALL "FILERROR" USING SERVICES-FILE                              
+134800         MOVE "* ERROR - UNABLE TO OPEN SERVICES FILE *"                  
+134900             TO ERROR-MSG                                                 
+135000         GO TO 9999-RETURN.                                               
+135100     CALL INTRINSIC ".LEN." USING                                         
+135200         SERVICES-RECORD GIVING SERVICES-LEN.                             
+135300                                                                          
+135400*------Get number of entries in CS-TABLE-----*                            
+135500                                                                          
+135600     CALL INTRINSIC ".LEN." USING CS-ENTRIES GIVING I.                    
+135700     CALL INTRINSIC ".LEN." USING CS-ENTRY (1) GIVING N.                  
+135800D    DISPLAY THIS-PROG SUB-PROG "I=" I "  N=" N.                          
+135900     COMPUTE CS-MAX = I / N.                                              
+136000D    MOVE CS-MAX TO DISP-SN4.                                             
+136100D    DISPLAY THIS-PROG SUB-PROG "CS-TABLE capacity"                       
+136200D        DISP-SN4 " Entries.".                                            
+136300                                                                          
+136400*========== Load from SERVICES file into CS-TABLE ==========*             
+136500                                                                          
+136600 1100-LOOP.                                                               
+136700D    DISPLAY THIS-PROG SUB-PROG "1100-LOOP".                              
+136800     COMPUTE I = - SERVICES-LEN.                                          
+136900     CALL INTRINSIC "FREAD" USING                                         
+137000         SERVICES-FILE SERVICES-RECORD I.                                 
+137100     IF CC GREATER THAN ZERO GO TO 9900-END.                              
+137200     IF CC LESS THAN ZERO                                                 
+137300         MOVE "FREAD" TO ERROR-CALL                                       
+137400         CALL "FILERROR" USING SERVICES-FILE                              
+137500         GO TO 9900-END.                                                  
+137600D    DISPLAY THIS-PROG SUB-PROG SERV-TCP-ADDRESS "/"                      
+137700D        SERV-SERVICE-NAME "  TYPE=" SERV-SERVICE-TYPE                    
+137800D        "  SERVER=" SERV-SERVER-NO.                                      
+137900     IF SERV-SERVICE-TYPE NOT = "S"                                       
+138000                              OR SERV-SERVER-NO NOT = SERVER-NO           
+138100         GO TO 1100-LOOP.                                                 
+138200D    DISPLAY THIS-PROG SUB-PROG "Service name=["                          
+138300D        SERV-SERVICE-NAME "]".                                           
+138400     IF CS-END = CS-MAX                                                   
+138500         MOVE CS-MAX TO DISP-SN4                                          
+138600         MOVE SPACES TO LOG-TEXT                                          
+138700         STRING "Exceeded CS-TABLE capacity of"                           
+138800             DISP-SN4 " entries" DELIMITED BY SIZE INTO LOG-TEXT          
+138900         CALL "WRITELOG"                                                  
+139000D        DISPLAY THIS-PROG SUB-PROG "Exceeded table capacity of"          
+139100D            DISP-SN4 " entries"                                          
+139200         GO TO 9900-END.                                                  
+139300                                                                          
+139400*    See if service name or TCP address already in table                  
+139500                                                                          
+139600     PERFORM VARYING I FROM 1 BY 1 UNTIL I > CS-END                       
+139700         MOVE SERV-TCP-ADDRESS TO TCP-ADDR-N                              
+139800         IF SERV-SERVICE-NAME = CS-SERVICE-NAME (I)                       
+139900                            OR TCP-ADDR-X = CS-TCP-ADDRESS (I)            
+140000             MOVE SERV-TCP-ADDRESS TO DISP-SN5                            
+140100             MOVE SPACES TO LOG-TEXT                                      
+140200             STRING "Service" DISP-SN5 "/" SERV-SERVICE-NAME              
+140300                 " not loaded into table - duplicate entry"               
+140400                 DELIMITED BY SIZE INTO LOG-TEXT                          
+140500             CALL "WRITELOG"                                              
+140600D            DISPLAY THIS-PROG SUB-PROG "Duplicate entry "                
+140700D                SERV-TCP-ADDRESS "/" SERV-SERVICE-NAME " ignored"        
+140800             GO TO 1100-LOOP                                              
+140900         END-IF                                                           
+141000     END-PERFORM.                                                         
+141100                                                                          
+141200*    Add to table in order by CS-SERVICE-NAME                             
+141300                                                                          
+141400     ADD 1 TO CS-END.                                                     
+141500     PERFORM VARYING I FROM CS-END BY -1 UNTIL I = 1                      
+141600                    OR SERV-SERVICE-NAME > CS-SERVICE-NAME (I - 1)        
+141700         MOVE CS-ENTRY (I - 1) TO CS-ENTRY (I)                            
+141800     END-PERFORM.                                                         
+141900     MOVE SERV-SERVICE-NAME TO CS-SERVICE-NAME (I).                       
+142000     MOVE SERV-PROG-NAME TO CS-PROG-NAME (I).                             
+142100     MOVE SERV-TCP-ADDRESS TO TCP-ADDR-N.                                 
+142200     MOVE TCP-ADDR-X TO CS-TCP-ADDRESS (I).                               
+142300                                                                          
+142400*    Write a log record                                                   
+142500                                                                          
+142600     MOVE SPACES TO LOG-TEXT.                                             
+142700     STRING "Service " SERV-TCP-ADDRESS "/" DELIMITED BY SIZE             
+142800         SERV-SERVICE-NAME DELIMITED BY SPACE                             
+142900         " Added to table" DELIMITED BY SIZE INTO LOG-TEXT.               
+143000     CALL "WRITELOG".                                                     
+143100D    MOVE I TO DISP-SN4.                                                  
+143200D    DISPLAY THIS-PROG SUB-PROG "Added at" DISP-SN4.                      
+143300                                                                          
+143400*    Go do another one                                                    
+143500                                                                          
+143600     GO TO 1100-LOOP.                                                     
+143700                                                                          
+143800*========== End of subroutine ==========*                                 
+143900                                                                          
+144000 9900-END.                                                                
+144100D    DISPLAY THIS-PROG SUB-PROG "9900-END".                               
+144200D    PERFORM VARYING I FROM 1 BY 1 UNTIL I > CS-END                       
+144300D        MOVE ZERO TO TCP-ADDR-N                                          
+144400D        MOVE CS-TCP-ADDRESS (I) TO TCP-ADDR-X                            
+144500D        MOVE TCP-ADDR-N TO DISP-SN5                                      
+144600D        DISPLAY THIS-PROG SUB-PROG                                       
+144700D            CS-SERVICE-NAME (I) " " CS-PROG-NAME (I) " " DISP-SN5        
+144800D    END-PERFORM.                                                         
+144900     CALL INTRINSIC "FCLOSE" USING SERVICES-FILE \0\ \0\.                 
+145000                                                                          
+145100*========== Return to caller ==========*                                  
+145200                                                                          
+145300 9999-RETURN.                                                             
+145400D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+145500     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+145600     GOBACK.                                                              
+145700                                                                          
+145800 END PROGRAM INITCS.                                                      
+145900$PAGE "--SETUPCS-- Setup call sockets"                                    
+146000$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+146100*================================================================*        
+146200 IDENTIFICATION DIVISION.                                                 
+146300*================================================================*        
+146400                                                                          
+146500 PROGRAM-ID. SETUPCS.                                                     
+146600                                                                          
+146700******************************************************************        
+146800*                                                                *        
+146900*  Creates a call socket for every entry in CS-TABLE that        *        
+147000*  hasn't already been created (CS-DESCRIPTOR = ZERO).           *        
+147100*                                                                *        
+147200******************************************************************        
+147300                                                                          
+147400*================================================================*        
+147500 ENVIRONMENT DIVISION.                                                    
+147600*================================================================*        
+147700                                                                          
+147800 CONFIGURATION SECTION.                                                   
+147900$IF X1=OFF                                                                
+148000 SOURCE-COMPUTER. HP3000.                                                 
+148100$IF X1=ON                                                                 
+148200 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+148300$IF                                                                       
+148400 OBJECT-COMPUTER. HP3000.                                                 
+148500 SPECIAL-NAMES.                                                           
+148600     CONDITION-CODE IS CC.                                                
+148700                                                                          
+148800*================================================================*        
+148900 DATA DIVISION.                                                           
+149000*================================================================*        
+149100 WORKING-STORAGE SECTION.                                                 
+149200                                                                          
+149300 01  I                     PIC S9(4) COMP.                                
+149400 01  I2                    PIC S9(9) COMP.                                
+149500 01  N                     PIC S9(4) COMP.                                
+149600 01  N2                    PIC S9(9) COMP.                                
+149700                                                                          
+149800 01  PREV-SUB-PROG         PIC X(9).                                      
+149900                                                                          
+150000 01  OPTION                PIC X(20).                                     
+150100                                                                          
+150200 01  WORK-X1.                                                             
+150300     02  WORK-N1           PIC S9(4) COMP.                                
+150400                                                                          
+150500 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+150600 01  FILLER REDEFINES TCP-ADDR-N.                                         
+150700     02  FILLER            PIC XX.                                        
+150800     02  TCP-ADDR-X        PIC XX.                                        
+150900                                                                          
+151000 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+151100 01  FILLER REDEFINES LONG-ERROR.                                         
+151200     02  FILLER            PIC XX.                                        
+151300     02  SHORT-ERROR       PIC S9(4) COMP.                                
+151400                                                                          
+151500 01  ERROR-MSG             PIC X(80).                                     
+151600                                                                          
+151700 01  DISP-N4               PIC 9(4).                                      
+151800 01  DISP-N5               PIC 9(5).                                      
+151900 01  DISP-SN4              PIC ----9.                                     
+152000 01  DISP-SN5              PIC -----9.                                    
+152100                                                                          
+152200 COPY SERVCOM OF J3KLIB.                                                  
+152300 COPY CSTABLE OF J3KLIB.                                                  
+152416*================================================================*        
+152500 PROCEDURE DIVISION.                                                      
+152600*================================================================*        
+152700                                                                          
+152800 1000-BEGIN.                                                              
+152900     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+153000     MOVE "SETUPCS" TO SUB-PROG.                                          
+153100D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN".                             
+153200     MOVE ZERO TO CS.                                                     
+153300                                                                          
+153400*========== Create call sockets ==========*                               
+153500                                                                          
+153600 1100-LOOP.                                                               
+153700     ADD 1 TO CS.                                                         
+153800D    MOVE CS TO DISP-SN4.                                                 
+153900D    DISPLAY THIS-PROG SUB-PROG "1100-LOOP  CS=" DISP-SN4.                
+154000     IF CS GREATER THAN CS-END GO TO 9999-RETURN.                         
+154100     IF CS-DESCRIPTOR (CS) NOT = ZERO GO TO 1100-LOOP.                    
+154200                                                                          
+154300*    Setup OPTION array for IPCCREATE                                     
+154400                                                                          
+154500D    DISPLAY THIS-PROG SUB-PROG "Setup OPTION for IPCCREATE".             
+154600     CALL INTRINSIC "INITOPT" USING OPTION \1\ SHORT-ERROR.               
+154700     IF SHORT-ERROR NOT = ZERO                                            
+154800         MOVE "INITOPT" TO ERROR-CALL                                     
+154900         PERFORM 9000-OPT-CALL-ERROR                                      
+155000         GO TO 1100-LOOP.                                                 
+155100     CALL INTRINSIC "ADDOPT" USING                                        
+155200         OPTION \0\ \128\ \2\ CS-TCP-ADDRESS (CS) SHORT-ERROR.            
+155300     IF SHORT-ERROR NOT = ZERO                                            
+155400         MOVE "ADDOPT" TO ERROR-CALL                                      
+155500         PERFORM 9000-OPT-CALL-ERROR                                      
+155600         GO TO 1100-LOOP.                                                 
+155700                                                                          
+155800*    Create a call socket                                                 
+155900                                                                          
+156000D    DISPLAY THIS-PROG SUB-PROG "Create call socket".                     
+156100     CALL INTRINSIC "IPCCREATE" USING                                     
+156200         \3\ \4\ \\ OPTION CS-DESCRIPTOR (CS) LONG-ERROR.                 
+156300     IF LONG-ERROR NOT = ZERO                                             
+156400         MOVE "IPCCREATE" TO ERROR-CALL                                   
+156500         CALL "IPCERROR" USING LONG-ERROR                                 
+156600         GO TO 1100-LOOP.                                                 
+156700D    MOVE CS-DESCRIPTOR (CS) TO DISP-SN4                                  
+156800D    DISPLAY THIS-PROG SUB-PROG "CS-DESCRIPTOR=" DISP-SN4                 
+156900                                                                          
+157000*    Set timeout to infinity                                              
+157100                                                                          
+157200D    DISPLAY THIS-PROG SUB-PROG "Set timeout to infinity".                
+157300     MOVE ZERO TO WORK-N1.                                                
+157400     CALL INTRINSIC "IPCCONTROL" USING                                    
+157500         CS-DESCRIPTOR (CS) \3\ WORK-X1 \2\ \\ \\ \\ LONG-ERROR.          
+157600     IF LONG-ERROR NOT = ZERO                                             
+157700         MOVE "IPCCONTROLa" TO ERROR-CALL                                 
+157800         MOVE ZERO TO N2                                                  
+157900         CALL "IPCERROR" USING N2                                         
+158000         GO TO 1100-LOOP.                                                 
+158100                                                                          
+158200*    Enable NOWAIT IO                                                     
+158300                                                                          
+158400D    DISPLAY THIS-PROG SUB-PROG "Enable NOWAIT IO".                       
+158500     CALL INTRINSIC "IPCCONTROL" USING                                    
+158600         CS-DESCRIPTOR (CS) \1\ \\ \\ \\ \\ \\ LONG-ERROR.                
+158700     IF LONG-ERROR NOT = ZERO                                             
+158800         MOVE "IPCCONTROLb" TO ERROR-CALL                                 
+158900         MOVE ZERO TO N2                                                  
+159000         CALL "IPCERROR" USING N2                                         
+159100         GO TO 1100-LOOP.                                                 
+159200                                                                          
+159300*    Post an IPCRECVCN for this call socket                               
+159400                                                                          
+159500D    DISPLAY THIS-PROG SUB-PROG "Post first IPCRECVCN"                    
+159600     CALL INTRINSIC "IPCRECVCN" USING CS-DESCRIPTOR (CS)                  
+159700         NEW-DESCRIPTOR \\ \\ LONG-ERROR.                                 
+159800     IF LONG-ERROR NOT = ZERO                                             
+159900         MOVE "IPCRECVCN" TO ERROR-CALL                                   
+160000         MOVE ZERO TO N2                                                  
+160100         CALL "IPCERROR" USING N2                                         
+160200         GO TO 1100-LOOP.                                                 
+160300                                                                          
+160400*    Write a log record                                                   
+160500                                                                          
+160600     MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X.                              
+160700     MOVE TCP-ADDR-N TO DISP-N5.                                          
+160800     MOVE CS-DESCRIPTOR (CS) TO DISP-N4.                                  
+160900     MOVE SPACES TO LOG-TEXT.                                             
+161000     STRING DISP-N4 " Created call socket for " DISP-N5                   
+161100         "/" CS-SERVICE-NAME (CS) DELIMITED BY SIZE INTO LOG-TEXT.        
+161200     CALL "WRITELOG".                                                     
+161300                                                                          
+161400*    Go do another one                                                    
+161500                                                                          
+161600     GO TO 1100-LOOP.                                                     
+161700                                                                          
+161800*========== OPT call error ==========*                                    
+161900                                                                          
+162000 9000-OPT-CALL-ERROR.                                                     
+162100D    DISPLAY THIS-PROG SUB-PROG "9000-OPT-CALL-ERROR".                    
+162200     MOVE SHORT-ERROR TO DISP-SN4.                                        
+162300     MOVE SPACES TO LOG-TEXT.                                             
+162400     STRING "Error" DISP-SN4 " occurred in " ERROR-CALL                   
+162500         DELIMITED BY SIZE INTO LOG-TEXT.                                 
+162600     CALL "WRITELOG".                                                     
+162700D    DISPLAY THIS-PROG SUB-PROG "Error" DISP-SN4 " occurred in "          
+162800D        ERROR-CALL " "                                                   
+162900     MOVE SHORT-ERROR TO  I I2.                                           
+163000*    CALL INTRINSIC "IPCERRMSG" USING I2 ERROR-MSG N2 LONG-ERROR.         
+163100     CALL "J3KSOCKERR" USING I ERROR-MSG N.                               
+163200     MOVE 0 TO LONG-ERROR.                                                
+163300     MOVE N TO N2.                                                        
+163400     MOVE I TO I2.                                                        
+163500D    IF LONG-ERROR = ZERO                                                 
+163600D        DISPLAY THIS-PROG SUB-PROG "-------OPT call error-------"        
+163700D        DISPLAY ERROR-MSG(1:N2).                                         
+163800                                                                          
+163900*========== Return to caller ==========*                                  
+164000                                                                          
+164100 9999-RETURN.                                                             
+164200D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+164300     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+164400     GOBACK.                                                              
+164500                                                                          
+164600 END PROGRAM SETUPCS.                                                     
+164700$PAGE "--SHUTCS-- Shutdown call socket"                                   
+164800$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+164900*================================================================*        
+165000 IDENTIFICATION DIVISION.                                                 
+165100*================================================================*        
+165200                                                                          
+165300 PROGRAM-ID. SHUTCS.                                                      
+165400                                                                          
+165500******************************************************************        
+165600*                                                                *        
+165700*  Shutdown a call sockets.                                      *        
+165800*                                                                *        
+165900******************************************************************        
+166000                                                                          
+166100*================================================================*        
+166200 ENVIRONMENT DIVISION.                                                    
+166300*================================================================*        
+166400                                                                          
+166500 CONFIGURATION SECTION.                                                   
+166600$IF X1=OFF                                                                
+166700 SOURCE-COMPUTER. HP3000.                                                 
+166800$IF X1=ON                                                                 
+166900 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+167000$IF                                                                       
+167100 OBJECT-COMPUTER. HP3000.                                                 
+167200 SPECIAL-NAMES.                                                           
+167300     CONDITION-CODE IS CC.                                                
+167400                                                                          
+167500*================================================================*        
+167600 DATA DIVISION.                                                           
+167700*================================================================*        
+167800 WORKING-STORAGE SECTION.                                                 
+167900                                                                          
+168000 01  I                     PIC S9(4) COMP.                                
+168100 01  I2                    PIC S9(9) COMP.                                
+168200 01  N                     PIC S9(4) COMP.                                
+168300 01  N2                    PIC S9(9) COMP.                                
+168400                                                                          
+168500 01  PREV-SUB-PROG       PIC X(9).                                        
+168600                                                                          
+168700 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+168800 01  FILLER REDEFINES TCP-ADDR-N.                                         
+168900     02  FILLER            PIC XX.                                        
+169000     02  TCP-ADDR-X        PIC XX.                                        
+169100                                                                          
+169200 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+169300 01  FILLER REDEFINES LONG-ERROR.                                         
+169400     02  FILLER            PIC XX.                                        
+169500     02  SHORT-ERROR       PIC S9(4) COMP.                                
+169600                                                                          
+169700 01  DISP-N4               PIC 9(4).                                      
+169800 01  DISP-N5               PIC 9(5).                                      
+169900 01  DISP-SN4              PIC ----9.                                     
+170000                                                                          
+170100 COPY SERVCOM OF J3KLIB.                                                  
+170200 COPY CSTABLE OF J3KLIB.                                                  
+170300*================================================================*        
+170400 PROCEDURE DIVISION.                                                      
+170500*================================================================*        
+170600                                                                          
+170700 1000-BEGIN.                                                              
+170800     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+170900     MOVE "SHUTCS" TO SUB-PROG.                                           
+171000D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+171100     CALL INTRINSIC "IPCSHUTDOWN" USING                                   
+171200         CS-DESCRIPTOR (CS) LONG-ERROR.                                   
+171300     IF LONG-ERROR = ZERO                                                 
+171400         MOVE CS-DESCRIPTOR (CS) TO DISP-N4                               
+171500         MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X                           
+171600         MOVE TCP-ADDR-N TO DISP-N5                                       
+171700         MOVE SPACES TO LOG-TEXT                                          
+171800         STRING DISP-N4 " Shutdown call socket for "                      
+171900             DISP-N5 "/" CS-SERVICE-NAME (CS)                             
+172000             DELIMITED BY SIZE INTO LOG-TEXT                              
+172100         CALL "WRITELOG"                                                  
+172200D        DISPLAY THIS-PROG SUB-PROG "Shutdown call socket for "           
+172300D        DISP-N5 "/" CS-SERVICE-NAME (CS)                                 
+172400D    ELSE                                                                 
+172500D        MOVE LONG-ERROR TO DISP-SN4                                      
+172600D        DISPLAY THIS-PROG SUB-PROG "Error" DISP-SN4                      
+172700D            " in IPCSHUTDOWN"                                            
+172800     END-IF.                                                              
+172900     MOVE ZERO TO CS-DESCRIPTOR (CS).                                     
+173000                                                                          
+173100*========== Return to caller ==========*                                  
+173200                                                                          
+173300 9999-RETURN.                                                             
+173400D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+173500     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+173600     GOBACK.                                                              
+173700                                                                          
+173800 END PROGRAM SHUTCS.                                                      
+173900$PAGE "--SHUTVC-- Shutdown virtual socket"                                
+174000$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+174100*================================================================*        
+174200 IDENTIFICATION DIVISION.                                                 
+174300*================================================================*        
+174400                                                                          
+174500 PROGRAM-ID. SHUTVC.                                                      
+174600                                                                          
+174700******************************************************************        
+174800*                                                                *        
+174900*  Shutdown a virtual socket.                                    *        
+175000*                                                                *        
+175100******************************************************************        
+175200                                                                          
+175300*================================================================*        
+175400 ENVIRONMENT DIVISION.                                                    
+175500*================================================================*        
+175600                                                                          
+175700 CONFIGURATION SECTION.                                                   
+175800$IF X1=OFF                                                                
+175900 SOURCE-COMPUTER. HP3000.                                                 
+176000$IF X1=ON                                                                 
+176100 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+176200$IF                                                                       
+176300 OBJECT-COMPUTER. HP3000.                                                 
+176400 SPECIAL-NAMES.                                                           
+176500     CONDITION-CODE IS CC.                                                
+176600                                                                          
+176700*================================================================*        
+176800 DATA DIVISION.                                                           
+176900*================================================================*        
+177000 WORKING-STORAGE SECTION.                                                 
+177100                                                                          
+177200 01  I                     PIC S9(4) COMP.                                
+177300 01  I2                    PIC S9(9) COMP.                                
+177400 01  N                     PIC S9(4) COMP.                                
+177500 01  N2                    PIC S9(9) COMP.                                
+177600                                                                          
+177700 01  PREV-SUB-PROG       PIC X(9).                                        
+177800                                                                          
+177900 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+178000 01  FILLER REDEFINES TCP-ADDR-N.                                         
+178100     02  FILLER            PIC XX.                                        
+178200     02  TCP-ADDR-X        PIC XX.                                        
+178300                                                                          
+178400 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+178500 01  FILLER REDEFINES LONG-ERROR.                                         
+178600     02  FILLER            PIC XX.                                        
+178700     02  SHORT-ERROR       PIC S9(4) COMP.                                
+178800                                                                          
+178900 01  DISP-N4A              PIC 9(4).                                      
+179000 01  DISP-N4B              PIC 9(4).                                      
+179100 01  DISP-N5               PIC 9(5).                                      
+179200                                                                          
+179300 COPY SERVCOM OF J3KLIB.                                                  
+179400 COPY CSTABLE OF J3KLIB.                                                  
+179516 COPY VCTABLE OF J3KLIB.                                                  
+179600*================================================================*        
+179700 PROCEDURE DIVISION.                                                      
+179800*================================================================*        
+179900                                                                          
+180000 1000-BEGIN.                                                              
+180100     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+180200     MOVE "SHUTVC" TO SUB-PROG.                                           
+180300D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+180400     MOVE VC-CS (VC) TO CS.                                               
+180500     CALL INTRINSIC "IPCSHUTDOWN" USING                                   
+180600         VC-DESCRIPTOR (VC) LONG-ERROR.                                   
+180700     IF LONG-ERROR = ZERO                                                 
+180800         MOVE CS-DESCRIPTOR (CS) TO DISP-N4A                              
+180900         MOVE VC-DESCRIPTOR (VC) TO DISP-N4B                              
+181000         MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X                           
+181100         MOVE TCP-ADDR-N TO DISP-N5                                       
+181200         MOVE SPACES TO LOG-TEXT                                          
+181300         STRING DISP-N4A "/" DISP-N4B " Shutdown virtual "                
+181400             "socket for " DISP-N5 "/" CS-SERVICE-NAME (CS)               
+181500             DELIMITED BY SIZE INTO LOG-TEXT                              
+181600         CALL "WRITELOG"                                                  
+181700D        DISPLAY THIS-PROG SUB-PROG "Shutdown virtual socket for "        
+181800D        DISP-N5 "/" CS-SERVICE-NAME (CS)                                 
+181900     END-IF.                                                              
+182000                                                                          
+182100*========== Return to caller ==========*                                  
+182200                                                                          
+182300 9999-RETURN.                                                             
+182400D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+182500     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+182600     GOBACK.                                                              
+182700                                                                          
+182800 END PROGRAM SHUTVC.                                                      
+182900$PAGE "--IPCERROR-- IPC call error routine"                               
+183000$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+183100*================================================================*        
+183200 IDENTIFICATION DIVISION.                                                 
+183300*================================================================*        
+183400                                                                          
+183500 PROGRAM-ID. IPCERROR.                                                    
+183600                                                                          
+183700******************************************************************        
+183800*                                                                *        
+183900*  IPC call error routine.                                       *        
+184000*                                                                *        
+184100******************************************************************        
+184200                                                                          
+184300*================================================================*        
+184400 ENVIRONMENT DIVISION.                                                    
+184500*================================================================*        
+184600                                                                          
+184700 CONFIGURATION SECTION.                                                   
+184800$IF X1=OFF                                                                
+184900 SOURCE-COMPUTER. HP3000.                                                 
+185000$IF X1=ON                                                                 
+185100 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+185200$IF                                                                       
+185300 OBJECT-COMPUTER. HP3000.                                                 
+185400 SPECIAL-NAMES.                                                           
+185500     CONDITION-CODE IS CC.                                                
+185600                                                                          
+185700*================================================================*        
+185800 DATA DIVISION.                                                           
+185900*================================================================*        
+186000 WORKING-STORAGE SECTION.                                                 
+186100                                                                          
+186200 01  I                     PIC S9(4) COMP.                                
+186300 01  I2                    PIC S9(9) COMP.                                
+186400 01  N                     PIC S9(4) COMP.                                
+186500 01  N2                    PIC S9(9) COMP.                                
+186600                                                                          
+186700 01  DESCRIPTOR            PIC S9(9) COMP.                                
+186800                                                                          
+186900 01  TCP-ADDR-N            PIC S9(9) COMP VALUE ZERO.                     
+187000 01  FILLER REDEFINES TCP-ADDR-N.                                         
+187100     02  FILLER            PIC XX.                                        
+187200     02  TCP-ADDR-X        PIC XX.                                        
+187300                                                                          
+187400 01  ERROR-NO              PIC S9(9) COMP.                                
+187500 01  ERROR-MSG             PIC X(80).                                     
+187600                                                                          
+187700 01  PREV-SUB-PROG         PIC X(9).                                      
+187800                                                                          
+187900 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+188000 01  FILLER REDEFINES LONG-ERROR.                                         
+188100     02  FILLER            PIC XX.                                        
+188200     02  SHORT-ERROR       PIC S9(4) COMP.                                
+188300                                                                          
+188400 01  DISP-N4A              PIC 9(4).                                      
+188500 01  DISP-N4B              PIC 9(4).                                      
+188600 01  DISP-N5               PIC 9(5).                                      
+188700 01  DISP-SN4X.                                                           
+188800     02  DISP-SN4          PIC ----9.                                     
+188900                                                                          
+189000 COPY SERVCOM OF J3KLIB.                                                  
+189100 COPY CSTABLE OF J3KLIB.                                                  
+189200 LINKAGE SECTION.                                                         
+189300                                                                          
+189400 01  LINK-VC-DESCRIPTOR    PIC S9(9) COMP.                                
+189500                                                                          
+189600*================================================================*        
+189700 PROCEDURE DIVISION USING LINK-VC-DESCRIPTOR.                             
+189800*================================================================*        
+189900                                                                          
+190000 1000-BEGIN.                                                              
+190100     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+190200     MOVE "IPCERROR" TO SUB-PROG.                                         
+190300D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+190400     MOVE CS-DESCRIPTOR (CS) TO DISP-N4A.                                 
+190500     MOVE LINK-VC-DESCRIPTOR TO DISP-N4B.                                 
+190600     MOVE SPACES TO LOG-TEXT.                                             
+190700                                                                          
+190800*    Get IPC error number                                                 
+190900                                                                          
+191000     IF ERROR-CALL = "IPCCREATE"                                          
+191100         MOVE LINK-VC-DESCRIPTOR TO ERROR-NO DISP-SN4                     
+191200         MOVE ZERO TO LINK-VC-DESCRIPTOR                                  
+191300     ELSE                                                                 
+191400         IF LINK-VC-DESCRIPTOR NOT = ZERO                                 
+191500             MOVE LINK-VC-DESCRIPTOR TO DESCRIPTOR                        
+191600         ELSE                                                             
+191700             MOVE CS-DESCRIPTOR (CS) TO DESCRIPTOR                        
+191800         END-IF                                                           
+191900         CALL INTRINSIC "IPCCHECK" USING                                  
+192000             DESCRIPTOR ERROR-NO \\ LONG-ERROR                            
+192100         IF LONG-ERROR = ZERO                                             
+192200             MOVE ERROR-NO TO DISP-SN4                                    
+192300         ELSE                                                             
+192400             MOVE ZERO TO ERROR-NO                                        
+192500             MOVE " ????" TO DISP-SN4X.                                   
+192600D    DISPLAY THIS-PROG SUB-PROG "IPC error" DISP-SN4X " in "              
+192700D        ERROR-CALL.                                                      
+192800                                                                          
+192900*    Get the error message                                                
+193000                                                                          
+193100     MOVE SPACES TO ERROR-MSG.                                            
+193200     IF DISP-SN4X NOT = " ????"                                           
+193300        MOVE ERROR-NO TO I                                                
+193400        INITIALIZE LONG-ERROR N ERROR-MSG                                 
+193500        CALL "J3KSOCKERR" USING I ERROR-MSG N                             
+193600        MOVE N TO I2                                                      
+193700*        CALL INTRINSIC "IPCERRMSG" USING                                 
+193800*            ERROR-NO ERROR-MSG I2 LONG-ERROR                             
+193900*        IF LONG-ERROR NOT = ZERO                                         
+194000*            MOVE SPACES TO ERROR-MSG                                     
+194100*            DISPLAY THIS-PROG SUB-PROG "IPC error" LONG-ERROR            
+194200*        ELSE                                                             
+194300D            DISPLAY THIS-PROG SUB-PROG "-------IPC error-------"         
+194400D            DISPLAY ERROR-MSG(1:I2)                                      
+194500*        END-IF.                                                          
+194600                                                                          
+194700*    Log the error                                                        
+194800                                                                          
+194900     MOVE CS-TCP-ADDRESS (CS) TO TCP-ADDR-X.                              
+195000     MOVE TCP-ADDR-N TO DISP-N5.                                          
+195100     STRING DISP-N4A "/" DISP-N4B " IPC error" DISP-SN4X " in "           
+195200             DELIMITED BY SIZE                                            
+195300         ERROR-CALL DELIMITED BY SPACE                                    
+195400         " " DISP-N5 "/" DELIMITED BY SIZE                                
+195500         CS-SERVICE-NAME (CS) DELIMITED BY SPACE                          
+195600         " (" DELIMITED BY SIZE                                           
+195700         PREV-SUB-PROG DELIMITED BY SPACE                                 
+195800         ")" DELIMITED BY SIZE INTO LOG-TEXT.                             
+195900     CALL "WRITELOG".                                                     
+196000     IF ERROR-MSG NOT = SPACES                                            
+196100         MOVE ERROR-MSG TO LOG-TEXT                                       
+196200         CALL "WRITELOG".                                                 
+196300                                                                          
+196400*    Shutdown and disable call socket if TCP address already used         
+196500                                                                          
+196600     IF LINK-VC-DESCRIPTOR = ZERO AND ERROR-NO = 106                      
+196700         CALL "SHUTCS"                                                    
+196800         MOVE -9999 TO CS-DESCRIPTOR (CS).                                
+196900                                                                          
+197000*========== Return to caller ==========*                                  
+197100                                                                          
+197200 9999-RETURN.                                                             
+197300D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+197400     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+197500     GOBACK.                                                              
+197600                                                                          
+197700 END PROGRAM IPCERROR.                                                    
+197800$PAGE "--FILERROR-- File error routine"                                   
+197900$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+198000*================================================================*        
+198100 IDENTIFICATION DIVISION.                                                 
+198200*================================================================*        
+198300                                                                          
+198400 PROGRAM-ID. FILERROR.                                                    
+198500                                                                          
+198600******************************************************************        
+198700*                                                                *        
+198800*  File error routine.                                           *        
+198900*                                                                *        
+199000******************************************************************        
+199100                                                                          
+199200*================================================================*        
+199300 ENVIRONMENT DIVISION.                                                    
+199400*================================================================*        
+199500                                                                          
+199600 CONFIGURATION SECTION.                                                   
+199700$IF X1=OFF                                                                
+199800 SOURCE-COMPUTER. HP3000.                                                 
+199900$IF X1=ON                                                                 
+200000 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+200100$IF                                                                       
+200200 OBJECT-COMPUTER. HP3000.                                                 
+200300 SPECIAL-NAMES.                                                           
+200400     CONDITION-CODE IS CC.                                                
+200500                                                                          
+200600*================================================================*        
+200700 DATA DIVISION.                                                           
+200800*================================================================*        
+200900 WORKING-STORAGE SECTION.                                                 
+201000                                                                          
+201100 01  I                     PIC S9(4) COMP.                                
+201200                                                                          
+201300 01  FILE-NAME             PIC X(26).                                     
+201400                                                                          
+201500 01  ERROR-NO              PIC S9(4) COMP.                                
+201600 01  ERROR-MSG             PIC X(80).                                     
+201700                                                                          
+201800 01  PREV-SUB-PROG         PIC X(9).                                      
+201900                                                                          
+202000 01  LONG-ERROR            PIC S9(9) COMP VALUE ZERO.                     
+202100 01  FILLER REDEFINES LONG-ERROR.                                         
+202200     02  FILLER            PIC XX.                                        
+202300     02  SHORT-ERROR       PIC S9(4) COMP.                                
+202400                                                                          
+202500 01  DISP-N4A              PIC 9(4).                                      
+202600 01  DISP-N4B              PIC 9(4).                                      
+202700 01  DISP-SN4X.                                                           
+202800     02  DISP-SN4          PIC ----9.                                     
+202900                                                                          
+203000 COPY SERVCOM OF J3KLIB.                                                  
+203100 LINKAGE SECTION.                                                         
+203200                                                                          
+203300 01  LINK-FILE-NO          PIC S9(4) COMP.                                
+203400                                                                          
+203500*================================================================*        
+203600 PROCEDURE DIVISION USING LINK-FILE-NO.                                   
+203700*================================================================*        
+203800                                                                          
+203900 1000-BEGIN.                                                              
+204000     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+204100     MOVE "FILERROR" TO SUB-PROG.                                         
+204200D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+204300     MOVE SPACES TO LOG-TEXT.                                             
+204400                                                                          
+204500*    Get file error number                                                
+204600                                                                          
+204700     CALL INTRINSIC "FCHECK" USING LINK-FILE-NO ERROR-NO.                 
+204800     IF CC = ZERO                                                         
+204900         MOVE ERROR-NO TO DISP-SN4                                        
+205000     ELSE                                                                 
+205100         MOVE " ????" TO DISP-SN4X.                                       
+205200D    DISPLAY THIS-PROG SUB-PROG "File error" DISP-SN4X " in "             
+205300D        ERROR-CALL.                                                      
+205400                                                                          
+205500*    Get the error message                                                
+205600                                                                          
+205700     MOVE SPACES TO ERROR-MSG.                                            
+205800     IF DISP-SN4X NOT = " ????"                                           
+205900         CALL INTRINSIC "FERRMSG" USING ERROR-NO ERROR-MSG I              
+206000         IF CC NOT = ZERO                                                 
+206100             MOVE SPACES TO ERROR-MSG                                     
+206200D            DISPLAY THIS-PROG SUB-PROG                                   
+206300D                "File error getting error message"                       
+206400D        ELSE                                                             
+206500D            DISPLAY THIS-PROG SUB-PROG "-------FILE error-------"        
+206600D            DISPLAY ERROR-MSG(1:I)                                       
+206700         END-IF.                                                          
+206800                                                                          
+206900*    Get file name                                                        
+207000                                                                          
+207100     CALL INTRINSIC "FFILEINFO" USING LINK-FILE-NO \1\ FILE-NAME.         
+207200     IF CC NOT = ZERO                                                     
+207300         MOVE "????????" TO FILE-NAME.                                    
+207400                                                                          
+207500*    Log the error                                                        
+207600                                                                          
+207700     STRING "File error" DISP-SN4X " " DELIMITED BY SIZE                  
+207800         ERROR-CALL DELIMITED BY SPACE                                    
+207900         "/" DELIMITED BY SIZE                                            
+208000         FILE-NAME DELIMITED BY SPACE                                     
+208100         " (" DELIMITED BY SIZE                                           
+208200         PREV-SUB-PROG DELIMITED BY SPACE                                 
+208300         ")" DELIMITED BY SIZE INTO LOG-TEXT.                             
+208400     CALL "WRITELOG".                                                     
+208500     IF ERROR-MSG NOT = SPACES                                            
+208600         MOVE ERROR-MSG TO LOG-TEXT                                       
+208700         CALL "WRITELOG".                                                 
+208800                                                                          
+208900*========== Return to caller ==========*                                  
+209000                                                                          
+209100 9999-RETURN.                                                             
+209200D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+209300     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+209400     GOBACK.                                                              
+209500                                                                          
+209600 END PROGRAM FILERROR.                                                    
+209700$PAGE "--WRITELOG-- Write record to log file"                             
+209800$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+209900*================================================================*        
+210000 IDENTIFICATION DIVISION.                                                 
+210100*================================================================*        
+210200                                                                          
+210300 PROGRAM-ID. WRITELOG.                                                    
+210400                                                                          
+210500******************************************************************        
+210600*                                                                *        
+210700*  Write a record to log file.                                   *        
+210800*                                                                *        
+210900******************************************************************        
+211000                                                                          
+211100*================================================================*        
+211200 ENVIRONMENT DIVISION.                                                    
+211300*================================================================*        
+211400                                                                          
+211500 CONFIGURATION SECTION.                                                   
+211600$IF X1=OFF                                                                
+211700 SOURCE-COMPUTER. HP3000.                                                 
+211800$IF X1=ON                                                                 
+211900 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+212000$IF                                                                       
+212100 OBJECT-COMPUTER. HP3000.                                                 
+212200 SPECIAL-NAMES.                                                           
+212300     CONDITION-CODE IS CC.                                                
+212400                                                                          
+212500*================================================================*        
+212600 DATA DIVISION.                                                           
+212700*================================================================*        
+212800 WORKING-STORAGE SECTION.                                                 
+212900                                                                          
+213000 01  I                     PIC S9(4) COMP.                                
+213100                                                                          
+213200 01  LOG-RECORD            PIC X(80).                                     
+213300                                                                          
+213400 01  ERROR-MSG             PIC X(80).                                     
+213500                                                                          
+213600 01  PREV-SUB-PROG         PIC X(9).                                      
+213700                                                                          
+213800 01  DISP-SN4              PIC ----9.                                     
+213900 01  DISP-DATE.                                                           
+214000     02  MO                PIC XX.                                        
+214100     02  DA                PIC XX.                                        
+214200     02  YR                PIC XX.                                        
+214300 01  DISP-TIME.                                                           
+214400     02  HR                PIC XX.                                        
+214500     02  MIN               PIC XX.                                        
+214600     02  SEC               PIC XX.                                        
+214700                                                                          
+214800 01  DATE-WORK.                                                           
+214900     02  MO                PIC XX.                                        
+215000     02  FILLER            PIC X.                                         
+215100     02  DA                PIC XX.                                        
+215200     02  FILLER            PIC X.                                         
+215300     02  YR                PIC XX.                                        
+215400                                                                          
+215500 01  TIME-WORK.                                                           
+215600     02  HR                PIC XX.                                        
+215700     02  MIN               PIC XX.                                        
+215800     02  SEC               PIC XX.                                        
+215900                                                                          
+216000 COPY SERVCOM OF J3KLIB.                                                  
+216100*================================================================*        
+216200 PROCEDURE DIVISION.                                                      
+216300*================================================================*        
+216400                                                                          
+216500 1000-BEGIN.                                                              
+216600     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+216700     MOVE "WRITELOG" TO SUB-PROG.                                         
+216800D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+216900     MOVE CURRENT-DATE TO DATE-WORK.                                      
+217000     MOVE TIME-OF-DAY TO TIME-WORK.                                       
+217100     MOVE CORR DATE-WORK TO DISP-DATE.                                    
+217200     MOVE CORR TIME-WORK TO DISP-TIME.                                    
+217300     STRING DISP-DATE " " DISP-TIME " " SERVER-NO " " LOG-TEXT            
+217400         DELIMITED BY SIZE INTO LOG-RECORD.                               
+217500     DISPLAY THIS-PROG SUB-PROG LOG-RECORD.                               
+217600D    MOVE 80 TO I.                                                        
+217700D    PERFORM UNTIL I = 1 OR LOG-RECORD(I:1) <> " "                        
+217800D        SUBTRACT 1 FROM I                                                
+217900D    END-PERFORM.                                                         
+218000D    DISPLAY LOG-RECORD(1:I).                                             
+218100     CALL INTRINSIC "FWRITE" USING LOG-FILE LOG-RECORD \-80\ \0\.         
+218200     IF CC <> ZERO                                                        
+218300         CALL INTRINSIC "FCHECK" USING LOG-FILE I                         
+218400         MOVE I TO DISP-SN4                                               
+218500D        DISPLAY THIS-PROG SUB-PROG "File error" DISP-SN4                 
+218600D            " on SERVLOG file #" SERVER-NO                               
+218700         DISPLAY THIS-PROG SUB-PROG "File error" DISP-SN4                 
+218800             " on SERVLOG file #" SERVER-NO UPON CONSOLE.                 
+218900                                                                          
+219000*========== Return to caller ==========*                                  
+219100                                                                          
+219200 9999-RETURN.                                                             
+219300D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+219400     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+219500     GOBACK.                                                              
+219600                                                                          
+219700 END PROGRAM WRITELOG.                                                    
+219800$PAGE "--SHOWDATA-- Display data buffer"                                  
+219900$CONTROL LIST,OPTFEATURES=LINKALIGNED16                           060726MA
+220000*================================================================*        
+220100 IDENTIFICATION DIVISION.                                                 
+220200*================================================================*        
+220300                                                                          
+220400 PROGRAM-ID. SHOWDATA.                                                    
+220500                                                                          
+220600******************************************************************        
+220700*                                                                *        
+220800*  Display data buffer.                                          *        
+220900*                                                                *        
+221000******************************************************************        
+221100                                                                          
+221200*================================================================*        
+221300 ENVIRONMENT DIVISION.                                                    
+221400*================================================================*        
+221500                                                                          
+221600 CONFIGURATION SECTION.                                                   
+221700$IF X1=OFF                                                                
+221800 SOURCE-COMPUTER. HP3000.                                                 
+221900$IF X1=ON                                                                 
+222000 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+222100$IF                                                                       
+222200 OBJECT-COMPUTER. HP3000.                                                 
+222300 SPECIAL-NAMES.                                                           
+222400     CONDITION-CODE IS CC.                                                
+222500                                                                          
+222600*================================================================*        
+222700 DATA DIVISION.                                                           
+222800*================================================================*        
+222900 WORKING-STORAGE SECTION.                                                 
+223000                                                                          
+223100 01  N                     PIC S9(4) COMP.                                
+223200 01  LEN                   PIC S9(4) COMP.                                
+223300 01  LOC                   PIC S9(4) COMP.                                
+223400                                                                          
+223500 01  PREV-SUB-PROG         PIC X(9).                                      
+223600                                                                          
+223700 01  DISP-SN4              PIC ----9.                                     
+223800                                                                          
+223900 COPY SERVCOM OF J3KLIB.                                                  
+224000 LINKAGE SECTION.                                                         
+224100                                                                          
+224200 01  LINK-BUFFER           PIC X(4096).                                   
+224300                                                                          
+224400 01  LINK-LEN              PIC S9(9) COMP.                                
+224500                                                                          
+224600*================================================================*        
+224700 PROCEDURE DIVISION USING LINK-BUFFER LINK-LEN.                           
+224800*================================================================*        
+224900                                                                          
+225000 1000-BEGIN.                                                              
+225100     MOVE SUB-PROG TO PREV-SUB-PROG.                                      
+225200     MOVE "SHOWDATA" TO SUB-PROG.                                         
+225300D    DISPLAY THIS-PROG SUB-PROG "1000-BEGIN  from " PREV-SUB-PROG.        
+225400     MOVE 1 TO LOC.                                                       
+225500     MOVE LINK-LEN TO LEN.                                                
+225600     MOVE LEN TO DISP-SN4.                                                
+225700     DISPLAY THIS-PROG SUB-PROG "Data length=" DISP-SN4.                  
+225800     PERFORM UNTIL LEN < 1                                                
+225900         IF LEN > 60                                                      
+226000             MOVE 60 TO N                                                 
+226100         ELSE                                                             
+226200             MOVE LEN TO N                                                
+226300         END-IF                                                           
+226400         DISPLAY THIS-PROG SUB-PROG                                       
+226500             "[" LINK-BUFFER(LOC:N) "]"                                   
+226600         ADD N TO LOC                                                     
+226700         SUBTRACT N FROM LEN                                              
+226800     END-PERFORM.                                                         
+226900*========== Return to caller ==========*                                  
+227000 9999-RETURN.                                                             
+227100D    DISPLAY THIS-PROG SUB-PROG "9999-RETURN".                            
+227200     MOVE PREV-SUB-PROG TO SUB-PROG.                                      
+227300     GOBACK.                                                              
+227400 END PROGRAM SHOWDATA.                                                    

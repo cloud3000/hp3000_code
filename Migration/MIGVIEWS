@@ -1,0 +1,2111 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST, MAP, CROSSREF            080831ma
+001100******************************************************************080702MA
+001200*   COPYRIGHT 2007 - 2009 J3K Solutions All rights reserved.      080702MA
+001300*                                                                 080830ma
+001400*                ****************************                     080830ma
+001500*                  FORMSPEC export utility                        081215ma
+001600*                ****************************                     080830ma
+001700*                                                                 080830ma
+001800*  This program will add the following VPLUS data to MIGDB.       080902ma
+001900*                                                                 080902ma
+002000*  Data Fields and all their properties.                          080830ma
+002100*  Processing Specs for each field.                               080830ma
+002200*  Screen enhancements.                                           080830ma
+002300*  Line Drawing characters.                                       080830ma
+002400*  Descriptive Text on the screen, and text properties.           080830ma
+002500*  The Function Keys that were painted as text on the screen      080830ma
+002600*  design (row 1 and 2) using screen escape sequences.            080830ma
+002700*  The Function Key Labels (f1 thru f8) as entered in the         080830ma
+002800*  FKEY screen in formspec.                                       080830ma
+002900*                                                                 080828MA
+003000*   http://www.j3ksolutions.com                                   080702MA
+003100*   mailto:support@j3ksolutions.com                               080702MA
+003200******************************************************************080702MA
+003300 IDENTIFICATION DIVISION.                                                 
+003400 PROGRAM-ID.     MIGVIEW.                                         090726ma
+003500 AUTHOR.     MICHAEL ANDERSON.                                            
+003600 ENVIRONMENT DIVISION.                                            060615MA
+003700 CONFIGURATION SECTION.                                           060615MA
+003800 SOURCE-COMPUTER. HP-3000.                                        MA081219
+003900*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  MA081219
+004000 OBJECT-COMPUTER. HP-3000.                                        080828MA
+004100 DATA DIVISION.                                                   060615MA
+004200 WORKING-STORAGE SECTION.                                         060615MA
+004300***************************************************************** 080813ma
+004400 01  FILE-ERROR-DATA.                                             090726ma
+004500     05 ERROR-NUMBER             PIC XX    VALUE SPACES.          090726ma
+004600     05 FNAME                    PIC X(8)  VALUE SPACES.          090726ma
+004700     05 FILE-ERROR-RECORD        PIC X(79) VALUE SPACES.          090726ma
+004800 01  GETINFO-DATA.                                                090726ma
+004900    05  GINFO-LEN                PIC S9(4) COMP.                  090726ma
+005000    05  GINFO-STR                PIC X(128).                      090726ma
+005100    05  GINFO-PARM               PIC S9(4) COMP.                  090726ma
+005200 01 WHO-INTRINSIC-PARMS.                                          090726ma
+005300    15  WHO-TERM-DEV-NO          PIC S9999 COMP.                  090726ma
+005400    15  WHO-MODE                 PIC S9999 COMP.                  090726ma
+005500    15  WHO-CAPABILITY           PIC S9(6) COMP.                  090726ma
+005600    15  WHO-LATTR                PIC S9(6) COMP.                  090726ma
+005700    15  WHO-USERN.                                                090726ma
+005800        20 BYTE1-6               PIC X(6).                        090726ma
+005900        20 SCHOOL-NUMBER         PIC XX.                          090726ma
+006000    15  WHO-GROUPN               PIC X(8).                        090726ma
+006100    15  WHO-ACCTN                PIC X(8).                        090726ma
+006200    15  WHO-HOMEN                PIC X(8).                        090726ma
+006300 01 CSTR                         PIC X(255)      VALUE SPACES.    090726ma
+006400 01 CERR                         PIC S9(4) COMP  VALUE 0.         090726ma
+006500 01 CPARM                        PIC S9(4) COMP  VALUE 0.         090726ma
+006600 01 CMSG                         PIC S9(4) COMP  VALUE 2.         090726ma
+006700 01 CMD                          PIC X(255)      VALUE SPACES.    090726ma
+006800 01 M                            Pic X(78) Value Spaces.          090726ma
+006900 01  TDAY                        PIC X(8)  VALUE SPACES.          090726ma
+007000 01  TNUMDAY                     PIC S9(9) COMP VALUE 0.          090726ma
+007100 01  TDOW                        PIC S9(4) COMP VALUE 0.          090726ma
+007200 01  FULL-CURRENT-DATE.                                           090726ma
+007300         05  C-DATE.                                              090726ma
+007400             10  C-YEAR          PIC 9(4).                        090726ma
+007500             10  C-MONTH         PIC 99.                          090726ma
+007600             10  C-DAY           PIC 99.                          090726ma
+007700         05  C-TIME.                                              090726ma
+007800             10  C-HOUR          PIC 99.                          090726ma
+007900             10  C-MINUTES       PIC 99.                          090726ma
+008000             10  C-SECONDS       PIC 99.                          090726ma
+008100             10  C-SEC-HUND      PIC 99.                          090726ma
+008200         05  C-TIME-DIFF.                                         090726ma
+008300             10  O-GMT-DIR       PIC X.                           090726ma
+008400             10  O-HOUR          PIC 99.                          090726ma
+008500             10  O-MINUTES       PIC 99.                          090726ma
+008600 01 SHOWTIME-STR.                                                 090726ma
+008700    02 FILLER                    PIC X(8) VALUE "SHOWTIME".       090726ma
+008800    02 FILLER                    PIC X    VALUE %15.              090726ma
+008900 01  MIGDB-STATUS.                                                090726ma
+009000     03  FILLER                  PIC S9(4) COMP VALUE  0.         090726ma
+009100     03  FILLER                  PIC S9(4) COMP VALUE  0.         090726ma
+009200     03  FILLER                  PIC S9(9) COMP VALUE  0.         090726ma
+009300     03  FILLER                  PIC S9(9) COMP VALUE  0.         090726ma
+009400     03  FILLER                  PIC S9(9) COMP VALUE  0.         090726ma
+009500     03  FILLER                  PIC S9(9) COMP VALUE  0.         090726ma
+009600 01 DATE-EDITING.                                                 090726ma
+009700    05 RAW-DATE.                                                  090726ma
+009800       10 D1                     PIC X   VALUE SPACES.            090726ma
+009900       10 D2                     PIC X   VALUE SPACES.            090726ma
+010000       10 D3                     PIC X   VALUE SPACES.            090726ma
+010100       10 D4                     PIC X   VALUE SPACES.            090726ma
+010200       10 D5                     PIC X   VALUE SPACES.            090726ma
+010300       10 D6                     PIC X   VALUE SPACES.            090726ma
+010400       10 D7                     PIC X   VALUE SPACES.            090726ma
+010500       10 D8                     PIC X   VALUE SPACES.            090726ma
+010600    05 EDITED-DATE.                                               090726ma
+010700       10 D5                     PIC X   VALUE SPACES.            090726ma
+010800       10 D6                     PIC X   VALUE SPACES.            090726ma
+010900       10 FILLER                 PIC X   VALUE "/".               090726ma
+011000       10 D7                     PIC X   VALUE SPACES.            090726ma
+011100       10 D8                     PIC X   VALUE SPACES.            090726ma
+011200       10 FILLER                 PIC X   VALUE "/".               090726ma
+011300       10 D1                     PIC X   VALUE SPACES.            090726ma
+011400       10 D2                     PIC X   VALUE SPACES.            090726ma
+011500       10 D3                     PIC X   VALUE SPACES.            090726ma
+011600       10 D4                     PIC X   VALUE SPACES.            090726ma
+011700 COPY NXUNIQ  OF J3KLIB.                                          090726ma
+011800 COPY DBSTAT  OF J3KLIB.                                          090726ma
+011900 COPY FFFLDS  OF J3KLIB.                                          090726ma
+012000 COPY FFMSTR  OF J3KLIB.                                          090726ma
+012100 COPY FMMSTR  OF J3KLIB.                                          090726ma
+012200 COPY prspec  OF J3KLIB.                                          090726ma
+012300 COPY SRVMST  OF J3KLIB.                                          090726ma
+012400 COPY AMSCOMM OF J3KLIB.                                          090726ma
+012500 01 SUMM-TABLE.                                                   090904ma
+012600    02 SUMIDX PIC S9(9) COMP VALUE 0.                             090904ma
+012700    02 SUMCNT PIC S9(9) COMP VALUE 0.                             090904ma
+012800    02 SUMPTR PIC S9(9) COMP VALUE 0.                             090904ma
+012900    02 SUMMAX PIC S9(9) COMP VALUE 0.                             090904ma
+013000    02 SUMM-ENTRIES OCCURS 26 TIMES.                              090904ma
+013100       10 SUMM-TYPE   PIC XX.                                     090904ma
+013200       10 SUMM-MIN    PIC S9(9) COMP.                             090904ma
+013300       10 SUMM-AVR    PIC S9(9) COMP.                             090904ma
+013400       10 SUMM-MAX    PIC S9(9) COMP.                             090904ma
+013500       10 SUMM-TOTAL  PIC S9(9) COMP.                             090904ma
+013600       10 SUMM-FIRST  PIC S9(9) COMP.                             090904ma
+013700       10 SUMM-COUNT  PIC S9(9) COMP.                             090904ma
+013800 01  DATA-LEN                    PIC S9(4) COMP.                  090726ma
+013900 01 FORMSFILE-SW                 PIC X VALUE "0".                 090726ma
+014000    88 END-OF-FORMSFILE                VALUE "1".                 090726ma
+014100 01  EXTFILE-STATUS              PIC X   VALUE "0".               090726ma
+014200     88 EXTFILE-EOF                      VALUE "9".               090726ma
+014300 01 MISMATCH-SW                  PIC X VALUE "0".                 090901ma
+014400    88 MISMATCH-OCCURED VALUE "1".                                090901ma
+014500                                                                  090901ma
+014600 01  Ascii-Value                 PIC S9(4) COMP VALUE 0.          090726ma
+014700 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 090726ma
+014800     02 ASCII-BYTE1              PIC X.                           090726ma
+014900     02 ASCII-BYTE2              PIC X.                           090726ma
+015000 01 S1                           PIC S9(9) COMP VALUE 0.          090726ma
+015100 01  FORMFILE-STATUS             PIC XX    VALUE SPACES.          090726ma
+015200 01  FORMFILE-COUNT              PIC S9(9) COMP VALUE 0.          090726ma
+015300 01  FORMFILE-FLAG               PIC XX    VALUE SPACES.          090726ma
+015400     88 FORMFILE-CLOSED        VALUE SPACES.                      090726ma
+015500     88 FORMFILE-OPENED-INPUT  VALUE "01".                        090726ma
+015600     88 FORMFILE-OPENED-OUTPUT VALUE "02".                        090726ma
+015700     88 FORMFILE-EOF           VALUE "99".                        090726ma
+015800 01 NUMDEC                       PIC S9(4) COMP.                  090726ma
+015900 01 NUMERR                       PIC S9(4) COMP.                  090726ma
+016000 01 NUM1                         PIC X(14).                       090726ma
+016100 01 NUM2                         PIC S9(14).                      090726ma
+016200 01  HPVAR-NAME              PIC X(20) VALUE "ITOSQLS_STATUS~  ". 090726ma
+016300 01  HPVAR-ITEM              PIC S9(9) COMP VALUE -1.             090726ma
+016400 01  HPVAR-ITEMNUM           PIC S9(9) COMP VALUE 1.              090726ma
+016500 01  HPVAR-STAT              PIC S9(9) COMP VALUE 0.              090726ma
+016600 01 MyHpSusan                PIC S9(9) COMP  VALUE 0.             090726ma
+016700 01 FILE-INFOBUF.                                                 090726ma
+016800    05 FILE-NUMBER-OF-ENTRIES      PIC S9(4) COMP.                090726ma
+016900    05 FILE-ENTRY-LENGTH           PIC S9(4) COMP.                090726ma
+017000    05 FILE-ENTRY-TABLE OCCURS 1 TIMES.                           090726ma
+017100       10 IN-FILE-VERSION          PIC S9(8) COMP.                090726ma
+017200       10 FILE-NUMBER-OF-FORMS     PIC S9(4) COMP.                090726ma
+017300       10 FILE-MAX-FIELDS          PIC S9(4) COMP.                090726ma
+017400       10 FILE-MAX-BUFSIZE         PIC S9(4) COMP.                090726ma
+017500       10 FILE-SAVE-FIELDS         PIC S9(4) COMP.                090726ma
+017600       10 FILE-HEAD-FORM           PIC X(15).                     090726ma
+017700       10 FILE-FILLER              PIC X.                         090726ma
+017800       10 FILE-ERROR-ENHANCE       PIC X(4).                      090726ma
+017900       10 FILE-WINDOW-ENHANCE      PIC X(4).                      090726ma
+018000       10 FILE-WINDOW-POSITION     PIC S9(4) COMP.                090726ma
+018100 01 FILE-INFOBUFLEN                PIC S9(4) COMP VALUE 21.       090726ma
+018200 01  THIS-TIMESTAMP.                                              090726ma
+018300     05 TS-LAYOUT.                                                090726ma
+018400        10 VTIMESTAMP              PIC S9(9) COMP.                090726ma
+018500        10 VTS-BYTES REDEFINES VTIMESTAMP.                        090726ma
+018600         12 VTS-WORD1              PIC S9(4) COMP.                090726ma
+018700         12 VTS-WORD1-BIT REDEFINES VTS-WORD1 PIC XX.             090726ma
+018800         12 VTS-WORD2              PIC S9(4) COMP.                090726ma
+018900         12 VTS-WORD2-BIT REDEFINES VTS-WORD2 PIC XX.             090726ma
+019000        10 CALENDAR-PARM.                                         090726ma
+019100            15 CAL-INT             PIC S9(4) COMP.                090726ma
+019200        10 CLOCK-PARM.                                            090726ma
+019300            15 CLOCK-DINT          PIC S9(9) COMP.                090726ma
+019400        10 THIS-CLOCK REDEFINES  CLOCK-PARM.                      090726ma
+019500         12 CLK-WORD1              PIC S9(4) COMP.                090726ma
+019600         12 CLK-WORD1-BIT REDEFINES CLK-WORD1 PIC XX.             090726ma
+019700         12 CLK-WORD2              PIC S9(4) COMP.                090726ma
+019800         12 CLK-WORD1-BIT REDEFINES CLK-WORD2 PIC XX.             090726ma
+019900 01  MY-TIMESTAMP                  PIC X(28) VALUE SPACES.        090726ma
+020000 01 FORM-INFOBUF.                                                 090726ma
+020100   05 FORM-NUMBER-OF-ENTRIES       PIC S9(4) COMP.                090726ma
+020200   05 FORM-ENTRY-LENGTH            PIC S9(4) COMP.                090726ma
+020300   05 FORM-ENTRY-TABLE OCCURS 256 TIMES.                          090726ma
+020400      10 FORM-FORM-NAME            PIC X(15).                     090726ma
+020500      10 FORM-FILLER1              PIC X.                         090726ma
+020600      10 FORM-FORM-NUMBER          PIC S9(4) COMP.                090726ma
+020700      10 FORM-NUMBER-OF-FIELDS     PIC S9(4) COMP.                090726ma
+020800      10 FORM-BUF-LENGTH           PIC S9(4) COMP.                090726ma
+020900      10 FORM-NEXT-FORM            PIC X(15).                     090726ma
+021000      10 FORM-FILLER2              PIC X.                         090726ma
+021100      10 FORM-REPEAT-OPTION        PIC X.                         090726ma
+021200      10 FORM-NFORM-OPTION         PIC X.                         090726ma
+021300 01 FORM-INFOBUFLEN                PIC S9(4) COMP VALUE 62.       090726ma
+021400                                                                  090901ma
+021500 01 FFFLDS-Del-Cnt Pic S9(9) Comp.                                090901ma
+021600 01 FFFLDS-Rec-Cnt Pic S9(9) Comp.                                090901ma
+021700*                                                                 090901ma
+021800 01 FFMSTR-Del-Cnt Pic S9(9) Comp.                                090901ma
+021900 01 FFMSTR-Rec-Cnt Pic S9(9) Comp.                                090901ma
+022000*                                                                 090901ma
+022100 01 FMMSTR-Del-Cnt Pic S9(9) Comp.                                090901ma
+022200 01 FMMSTR-Rec-Cnt Pic S9(9) Comp.                                090901ma
+022300*                                                                 090901ma
+022400 01 PRSPEC-Del-Cnt Pic S9(9) Comp.                                090901ma
+022500 01 PRSPEC-Rec-Cnt Pic S9(9) Comp.                                090901ma
+022600*                                                                 090901ma
+022700                                                                  090901ma
+022800 01 ACTUAL-FORM-COUNT              pic s9(4) comp value 0.        090726ma
+022900 01 FFIDX                          PIC S9(9) COMP.                090901ma
+023000 01 FFFIDX                         PIC S9(9) COMP.                090901ma
+023100 01 PRSIDX                         PIC S9(9) COMP.                090901ma
+023200 01 FLDIDX                         PIC S9(4) COMP.                090901ma
+023300 01 FLDCNT                         PIC S9(4) COMP.                090901ma
+023400 01 FRMIDX                         PIC S9(9) COMP.                090901ma
+023500 01 FRMCNT                         PIC S9(9) COMP.                090901ma
+023600 01 MY-NEW-FILCNT                  pic s9(9) comp value 0.        090726ma
+023700 01 MY-NEW-frmCNT                  pic s9(9) comp value 0.        090726ma
+023800 01 MY-NEW-fldCNT                  pic s9(9) comp value 0.        090726ma
+023900 01 MY-NEW-spcCNT                  pic s9(9) comp value 0.        090726ma
+024000 01 DISP-N2                        PIC ZZZ9.                      090726ma
+024100 01 FIELD-INFOBUF.                                                090726ma
+024200    05 FIELD-NUMBER-OF-ENTRIES     PIC S9(4) COMP.                090726ma
+024300    05 FIELD-ENTRY-LENGTH          PIC S9(4) COMP.                090726ma
+024400    05 FIELD-FORM-NAME             PIC X(15).                     090726ma
+024500    05 FIELD-FILLER                PIC X.                         090726ma
+024600    05 FIELD-ENTRY-TABLE OCCURS 128 TIMES.                        090726ma
+024700       10 FIELD-FIELD-NAME         PIC X(15).                     090726ma
+024800       10 FIELD-FILLER             PIC X.                         090726ma
+024900       10 FIELD-SCREEN-ORD-NUM     PIC S9(4) COMP.                090726ma
+025000       10 FIELD-NUM                PIC S9(4) COMP.                090726ma
+025100       10 FIELD-LENGTH             PIC S9(4) COMP.                090726ma
+025200       10 FIELD-POSITION           PIC S9(4) COMP.                090726ma
+025300       10 FIELD-ENHANCE            PIC X(4).                      090726ma
+025400 01 FIELD-INFOBUFLEN               PIC S9(4) COMP VALUE 80.       090726ma
+025500 01 TOTAL-FILES                    PIC S9(18) COMP VALUE 0.       090726ma
+025600 01 TOTAL-FORMS                    PIC S9(18) COMP VALUE 0.       090726ma
+025700 01 TOTAL-FIELDS                   PIC S9(18) COMP VALUE 0.       090726ma
+025800 01  DECIMAL-VALUE                 PIC S9(4) COMP VALUE 0.        090726ma
+025900 01  DISP-N                        PIC ZZZ9 VALUE ZERO.           090726ma
+026000 01 EDIT-MESSAGE                   PIC X(120).                    090726ma
+026100 01 ERROR-MSG                      PIC X(80) VALUE SPACES.        090726ma
+026200 01 CALLTYPE                       PIC X(20) VALUE SPACES.        090726ma
+026300 01  I                             PIC S9(4) COMP VALUE 0.        090726ma
+026400 01  Y                PIC S9(4) COMP VALUE 0.                     090726ma
+026500 01  PROCSPEC-LENGTH  PIC S9(4) COMP VALUE 0.                     090910ma
+026600 01  SPCIDX           PIC S9(4) COMP VALUE 0.                     090910ma
+026700 01 clearscreen.                                                  090726ma
+026800    02 filler pic x value %33.                                    090726ma
+026900    02 filler pic x value "E".                                    090726ma
+027000                                                                  090726ma
+027100*-------                                                          090726ma
+027200* STORAGE FOR J3KFORMINFO                                         091210ma
+027300                                                                  090901ma
+027400 01 LINK-FORMNAME PIC X(16).                                      090726ma
+027500 01 LINK-FIELD    PIC X(16).                                      090726ma
+027600                                                                  090726ma
+027700 01 LINK-J3KFORMINFO.                                             090726ma
+027800    02 J3KFORMINFO-COUNT          PIC S9(4).                      090726ma
+027900    02 J3KFORMINFO-LEN            PIC S9(9).                      090726ma
+028000    02 J3KFORMINFO-DATA.                                          090901ma
+028100       05 J3KFORMINFO-HEADER         PIC X(3).                    090726ma
+028200       05 J3KFORMINFO-DATA.                                       090726ma
+028300          10 J3KFORMINFO-FORM1             PIC X(15).             090726ma
+028400          10 J3KFORMINFO-FORM2             PIC X(15).             090726ma
+028500          10 J3KFORMINFO-REPEAT-OPTION     PIC X.                 090726ma
+028600          10 J3KFORMINFO-NFORM-OPTION      PIC X.                 090726ma
+028700          10 J3KFORMINFO-NFORM             PIC X(15).             090726ma
+028800          10 J3KFORMINFO-FKEY-DEF          PIC X.                 090726ma
+028900          10 J3KFORMINFO-REPRODUCED-FR     PIC X(15).             090726ma
+029000          10 J3KFORMINFO-COMMENTS          PIC X(50).             090726ma
+029100 01 LINK-REPRONAME                   PIC X(16).                   090726ma
+029200 01 LINK-J3KFORMDESIGN               PIC X(4096).                 090726ma
+029300 01 LINK-LEN                         PIC S9(9) COMP.              090726ma
+029400*-------                                                          091210ma
+029500* STORAGE FOR J3KFIELDINFO                                        091210ma
+029600                                                                  091210ma
+029700 01 LINK-J3KFIELDINFO.                                            090726ma
+029800  02 J3KFLDCNT             PIC S9(4) COMP.                        090901ma
+029900  02 LFT-ENTRIES OCCURS 128.                                      090901ma
+030000    05 J3KFIELDINFO-FLD1         PIC X(15).                       090726ma
+030100    05 J3KFIELDINFO-FLD2         PIC X(15).                       090726ma
+030200    05 J3KFIELDINFO-ENH          PIC X(4).                        090726ma
+030300    05 J3KFIELDINFO-ESCVAL       PIC X.                           090726ma
+030400    05 J3KFIELDINFO-A            PIC X.                           090726ma
+030500    05 J3KFIELDINFO-FLDNUM       PIC S9(4) COMP.                  090726ma
+030600    05 J3KFIELDINFO-SCRNODR      PIC S9(4) COMP.                  090726ma
+030700    05 J3KFIELDINFO-LEN          PIC S9(4) COMP.                  090726ma
+030800    05 J3KFIELDINFO-ROW          PIC S9(4) COMP.                  090726ma
+030900    05 J3KFIELDINFO-COL          PIC S9(4) COMP.                  090726ma
+031000    05 J3KFIELDINFO-FTYPE        PIC XX.                          090907ma
+031100    05 J3KFIELDINFO-DTYPE        PIC X(4).                        090907ma
+031200    05 J3KFIELDINFO-INIT         PIC X(65).                       090907ma
+031300    05 J3KFIELDINFO-PROCSPECS    PIC X(1300).                     090907ma
+031400                                                                  090907ma
+031500 01 J3K-FORM-MERGED.                                              090901ma
+031600    10 VPLUS-FORM-NAME        PIC X(15).                          090901ma
+031700    10 VPLUS-FORM-NUMBER      PIC S9(4) COMP.                     090901ma
+031800    10 VPLUS-NUMBER-OF-FIELDS PIC S9(4) COMP.                     090901ma
+031900    10 VPLUS-BUF-LENGTH       PIC S9(4) COMP.                     090901ma
+032000    10 VPLUS-NEXT-FORM        PIC X(15).                          090901ma
+032100    10 VPLUS-REPEAT-OPTION    PIC X.                              090901ma
+032200    10 VPLUS-NFORM-OPTION     PIC X.                              090901ma
+032300    10 J3K-FORM1              PIC X(15).                          090901ma
+032400    10 J3K-FORM2              PIC X(15).                          090901ma
+032500    10 J3K-REPEAT-OPTION      PIC X.                              090901ma
+032600    10 J3K-NFORM-OPTION       PIC X.                              090901ma
+032700    10 J3K-NFORM              PIC X(15).                          090901ma
+032800    10 J3K-FKEY-DEF           PIC X.                              090901ma
+032900    10 J3K-REPRODUCED-FR      PIC X(15).                          090901ma
+033000    10 J3K-COMMENTS           PIC X(50).                          090901ma
+033100                                                                  090901ma
+033200 01 J3K-FIELDS-MERGED.                                            090901ma
+033300    02 J3K-CNT               PIC S9(4) COMP.                      090901ma
+033400    02 VPLUS-CNT             PIC S9(4) COMP.                      090901ma
+033500    02 DFM-ENTRIES OCCURS 128.                                    090901ma
+033600      05 J3K-FLD1               PIC X(15).                        090901ma
+033700      05 VPLUS-FIELD-NAME       PIC X(15).                        090901ma
+033800      05 J3K-FLD2               PIC X(15).                        090901ma
+033900      05 J3K-ENH                PIC X(4).                         090901ma
+034000      05 VPLUS-ENHANCE          PIC X(4).                         090901ma
+034100      05 J3K-ESCVAL             PIC X.                            090901ma
+034200      05 J3K-A                  PIC X.                            090901ma
+034300      05 J3K-FLDNUM             PIC S9(4) COMP.                   090901ma
+034400      05 VPLUS-NUM              PIC S9(4) COMP.                   090901ma
+034500      05 J3K-SCRNODR            PIC S9(4) COMP.                   090901ma
+034600      05 VPLUS-SCREEN-ORD-NUM   PIC S9(4) COMP.                   090901ma
+034700      05 VPLUS-POSITION         PIC S9(4) COMP.                   090901ma
+034800      05 J3K-LEN                PIC S9(4) COMP.                   090901ma
+034900      05 VPLUS-LENGTH           PIC S9(4) COMP.                   090901ma
+035000      05 J3K-ROW                PIC S9(4) COMP.                   090901ma
+035100      05 J3K-COL                PIC S9(4) COMP.                   090901ma
+035200      05 J3K-FTYPE              PIC XX.                           090907ma
+035300      05 J3K-DTYPE              PIC X(4).                         090907ma
+035400      05 J3K-INIT               PIC X(65).                        090907ma
+035500      05 J3K-PROCSPECS          PIC X(1300).                      090907ma
+035600                                                                  090907ma
+035700                                                                  090901ma
+035800 PROCEDURE DIVISION.                                              090726ma
+035900 BEGIN-0000.                                                      090726ma
+036000     CALL   INTRINSIC "WHO"                                       090726ma
+036100     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN           090726ma
+036200            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.       090726ma
+036300     MOVE WHO-MODE TO USER-MODE.                                  090726ma
+036400     IF WHO-ACCTN(1:3) <> "SYS" OR                                090726ma
+036500        WHO-USERN(1:7) <> "MANAGER" OR                            090726ma
+036600        WHO-GROUPN(1:3) <> "J3K"                                  090726ma
+036700       DISPLAY "PLEASE LOGON AS MANAGER.SYS,J3K"                  090726ma
+036800       DISPLAY "This program will not run as "                    090726ma
+036900               WHO-USERN "." WHO-ACCTN "," WHO-GROUPN             090726ma
+037000       STOP RUN.                                                  090726ma
+037100     MOVE "VPLUS Documentation Tool version C.7.3" TO M.          090726ma
+037200     PERFORM MSG-PROCESS                                          090726ma
+037300     MOVE "-------------------------------" TO M.                 090726ma
+037400     PERFORM MSG-PROCESS                                          090726ma
+037500     MOVE "***      V/Plus Migration   ***" TO M.                 090726ma
+037600     PERFORM MSG-PROCESS                                          090726ma
+037700     MOVE "***                         ***" TO M.                 090726ma
+037800     PERFORM MSG-PROCESS                                          090726ma
+037900     MOVE "***                         ***" TO M.                 090726ma
+038000     PERFORM MSG-PROCESS                                          090726ma
+038100     MOVE "***                         ***" TO M.                 090726ma
+038200     PERFORM MSG-PROCESS                                          090726ma
+038300     MOVE "-------------------------------" TO M.                 090726ma
+038400     PERFORM MSG-PROCESS                                          090726ma
+038500     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                   090726ma
+038600     PERFORM INITIALIZATION.                                      090726ma
+038700*=================================================================090726ma
+038800 INITIALIZATION.                                                  090726ma
+038900D    DISPLAY "INITIALIZATION".                                    090726ma
+039000     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.             090726ma
+039100     MOVE C-DATE TO RAW-DATE.                                     090726ma
+039200     MOVE CORR RAW-DATE TO EDITED-DATE.                           090726ma
+039300     PERFORM GET-HPSUSAN.                                         090726ma
+039400     Initialize DATABASE-TABLE.                                   090726ma
+039500     MOVE 128 TO GINFO-LEN.                                       090726ma
+039600     INITIALIZE GINFO-STR GINFO-PARM.                             090726ma
+039700     MOVE 9 TO MIGDB.                                             090726ma
+039800     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                        090726ma
+039900     MOVE "J3K;" TO SEARCH-ITEM.                                  090726ma
+040000     CALL "DBOPEN" USING                                          090726ma
+040100      DATA-BASE-NAME(MIGDB) SEARCH-ITEM MODE-1 STATUS-AREA.       090726ma
+040200     IF IMAGE-ERRORS PERFORM 9000-IMAGE-ERROR.                    090726ma
+040300     MOVE STATUS-AREA TO MIGDB-STATUS.                            090726ma
+040400     INITIALIZE SrvMST-BUFFER.                                    090726ma
+040500     MOVE ";" TO NULL-ITEM.                                       090726ma
+040600     Move 1 to SEARCH-KEY-I2.                                     090726ma
+040700     Perform Get-SRVMST-Keyed.                                    090726ma
+040800     If No-Entry                                                  090726ma
+040900      Display "No server record found"                            090726ma
+041000      Call Intrinsic "QUIT" Using \1\.                            090726ma
+041100     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.             090726ma
+041200     MOVE C-DATE TO RAW-DATE.                                     090726ma
+041300     MOVE CORR RAW-DATE TO EDITED-DATE.                           090726ma
+041400     perform GET-HPSUSAN.                                         090726ma
+041500*     Display  "Server: " SRVMST-SVR-NAME.                        090726ma
+041600*     Display  "HPSUSAN: " SRVMST-SVR-SUSAN.                      090726ma
+041700*     Display  "MPE/iX version: " SRVMST-SVR-MPEVERSION.          090726ma
+041800     Initialize CSTR CERR CPARM CMSG.                             090726ma
+041900     MOVE 128 TO GINFO-LEN.                                       090726ma
+042000     INITIALIZE GINFO-STR GINFO-PARM.                             090726ma
+042100     INITIALIZE GINFO-STR GINFO-PARM.                             090726ma
+042200     CALL INTRINSIC "GETINFO" USING GINFO-STR GINFO-LEN           090726ma
+042300                                    GINFO-PARM.                   090726ma
+042400     IF GINFO-LEN > 0                                             090726ma
+042500D       DISPLAY "INFO LEN= [" GINFO-LEN  "]"                      090726ma
+042600        MOVE GINFO-STR(1:GINFO-LEN) TO SCREEN-FORMS-FILE          090726ma
+042700        PERFORM DELETE-FORMDATA Thru DELETE-FORMDATA-EXIT         090901ma
+042800        PERFORM VGETINFO                                          090726ma
+042900        Go To 9999-RETURN                                         090726ma
+043000     Else                                                         090726ma
+043100        Display "Forms file is required in the info string".      090726ma
+043200     Stop Run.                                                    090726ma
+043300*=================================================================090726ma
+043400$page "MISC SubParagraphs"                                        090726ma
+043500*=================================================================090726ma
+043600 GET-NUM.                                                         090726ma
+043700D    DISPLAY "GET-NUM".                                           090726ma
+043800     INITIALIZE NUM2 NUMDEC NUMERR.                               090726ma
+043900     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 090726ma
+044000     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            090726ma
+044100     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            090726ma
+044200*---------------------------------------------------------        090726ma
+044300 MPE-COMMAND.                                                     090726ma
+044400D    DISPLAY "MPE-COMMAND".                                       090726ma
+044500     INITIALIZE CSTR.                                             090726ma
+044600     STRING CMD DELIMITED BY "  " %15                             090726ma
+044700      DELIMITED BY SIZE INTO CSTR.                                090726ma
+044800     Move 2 To CMSG.                                              090726ma
+044900D    DISPLAY CMD(1:79).                                           090726ma
+045000     CALL INTRINSIC "HPCICOMMAND" USING                           090726ma
+045100          CSTR CERR CPARM CMSG.                                   090726ma
+045200     IF CERR <> 0                                                 090726ma
+045300      DISPLAY CERR                                                090726ma
+045400      DISPLAY CMD                                                 090726ma
+045500      DISPLAY CMSG.                                               090726ma
+045600     INITIALIZE CMD.                                              090726ma
+045700*---------------------------------------------------------        090726ma
+045800 SHOWTIME.                                                        090726ma
+045900     CALL INTRINSIC "HPCICOMMAND" USING                           090726ma
+046000          SHOWTIME-STR CERR CPARM CMSG.                           090726ma
+046100*--------------------------------------------------------         090726ma
+046200 GET-HPSUSAN.                                                     090726ma
+046300     MOVE "HPSUSAN~" TO HPVAR-NAME.                               090726ma
+046400     MOVE 1 TO HPVAR-ITEMNUM.                                     090726ma
+046500     INITIALIZE MYHPSUSAN HPVAR-ITEM HPVAR-STAT.                  090726ma
+046600     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 090726ma
+046700         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                      090726ma
+046800*     DISPLAY "HPSUSAN: " MYHPSUSAN.                              090726ma
+046900*------------------------------------------------------------     090726ma
+047000 MSG-PROCESS.                                                     090726ma
+047100*      DISPLAY "MSG-PROCESS".                                     090726ma
+047200     DISPLAY M.                                                   090726ma
+047300     INITIALIZE CSTR.                                             090726ma
+047400     STRING "TELLOP " M  %15 DELIMITED BY SIZE INTO CSTR.         090726ma
+047500     Move 2 To CMSG.                                              090726ma
+047600     IF BATCH-PROCESS OR NOT-INTERACTIVE                          090726ma
+047700      CALL INTRINSIC "HPCICOMMAND" USING                          090726ma
+047800           CSTR CERR CPARM CMSG.                                  090726ma
+047900     INITIALIZE M CMD.                                            090726ma
+048000*---------------------------------------------------------------- 090726ma
+048100 VGETINFO.                                                        090726ma
+048200D    DISPLAY "VGETINFO".                                          090726ma
+048300D    Display " Load-Form-Source.".                                090904ma
+048400     INITIALIZE CMD.                                              091210ma
+048500     CALL "J3KLOADFORM"                                           090904ma
+048600         USING SCREEN-FORMS-FILE SUMM-TABLE.                      091210ma
+048700D    Display SCREEN-FORMS-FILE "Records : " FRDCNT.               090904ma
+048800     STRING  "Adding: " SCREEN-FORMS-FILE                         090726ma
+048900      DELIMITED BY SIZE INTO M.                                   090726ma
+049000     PERFORM MSG-PROCESS.                                         090726ma
+049100     INITIALIZE SCREEN-COMAREA.                                   090726ma
+049200     MOVE 60 TO SCREEN-COMAREALEN.                                090726ma
+049300     CALL "VOPENFORMF" USING SCREEN-COMAREA, SCREEN-FORMS-FILE.   090726ma
+049400     IF  SCREEN-CSTATUS <> 0 PERFORM 9000-VPLUS-ERROR.            090726ma
+049500     MOVE SPACES TO FILE-INFOBUF.                                 090726ma
+049600     MOVE 60 TO SCREEN-COMAREALEN.                                090726ma
+049700     MOVE 1 TO FILE-NUMBER-OF-ENTRIES.                            090726ma
+049800     MOVE 19 TO FILE-ENTRY-LENGTH.                                090726ma
+049900     INITIALIZE SCREEN-CSTATUS.                                   090726ma
+050000     CALL "VGETFILEINFO" USING SCREEN-COMAREA FILE-INFOBUF        090726ma
+050100                               FILE-INFOBUFLEN.                   090726ma
+050200     MOVE in-FILE-VERSION(1) TO VTIMESTAMP.                       090726ma
+050300     MOVE 0 TO CLOCK-DINT.                                        090726ma
+050400     MOVE VTS-WORD2 TO CLK-WORD1.                                 090726ma
+050500     CALL INTRINSIC "FMTDATE"   USING VTS-WORD1                   090726ma
+050600                                      CLOCK-DINT                  090726ma
+050700                                      MY-TIMESTAMP.               090726ma
+050800                                                                  090726ma
+050900*---- Get form info -------*                                      090726ma
+051000     MOVE SPACES TO FORM-INFOBUF.                                 090726ma
+051100     MOVE FILE-NUMBER-OF-FORMS(1) TO FORM-NUMBER-OF-ENTRIES       090726ma
+051200     MOVE 20                      TO FORM-ENTRY-LENGTH            090726ma
+051300     COMPUTE FORM-INFOBUFLEN =                                    090726ma
+051400       2 + ( FORM-NUMBER-OF-ENTRIES * FORM-ENTRY-LENGTH)          090726ma
+051500       END-COMPUTE                                                090726ma
+051600     MOVE 1 TO FORM-FORM-NUMBER(1)                                090726ma
+051700     INITIALIZE SCREEN-CSTATUS                                    090901ma
+051800     CALL "VGETFORMINFO" USING SCREEN-COMAREA FORM-INFOBUF        090726ma
+051900                               FORM-INFOBUFLEN.                   090726ma
+052000*/\/\/\/\/\/\ WORK-AROUND                                         090726ma
+052100*                                                                 090726ma
+052200*   VPLUS VGETFORMINFO BUG THAT RETURNS BLANK FORM NAMES          090726ma
+052300                                                                  090726ma
+052400     MOVE FILE-NUMBER-OF-FORMS(1) TO ACTUAL-FORM-COUNT.           090726ma
+052500     PERFORM VARYING FRMIDX FROM 1 BY 1                           090726ma
+052600       UNTIL (FRMIDX > FILE-NUMBER-OF-FORMS(1))                   090726ma
+052700      IF FORM-FORM-NAME(FRMIDX) = SPACES                          090726ma
+052800       MOVE HIGH-VALUES TO FORM-FORM-NAME(FRMIDX)                 090726ma
+052900       SUBTRACT 1  FROM ACTUAL-FORM-COUNT                         090726ma
+053000      END-IF                                                      090726ma
+053100     END-PERFORM                                                  090726ma
+053200*                                                                 090726ma
+053300      DISPLAY "FORMSFILE: " SCREEN-FORMS-FILE                     090726ma
+053400                                                                  090726ma
+053500*\/\/\/\/\/\/ END WORK-AROUND                                     090726ma
+053600     PERFORM VARYING FRMIDX FROM 1 BY 1                           090726ma
+053700       UNTIL (FRMIDX > FILE-NUMBER-OF-FORMS(1))                   090726ma
+053800D     DISPLAY "PROCESSING NEXT FORM IN " SCREEN-FORMS-FILE        090726ma
+053900D     DISPLAY "FORM NUMBER " FRMIDX                               090726ma
+054000      INITIALIZE J3K-FORM-MERGED J3K-FIELDS-MERGED                090901ma
+054100      IF FORM-FORM-NAME(FRMIDX) <> HIGH-VALUES                    090726ma
+054200                                                                  090901ma
+054300* GET MORE FORM INFO FROM SOURCE FORMS FILE                       090901ma
+054400*                                                                 090901ma
+054500       MOVE ACTUAL-FORM-COUNT TO FRMCNT                           090901ma
+054600       MOVE FORM-FORM-NAME(FRMIDX) TO LINK-FORMNAME               090901ma
+054700       CALL "J3KFORMINFO" USING                                   090901ma
+054800        LINK-FORMNAME LINK-J3KFORMINFO                            091210ma
+054900       END-CALL                                                   090901ma
+055000*                                                                 090901ma
+055100* GET THE FORM DESIGN DATA, AS IT WAS ENTERED INTO FORMSPEC.      090901ma
+055200*                                                                 090901ma
+055300       MOVE J3KFORMINFO-REPRODUCED-FR                             090901ma
+055400         TO LINK-REPRONAME                                        090901ma
+055500       CALL "J3KFORMDESIGN" USING                                 090901ma
+055600        LINK-FORMNAME LINK-REPRONAME                              090901ma
+055700        LINK-J3KFORMDESIGN LINK-LEN                               091210ma
+055800       END-CALL                                                   090901ma
+055900                                                                  090901ma
+056000       MOVE SPACES TO FIELD-INFOBUF                               090726ma
+056100       MOVE FORM-NUMBER-OF-FIELDS(FRMIDX)                         090726ma
+056200         TO FIELD-NUMBER-OF-ENTRIES                               090726ma
+056300       MOVE 14 TO FIELD-ENTRY-LENGTH                              090726ma
+056400       IF J3KFORMINFO-REPRODUCED-FR = SPACES                      090901ma
+056500        DISPLAY "   PROCESSING "                                  090901ma
+056600                FORM-FORM-NAME(FRMIDX)                            090901ma
+056700       ELSE                                                       090901ma
+056800        DISPLAY "   PROCESSING "                                  090901ma
+056900                FORM-FORM-NAME(FRMIDX) " REPRODUCED FROM: "       090901ma
+057000                J3KFORMINFO-REPRODUCED-FR                         090901ma
+057100       END-IF                                                     090901ma
+057200       COMPUTE FIELD-INFOBUFLEN =                                 090726ma
+057300        10 + ( FIELD-NUMBER-OF-ENTRIES * FIELD-ENTRY-LENGTH)      090726ma
+057400       END-COMPUTE                                                090901ma
+057500       MOVE FORM-FORM-NAME(FRMIDX) TO FIELD-FORM-NAME             090726ma
+057600       INITIALIZE SCREEN-CSTATUS                                  090726ma
+057700D      DISPLAY "229.41 CALLING VGETFIELDINFO"                     090726ma
+057800       CALL "VGETFIELDINFO" USING SCREEN-COMAREA,                 090726ma
+057900                          FIELD-INFOBUF, FIELD-INFOBUFLEN         090726ma
+058000       MOVE FORM-FORM-NAME(FRMIDX) TO SCREEN-NFNAME SCREEN-NAME   090726ma
+058100D      DISPLAY "           Form: ["                               090726ma
+058200D              FORM-FORM-NAME(FRMIDX) "]"                         090726ma
+058300*                                                                 090901ma
+058400* GET MORE FIELD INFO FROM SOURCE FORMS FILE                      090901ma
+058500*                                                                 090901ma
+058600       MOVE FORM-NUMBER-OF-FIELDS(FRMIDX) TO FLDCNT               090901ma
+058700*       DISPLAY "FORMNAME: " LINK-FORMNAME                        090901ma
+058800*       DISPLAY "FIELD COUNT: " FLDCNT                            090901ma
+058900       INITIALIZE LINK-J3KFIELDINFO                               090901ma
+059000       CALL "J3KFIELDINFO" USING LINK-FORMNAME LINK-J3KFIELDINFO  091210ma
+059100       END-CALL                                                   090901ma
+059200       PERFORM MERGE-FORMINFO                                     090901ma
+059300      END-IF                                                      090726ma
+059400     END-PERFORM.                                                 090726ma
+059500D    DISPLAY "LEAVING VGETINFO".                                  090726ma
+059600     ADD ACTUAL-FORM-COUNT TO TOTAL-FORMS.                        090726ma
+059700     CALL "VCLOSEFORMF" USING SCREEN-COMAREA.                     090726ma
+059800 COPY SRVMST0 OF J3KLIB.                                          090726ma
+059900 COPY SRVMST1 OF J3KLIB.                                          090726ma
+060000 COPY SRVMST2 OF J3KLIB.                                          090726ma
+060100 COPY SRVMST3 OF J3KLIB.                                          090726ma
+060200 COPY SRVMST4 OF J3KLIB.                                          090726ma
+060300 COPY SRVMST5 OF J3KLIB.                                          090726ma
+060400 COPY SRVMST6 OF J3KLIB.                                          090726ma
+060500 COPY SRVMST7 OF J3KLIB.                                          090726ma
+060600 COPY SRVMST8 OF J3KLIB.                                          090726ma
+060700*-------------------------                                        090901ma
+060800 COPY FFFLDS0 OF J3KLIB.                                          090901ma
+060900 COPY FFFLDS1 OF J3KLIB.                                          090901ma
+061000 COPY FFFLDS2 OF J3KLIB.                                          090901ma
+061100 COPY FFFLDS3 OF J3KLIB.                                          090901ma
+061200 COPY FFFLDS4 OF J3KLIB.                                          090901ma
+061300 COPY FFFLDS5 OF J3KLIB.                                          090901ma
+061400 COPY FFFLDS6 OF J3KLIB.                                          090901ma
+061500 COPY FFFLDS7 OF J3KLIB.                                          090901ma
+061600 COPY FFFLDS8 OF J3KLIB.                                          090901ma
+061700*-------------------------                                        090901ma
+061800 COPY FFMSTR0 OF J3KLIB.                                          090901ma
+061900 COPY FFMSTR1 OF J3KLIB.                                          090901ma
+062000 COPY FFMSTR2 OF J3KLIB.                                          090901ma
+062100 COPY FFMSTR3 OF J3KLIB.                                          090901ma
+062200 COPY FFMSTR4 OF J3KLIB.                                          090901ma
+062300 COPY FFMSTR5 OF J3KLIB.                                          090901ma
+062400 COPY FFMSTR6 OF J3KLIB.                                          090901ma
+062500 COPY FFMSTR7 OF J3KLIB.                                          090901ma
+062600 COPY FFMSTR8 OF J3KLIB.                                          090901ma
+062700 COPY FFMSTR9 OF J3KLIB.                                          090901ma
+062800*-------------------------                                        090901ma
+062900 COPY FMMSTR0 OF J3KLIB.                                          090901ma
+063000 COPY FMMSTR1 OF J3KLIB.                                          090901ma
+063100 COPY FMMSTR2 OF J3KLIB.                                          090901ma
+063200 COPY FMMSTR3 OF J3KLIB.                                          090901ma
+063300 COPY FMMSTR4 OF J3KLIB.                                          090901ma
+063400 COPY FMMSTR5 OF J3KLIB.                                          090901ma
+063500 COPY FMMSTR6 OF J3KLIB.                                          090901ma
+063600 COPY FMMSTR7 OF J3KLIB.                                          090901ma
+063700 COPY FMMSTR8 OF J3KLIB.                                          090901ma
+063800 COPY FMMSTR9 OF J3KLIB.                                          090901ma
+063900*-------------------------                                        090901ma
+064000 COPY PRSPEC0 OF J3KLIB.                                          090901ma
+064100 COPY PRSPEC1 OF J3KLIB.                                          090901ma
+064200 COPY PRSPEC2 OF J3KLIB.                                          090901ma
+064300 COPY PRSPEC3 OF J3KLIB.                                          090901ma
+064400 COPY PRSPEC4 OF J3KLIB.                                          090901ma
+064500 COPY PRSPEC5 OF J3KLIB.                                          090901ma
+064600 COPY PRSPEC6 OF J3KLIB.                                          090901ma
+064700 COPY PRSPEC7 OF J3KLIB.                                          090901ma
+064800 COPY PRSPEC8 OF J3KLIB.                                          090901ma
+064900                                                                  090901ma
+065000$PAGE "MISC. ERROR CONDITION SUBROUTINES"                         090726ma
+065100*---------------------------------------------------------        090726ma
+065200 9000-IMAGE-ERROR.                                                090726ma
+065300D    DISPLAY "9000-IMAGE-ERROR".                                  090726ma
+065400     CALL "DBEXPLAIN" USING STATUS-AREA.                          090726ma
+065500     GO TO 9900-ABEND.                                            090726ma
+065600***************************************************************** 090726ma
+065700*---------------------------------------------------------        090726ma
+065800 9000-VPLUS-ERROR.                                                090726ma
+065900D    DISPLAY "9000-VPLUS-ERROR" SCREEN-CSTATUS.                   090726ma
+066000     INITIALIZE  CSTR CERR CPARM.                                 090726ma
+066100     MOVE 80 TO CPARM.                                            090726ma
+066200     CALL "VERRMSG" USING SCREEN-COMAREA ERROR-MSG CPARM CERR.    090726ma
+066300     INITIALIZE SCREEN-CSTATUS.                                   090726ma
+066400     display SCREEN-FORMS-FILE .                                  090726ma
+066500     DISPLAY ERROR-MSG(1:CERR).                                   090726ma
+066600     INITIALIZE CALLTYPE CSTR CERR CPARM.                         090726ma
+066700*---------------------------------------------------------------  090726ma
+066800 9900-ABEND.                                                      090726ma
+066900     DISPLAY "----------------------------------------".          090726ma
+067000     DISPLAY "-MIG801- ABNORMAL END OF PROGRAM".                  090726ma
+067100     DISPLAY "----------------------------------------".          090726ma
+067200*---------------------------------------------------------------  090726ma
+067300 9999-RETURN.                                                     090726ma
+067400     Display " END OF PROGRAM "  WITH NO ADVANCING.               090726ma
+067500     MOVE "SHOWTIME" TO CMD.                                      090726ma
+067600     PERFORM MPE-COMMAND.                                         090726ma
+067700     GOBACK.                                                      090726ma
+067800*---------------------------------------------------------------- 090726ma
+067900 MERGE-FORMINFO.                                                  090901ma
+068000*                                                                 090901ma
+068100*> MERGE VPLUS DATA WITH EXTRACTED SOURCE DATA                    090901ma
+068200*                                                                 090901ma
+068300     MOVE FORM-FORM-NAME(FRMIDX)        TO VPLUS-FORM-NAME.       090901ma
+068400     MOVE FORM-FORM-NUMBER(FRMIDX)      TO VPLUS-FORM-NUMBER.     090901ma
+068500     MOVE FLDCNT                       TO VPLUS-NUMBER-OF-FIELDS. 090901ma
+068600     MOVE FORM-BUF-LENGTH(FRMIDX)       TO VPLUS-BUF-LENGTH.      090901ma
+068700     MOVE FORM-NEXT-FORM(FRMIDX)        TO VPLUS-NEXT-FORM.       090901ma
+068800     MOVE FORM-REPEAT-OPTION(FRMIDX)    TO VPLUS-REPEAT-OPTION.   090901ma
+068900     MOVE FORM-NFORM-OPTION(FRMIDX)     TO VPLUS-NFORM-OPTION.    090901ma
+069000     MOVE J3KFORMINFO-FORM1             TO J3K-FORM1.             090901ma
+069100     MOVE J3KFORMINFO-FORM2             TO J3K-FORM2.             090901ma
+069200     MOVE J3KFORMINFO-REPEAT-OPTION     TO J3K-REPEAT-OPTION.     090901ma
+069300     MOVE J3KFORMINFO-NFORM-OPTION      TO J3K-NFORM-OPTION.      090901ma
+069400     MOVE J3KFORMINFO-NFORM             TO J3K-NFORM.             090901ma
+069500     MOVE J3KFORMINFO-FKEY-DEF          TO J3K-FKEY-DEF.          090901ma
+069600     MOVE J3KFORMINFO-REPRODUCED-FR     TO J3K-REPRODUCED-FR.     090901ma
+069700     MOVE J3KFORMINFO-COMMENTS          TO J3K-COMMENTS.          090901ma
+069800                                                                  090901ma
+069900     DISPLAY "**** VPLUS DATA ****".                              090901ma
+070000     DISPLAY VPLUS-FORM-NAME                                      090901ma
+070100             VPLUS-NUMBER-OF-FIELDS VPLUS-BUF-LENGTH.             090901ma
+070200     DISPLAY VPLUS-NEXT-FORM VPLUS-REPEAT-OPTION                  090901ma
+070300             VPLUS-NFORM-OPTION.                                  090901ma
+070400                                                                  090901ma
+070500     DISPLAY "**** J3K DATA ****".                                090901ma
+070600     DISPLAY J3K-FORM1 J3K-FORM2 J3K-COMMENTS.                    090901ma
+070700     DISPLAY J3K-NFORM J3K-REPEAT-OPTION J3K-NFORM-OPTION         090901ma
+070800             J3K-FKEY-DEF J3K-REPRODUCED-FR.                      090901ma
+070900                                                                  090901ma
+071000                                                                  090901ma
+071100     MOVE J3KFLDCNT  TO J3K-CNT.                                  090901ma
+071200     MOVE FLDCNT     TO VPLUS-CNT.                                090901ma
+071300     MOVE "0" TO MISMATCH-SW.                                     090901ma
+071400     IF J3KFLDCNT <> FLDCNT                                       090901ma
+071500      DISPLAY "FIELD CNT MIS-MATCH, VGETFORMINFO & J3K LOGIC"     090901ma
+071600      MOVE "1" TO MISMATCH-SW                                     090901ma
+071700      IF J3KFLDCNT > FLDCNT                                       090901ma
+071800       MOVE J3KFLDCNT TO FLDCNT VPLUS-NUMBER-OF-FIELDS            090901ma
+071900      ELSE                                                        090901ma
+072000       MOVE FLDCNT TO J3KFLDCNT VPLUS-NUMBER-OF-FIELDS.           090901ma
+072100     DISPLAY "**** FIELDS ****".                                  090901ma
+072200     PERFORM VARYING FLDIDX FROM 1 BY 1                           090901ma
+072300       UNTIL FLDIDX > FLDCNT                                      090901ma
+072400      MOVE J3KFIELDINFO-FLD1(FLDIDX)                              090901ma
+072500        TO J3K-FLD1(FLDIDX)                                       090901ma
+072600      MOVE FIELD-FIELD-NAME(FLDIDX)                               090901ma
+072700        TO VPLUS-FIELD-NAME(FLDIDX)                               090901ma
+072800      MOVE J3KFIELDINFO-FLD2(FLDIDX)                              090901ma
+072900        TO J3K-FLD2(FLDIDX)                                       090901ma
+073000      MOVE J3KFIELDINFO-ENH(FLDIDX)                               090901ma
+073100        TO J3K-ENH(FLDIDX)                                        090901ma
+073200      MOVE FIELD-ENHANCE(FLDIDX)                                  090901ma
+073300        TO VPLUS-ENHANCE(FLDIDX)                                  090901ma
+073400      MOVE J3KFIELDINFO-ESCVAL(FLDIDX)                            090901ma
+073500        TO J3K-ESCVAL(FLDIDX)                                     090901ma
+073600      MOVE J3KFIELDINFO-A(FLDIDX)                                 090901ma
+073700        TO J3K-A(FLDIDX)                                          090901ma
+073800      MOVE J3KFIELDINFO-FLDNUM(FLDIDX)                            090901ma
+073900        TO J3K-FLDNUM(FLDIDX)                                     090901ma
+074000      MOVE FIELD-NUM(FLDIDX)                                      090901ma
+074100        TO VPLUS-NUM(FLDIDX)                                      090901ma
+074200      MOVE J3KFIELDINFO-SCRNODR(FLDIDX)                           090901ma
+074300        TO J3K-SCRNODR(FLDIDX)                                    090901ma
+074400      MOVE FIELD-SCREEN-ORD-NUM(FLDIDX)                           090901ma
+074500        TO VPLUS-SCREEN-ORD-NUM(FLDIDX)                           090901ma
+074600      MOVE FIELD-POSITION(FLDIDX)                                 090901ma
+074700        TO VPLUS-POSITION(FLDIDX)                                 090901ma
+074800      MOVE J3KFIELDINFO-LEN(FLDIDX)                               090901ma
+074900        TO J3K-LEN(FLDIDX)                                        090901ma
+075000      MOVE FIELD-LENGTH(FLDIDX)                                   090901ma
+075100        TO VPLUS-LENGTH(FLDIDX)                                   090901ma
+075200      MOVE J3KFIELDINFO-ROW(FLDIDX)                               090901ma
+075300        TO J3K-ROW(FLDIDX)                                        090901ma
+075400      MOVE J3KFIELDINFO-COL(FLDIDX)                               090901ma
+075500        TO J3K-COL(FLDIDX)                                        090901ma
+075600      IF J3KFIELDINFO-FTYPE(FLDIDX) = Spaces                      090910ma
+075700       Move "O " To J3KFIELDINFO-FTYPE(FLDIDX)                    090910ma
+075800      END-IF                                                      090910ma
+075900      MOVE J3KFIELDINFO-FTYPE(FLDIDX)                             090907ma
+076000        TO J3K-FTYPE(FLDIDX)                                      090907ma
+076100      IF J3KFIELDINFO-DTYPE(FLDIDX) = Spaces                      090910ma
+076200       Move "CHAR" To J3KFIELDINFO-DTYPE(FLDIDX)                  090910ma
+076300      END-IF                                                      090910ma
+076400      MOVE J3KFIELDINFO-DTYPE(FLDIDX)                             090907ma
+076500        TO J3K-DTYPE(FLDIDX)                                      090907ma
+076600      MOVE J3KFIELDINFO-INIT(FLDIDX)                              090907ma
+076700        TO J3K-INIT(FLDIDX)                                       090907ma
+076800      MOVE J3KFIELDINFO-PROCSPECS(FLDIDX)                         090907ma
+076900        TO J3K-PROCSPECS(FLDIDX)                                  090907ma
+077000      DISPLAY J3K-FLD2(FLDIDX) J3K-ESCVAL(FLDIDX) " "             090901ma
+077100              J3K-FLDNUM(FLDIDX) " " J3K-LEN(FLDIDX) " "          090901ma
+077200              J3K-ROW(FLDIDX) " " J3K-COL(FLDIDX) " "             090901ma
+077300              J3K-FTYPE(FLDIDX) " " J3K-DTYPE(FLDIDX)             090907ma
+077400      IF J3K-INIT(FLDIDX) > SPACES                                090907ma
+077500       DISPLAY J3K-INIT(FLDIDX)                                   090907ma
+077600      END-IF                                                      090907ma
+077700      IF J3K-PROCSPECS(FLDIDX) > SPACES                           090910ma
+077800       PERFORM GET-PROCSPEC-LEN                                   090910ma
+077900       DISPLAY J3K-PROCSPECS(FLDIDX)(1:PROCSPEC-LENGTH)           090910ma
+078000      END-IF                                                      090907ma
+078100     END-PERFORM.                                                 090726ma
+078200                                                                  090901ma
+078300*---------------------------------------------------------------- 090726ma
+078400 DELETE-FORMDATA.                                                 090901ma
+078500                                                                  090901ma
+078600                                                                  090901ma
+078700*                                                                 090901ma
+078800* Prepare for form data reload, this paragraph will delete        090901ma
+078900* all records related to a formsfile from the following           090901ma
+079000* data sets:                                                      090901ma
+079100*                                                                 090901ma
+079200* FFFLDS: The formsfile FIELDS data set.                          090901ma
+079300* FFMSTR: The formsfile FILE data set.                            090901ma
+079400* FMMSTR: The formsfile FORMS data set.                           090901ma
+079500* PRSPEC: The formfile PROCESSING SPECS data set.                 090901ma
+079600*                                                                 090901ma
+079700     Display "Find and Delete records for " SCREEN-FORMS-FILE.    090901ma
+079800                                                                  090901ma
+079900 BEGIN-DELETE.                                                    090901ma
+080000     Initialize FFMSTR-BUFFER FFIDX.                              090901ma
+080100     Move 999999999 To FFFLDS-Del-Cnt FMMSTR-Del-Cnt.             090901ma
+080200     Perform Rewind-FMMSTR.                                       090901ma
+080300     Perform Varying FFIDX From 1 by 1                            090901ma
+080400       Until END-OF-FILE                                          090901ma
+080500          Or FFIDX > 10000                                        090901ma
+080600          Or FFMSTR-VFIL-NAME = SCREEN-FORMS-FILE                 090901ma
+080700      Initialize FFMSTR-BUFFER                                    090901ma
+080800      Perform Get-FFMSTR-Serial                                   090901ma
+080900     End-Perform.                                                 090901ma
+081000     If END-OF-FILE or FFIDX > 10000                              090901ma
+081100       Display "OK! no records exist for " SCREEN-FORMS-FILE      090901ma
+081200       Go to DELETE-FORMDATA-EXIT                                 090901ma
+081300     Else                                                         090901ma
+081400       Perform Delete-Fields Until FFFLDS-Del-Cnt = 0             090901ma
+081500       Perform Delete-Forms Until FMMSTR-Del-Cnt = 0              090901ma
+081600       Perform Delete-FormsFile.                                  090901ma
+081700     Go To BEGIN-DELETE.                                          090901ma
+081800*                                                                 090901ma
+081900 Delete-FormsFile.                                                090901ma
+082000     Move FFMSTR-VFIL-UNIQUE to Search-Key-I2.                    090901ma
+082100     Move "VFIL-UNIQUE;" To Search-Item.                          090901ma
+082200     Perform Find-FFMSTR.                                         090901ma
+082300     If CONDITION-WORD = 0 and Entries-In-Chain > 0               090901ma
+082400      Perform Get-FFMSTR-CHAINED                                  090901ma
+082500      Perform Lock-FFMSTR                                         090901ma
+082600      Perform Delete-FFMSTR                                       090901ma
+082700      Perform Unlock-FFMSTR.                                      090901ma
+082800                                                                  090901ma
+082900*                                                                 090901ma
+083000 Delete-Fields.                                                   090901ma
+083100     Initialize FFFLDS-Rec-Cnt FFFLDS-Del-Cnt FFFLDS-Buffer.      090901ma
+083200     Move FFMSTR-VFIL-UNIQUE to Search-Key-I2.                    090901ma
+083300     Move "VFIL-UNIQUE;" To Search-Item.                          090901ma
+083400     Move 999999999 To PRSPEC-Del-Cnt.                            090901ma
+083500     Perform Find-FFFLDS.                                         090901ma
+083600     If CONDITION-WORD = 0 and Entries-In-Chain > 0               090901ma
+083700      Move Entries-In-Chain To FFFLDS-Rec-Cnt                     090901ma
+083800      Perform Varying FFFIDX From 1 by 1                          090901ma
+083900        Until END-OF-CHAIN or FFFIDX > 100000                     090901ma
+084000       initialize FFFLDS-BUFFER                                   090901ma
+084100       Perform Get-FFFLDS-Chained                                 090901ma
+084200       If not END-OF-CHAIN                                        090901ma
+084300        Move Status-Area to Save-Status                           090901ma
+084400        Perform Delete-ProcSpecs until PRSPEC-Del-Cnt = 0         090901ma
+084500        Move Save-Status To Status-Area                           090901ma
+084600        Perform Get-FFFLDS-Direct                                 090901ma
+084700        Perform Lock-FFFLDS                                       090901ma
+084800        Perform Delete-FFFLDS                                     090901ma
+084900        Add 1 To FFFLDS-Del-Cnt                                   090901ma
+085000        Perform Unlock-FFFLDS                                     090901ma
+085100       End-If                                                     090901ma
+085200      End-Perform.                                                090901ma
+085300*                                                                 090901ma
+085400 Delete-Forms.                                                    090901ma
+085500     Initialize FMMSTR-Rec-Cnt FMMSTR-Del-Cnt FMMSTR-Buffer.      090901ma
+085600     Move FFMSTR-VFIL-UNIQUE to Search-Key-I2.                    090901ma
+085700     Move "VFIL-UNIQUE;" To Search-Item.                          090901ma
+085800     Perform Find-FMMSTR.                                         090901ma
+085900     If CONDITION-WORD = 0 and Entries-In-Chain > 0               090901ma
+086000      Move Entries-In-Chain To FMMSTR-Rec-Cnt                     090901ma
+086100      Perform Varying FFFIDX From 1 by 1                          090901ma
+086200        Until END-OF-CHAIN or FFFIDX > 100000                     090901ma
+086300       initialize FMMSTR-BUFFER                                   090901ma
+086400       Perform Get-FMMSTR-Chained                                 090901ma
+086500       If not END-OF-CHAIN                                        090901ma
+086600        Perform Get-FMMSTR-Direct                                 090901ma
+086700        Perform Lock-FMMSTR                                       090901ma
+086800        Perform Delete-FMMSTR                                     090901ma
+086900        Add 1 To FMMSTR-Del-Cnt                                   090901ma
+087000        Perform Unlock-FMMSTR                                     090901ma
+087100       End-If                                                     090901ma
+087200      End-Perform.                                                090901ma
+087300*                                                                 090901ma
+087400 Delete-ProcSpecs.                                                090901ma
+087500     Initialize PRSPEC-Rec-Cnt PRSPEC-Del-Cnt PRSPEC-Buffer.      090901ma
+087600     Move FFFLDS-VFLD-UNIQUE to Search-Key-I2.                    090901ma
+087700     Move "VFLD-UNIQUE;" To Search-Item.                          090901ma
+087800     Perform Find-PRSPEC.                                         090901ma
+087900     If CONDITION-WORD = 0 and Entries-In-Chain > 0               090901ma
+088000      Move Entries-In-Chain To PRSPEC-Rec-Cnt                     090901ma
+088100      Perform Varying PRSIDX From 1 by 1                          090901ma
+088200        Until END-OF-CHAIN or PRSIDX > PRSPEC-Rec-Cnt             090901ma
+088300       Initialize PRSPEC-BUFFER                                   090901ma
+088400       Perform Get-PRSPEC-Chained                                 090901ma
+088500       If not END-OF-CHAIN                                        090901ma
+088600        Perform Lock-PRSPEC                                       090901ma
+088700        Perform Delete-PRSPEC                                     090901ma
+088800        Add 1 To PRSPEC-Del-Cnt                                   090901ma
+088900        Perform Unlock-PRSPEC                                     090901ma
+089000       End-If                                                     090901ma
+089100      End-Perform.                                                090901ma
+089200                                                                  090901ma
+089300 DELETE-FORMDATA-EXIT.                                            090901ma
+089400     EXIT.                                                        090901ma
+089500*--------------------------------------------------------------   090910ma
+089600 GET-PROCSPEC-LEN.                                                090910ma
+089700     MOVE 0 TO PROCSPEC-LENGTH SPCIDX.                            090910ma
+089800     PERFORM VARYING SPCIDX FROM 1299 BY -1                       090910ma
+089900       UNTIL J3K-PROCSPECS(FLDIDX)(SPCIDX:1) > " "                090910ma
+090000      CONTINUE                                                    090910ma
+090100     END-PERFORM.                                                 090910ma
+090200     MOVE SPCIDX TO PROCSPEC-LENGTH.                              090910ma
+090300                                                                  090910ma
+090400 END PROGRAM MIGVIEW.                                             090726ma
+090500***************************************************************   090726ma
+090600*                                                                 090726ma
+090700***************************************************************   090726ma
+090800$PAGE "THIS PROGRAM ---> J3KFORMINFO   "                          090726ma
+090900                                                                  090726ma
+091000*                                                                 090726ma
+091100*     |           |           |           |           |           090726ma
+091200*     |           |           |           |           |           090726ma
+091300*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      090726ma
+091400* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       090726ma
+091500*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        090726ma
+091600*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         090726ma
+091700*    \|/         \|/         \|/         \|/         \|/          090726ma
+091800*     Y           Y           Y           Y           Y           090726ma
+091900*                                                                 090726ma
+092000$TITLE "J3KFORMINFO - GET MORE FORM INFO"                         090726ma
+092100$CONTROL LIST,DYNAMIC,BOUNDS,POST85                               090726ma
+092200 IDENTIFICATION DIVISION.                                         090726ma
+092300 PROGRAM-ID. J3KFORMINFO.                                         090726ma
+092400 AUTHOR.     MICHAEL ANDERSON.                                    090726ma
+092500 DATE-COMPILED.                                                   090726ma
+092600 ENVIRONMENT DIVISION.                                            090726ma
+092700 CONFIGURATION SECTION.                                           090726ma
+092800 SOURCE-COMPUTER. HP3000.                                         090726ma
+092900 OBJECT-COMPUTER. HP3000.                                         090726ma
+093000 INPUT-OUTPUT SECTION.                                            091210ma
+093100 FILE-CONTROL.                                                    091210ma
+093200     SELECT E-FILE      ASSIGN TO "E"                             091210ma
+093300            FILE STATUS IS E-STATUS.                              091210ma
+093400 DATA DIVISION.                                                   091210ma
+093500 FILE SECTION.                                                    091210ma
+093600*                                                                 091210ma
+093700 FD E-FILE                                                        091210ma
+093800     RECORD CONTAINS 122 CHARACTERS                               091210ma
+093900     DATA RECORD IS E-FILE-RECORD.                                091210ma
+094000 01 E-FILE-RECORD.                                                091210ma
+094100    05 E-LENGTH            PIC S9(4) COMP.                        091210ma
+094200    05 E-TYPE              PIC X.                                 091210ma
+094300    05 E-FORM1             PIC X(15).                             091210ma
+094400    05 E-FORM2             PIC X(15).                             091210ma
+094500    05 E-REPEAT-OPTION     PIC X.                                 091210ma
+094600    05 E-NFORM-OPTION      PIC X.                                 091210ma
+094700    05 E-NFORM             PIC X(15).                             091210ma
+094800    05 E-FKEY-DEF          PIC X.                                 091210ma
+094900    05 E-REPRODUCED-FR     PIC X(15).                             091210ma
+095000    05 E-COMMENTS          PIC X(56).                             091210ma
+095100*                                                                 091210ma
+095200 WORKING-STORAGE SECTION.                                         090726ma
+095300                                                                  090726ma
+095400 01 E-STATUS           PIC XX VALUE "00".                         091210ma
+095500                                                                  091210ma
+095600 01 VALID-E-SW         PIC X VALUE "0".                           091210ma
+095700    88 VALID-E-RECORD  VALUE "1".                                 091210ma
+095800                                                                  091210ma
+095900 01  DONE-READING-SW   PIC X VALUE "0".                           091210ma
+096000    88 DONE-READING    VALUE "1".                                 091210ma
+096100                                                                  091210ma
+096200                                                                  090726ma
+096300 LINKAGE SECTION.                                                 090726ma
+096400                                                                  090726ma
+096500 01 LINK-FORMNAME PIC X(16).                                      090726ma
+096600                                                                  090904ma
+096700 01 LINK-RECORD.                                                  090726ma
+096800    02 LINK-COUNT          PIC S9(4).                             090726ma
+096900    02 LINK-LEN            PIC S9(9).                             090726ma
+097000    02 LINK-RECORD-DATA.                                          091210ma
+097100       05 LINK-HEADER         PIC X(3).                           091210ma
+097200       05 LINK-DATA.                                              091210ma
+097300          10 LINK-FORM1             PIC X(15).                    091210ma
+097400          10 LINK-FORM2             PIC X(15).                    091210ma
+097500          10 LINK-REPEAT-OPTION     PIC X.                        091210ma
+097600          10 LINK-NFORM-OPTION      PIC X.                        091210ma
+097700          10 LINK-NFORM             PIC X(15).                    091210ma
+097800          10 LINK-FKEY-DEF          PIC X.                        091210ma
+097900          10 LINK-REPRODUCED-FR     PIC X(15).                    091210ma
+098000          10 LINK-COMMENTS          PIC X(50).                    091210ma
+098100                                                                  090726ma
+098200 PROCEDURE DIVISION USING LINK-FORMNAME LINK-RECORD.              091210ma
+098300 GET-E-RECORDS.                                                   090726ma
+098400*                                                                 090726ma
+098500* L O A D    "E"    R E C O R D S                                 090726ma
+098600*                                                                 090726ma
+098700     INITIALIZE LINK-RECORD E-FILE-RECORD.                        091210ma
+098800     OPEN INPUT E-FILE.                                           091210ma
+098900     IF E-STATUS <> "00"                                          091210ma
+099000      DISPLAY "ERROR OPENING E FILE"                              091210ma
+099100      GO TO ABEND-J3KFORMINFO.                                    091210ma
+099200                                                                  091210ma
+099300     PERFORM GET-E-RECORD.                                        091210ma
+099400     IF VALID-E-RECORD                                            091210ma
+099500      MOVE E-LENGTH        TO LINK-LEN                            091210ma
+099600      MOVE E-FORM1         TO LINK-FORM1                          091210ma
+099700      MOVE E-FORM2         TO LINK-FORM2                          091210ma
+099800      MOVE E-REPEAT-OPTION TO LINK-REPEAT-OPTION                  091210ma
+099900      MOVE E-NFORM-OPTION  TO LINK-NFORM-OPTION                   091210ma
+100000      MOVE E-NFORM         TO LINK-NFORM                          091210ma
+100100      MOVE E-FKEY-DEF      TO LINK-FKEY-DEF                       091210ma
+100200      MOVE E-REPRODUCED-FR TO LINK-REPRODUCED-FR                  091210ma
+100300      MOVE E-COMMENTS      TO LINK-COMMENTS.                      091210ma
+100400*                                                                 091210ma
+100500* Caller should check LINK-LEN                                    091210ma
+100600*                                                                 091210ma
+100700     GO TO END-J3KFORMINFO.                                       091210ma
+100800*---------------------------------------------------------------- 091210ma
+100900 GET-E-RECORD.                                                    091210ma
+101000     MOVE "0" TO VALID-E-SW DONE-READING-SW.                      091210ma
+101100     PERFORM UNTIL DONE-READING                                   091210ma
+101200      READ E-FILE                                                 091210ma
+101300       AT END                                                     091210ma
+101400        MOVE "1" TO DONE-READING-SW                               091210ma
+101500      NOT AT END                                                  091210ma
+101600       IF LINK-FORMNAME = E-FORM1                                 091210ma
+101700       OR LINK-FORMNAME = E-FORM2                                 091210ma
+101800        MOVE "1" TO VALID-E-SW                                    091210ma
+101900        MOVE "1" TO DONE-READING-SW                               091210ma
+102000       END-IF                                                     091210ma
+102100      END-READ                                                    091210ma
+102200     END-PERFORM.                                                 091210ma
+102300                                                                  091210ma
+102400*---------------------------------------------------------------  091210ma
+102500 ABEND-J3KFORMINFO.                                               091210ma
+102600     DISPLAY "ABNORMAL END OF J3KFORMINFO".                       091210ma
+102700*---------------------------------------------------------------  091210ma
+102800 END-J3KFORMINFO.                                                 091210ma
+102900     CLOSE E-FILE.                                                091210ma
+103000     GOBACK.                                                      091210ma
+103100                                                                  091210ma
+103200 END PROGRAM J3KFORMINFO.                                         090726ma
+103300                                                                  090726ma
+103400$PAGE "THIS PROGRAM ---> J3KFORMDESIGN   "                        090726ma
+103500                                                                  090726ma
+103600*                                                                 090726ma
+103700*     |           |           |           |           |           090726ma
+103800*     |           |           |           |           |           090726ma
+103900*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      090726ma
+104000* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       090726ma
+104100*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        090726ma
+104200*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         090726ma
+104300*    \|/         \|/         \|/         \|/         \|/          090726ma
+104400*     Y           Y           Y           Y           Y           090726ma
+104500*                                                                 090726ma
+104600$TITLE "J3KFORMDESIGN, The design as it was enter in FORMSPEC"    090726ma
+104700$CONTROL LIST,DYNAMIC,BOUNDS,POST85                               090726ma
+104800 IDENTIFICATION DIVISION.                                         090726ma
+104900 PROGRAM-ID. J3KFORMDESIGN.                                       090726ma
+105000 AUTHOR.     MICHAEL ANDERSON.                                    090726ma
+105100 DATE-COMPILED.                                                   090726ma
+105200 ENVIRONMENT DIVISION.                                            090726ma
+105300 CONFIGURATION SECTION.                                           090726ma
+105400 SOURCE-COMPUTER. HP3000.                                         090726ma
+105500 OBJECT-COMPUTER. HP3000.                                         090726ma
+105600 INPUT-OUTPUT SECTION.                                            091210ma
+105700 FILE-CONTROL.                                                    091210ma
+105800     SELECT E-FILE      ASSIGN TO "E"                             091210ma
+105900            FILE STATUS IS E-STATUS.                              091210ma
+106000     SELECT F-FILE      ASSIGN TO "F"                             091210ma
+106100            FILE STATUS IS F-STATUS.                              091210ma
+106200     SELECT V-FILE      ASSIGN TO "V"                             091210ma
+106300            FILE STATUS IS V-STATUS.                              091210ma
+106400 DATA DIVISION.                                                   091210ma
+106500 FILE SECTION.                                                    091210ma
+106600*                                                                 091210ma
+106700 FD E-FILE                                                        091210ma
+106800     RECORD CONTAINS 122 CHARACTERS                               091210ma
+106900     DATA RECORD IS E-FILE-RECORD.                                091210ma
+107000 01 E-FILE-RECORD.                                                091210ma
+107100    05 E-LENGTH            PIC S9(4) COMP.                        091210ma
+107200    05 E-TYPE              PIC X.                                 091210ma
+107300    05 E-FORM1             PIC X(15).                             091210ma
+107400    05 E-FORM2             PIC X(15).                             091210ma
+107500    05 E-REPEAT-OPTION     PIC X.                                 091210ma
+107600    05 E-NFORM-OPTION      PIC X.                                 091210ma
+107700    05 E-NFORM             PIC X(15).                             091210ma
+107800    05 E-FKEY-DEF          PIC X.                                 091210ma
+107900    05 E-REPRODUCED-FR     PIC X(15).                             091210ma
+108000    05 E-COMMENTS          PIC X(56).                             091210ma
+108100*                                                                 091210ma
+108200 FD F-FILE                                                        091210ma
+108300     RECORD CONTAINS 4114 CHARACTERS                              091210ma
+108400     DATA RECORD IS F-FILE-RECORD.                                091210ma
+108500 01 F-FILE-RECORD.                                                091210ma
+108600    05  F-LENGTH       PIC S9(4) COMP.                            091210ma
+108700    05  F-TYPE         PIC X.                                     091210ma
+108800    05  F-FORM         PIC X(15).                                 091210ma
+108900    05  F-DESIGN       PIC X(4096).                               091210ma
+109000*                                                                 091210ma
+109100 FD V-FILE                                                        091210ma
+109200     RECORD CONTAINS 4114 CHARACTERS                              091210ma
+109300     DATA RECORD IS V-FILE-RECORD.                                091210ma
+109400 01 V-FILE-RECORD.                                                091210ma
+109500    05  V-LENGTH       PIC S9(4) COMP.                            091210ma
+109600    05  V-TYPE         PIC X.                                     091210ma
+109700    05  V-FORM         PIC X(15).                                 091210ma
+109800    05  V-DESIGN       PIC X(4096).                               091210ma
+109900                                                                  091210ma
+110000 WORKING-STORAGE SECTION.                                         090726ma
+110100                                                                  090726ma
+110200 01 Design-name        Pic X(16).                                 091210ma
+110300                                                                  091210ma
+110400 01 E-STATUS           PIC XX VALUE "00".                         091210ma
+110500 01 F-STATUS           PIC XX VALUE "00".                         091210ma
+110600 01 V-STATUS           PIC XX VALUE "00".                         091210ma
+110700                                                                  091210ma
+110800 01 VALID-E-SW         PIC X VALUE "0".                           091210ma
+110900    88 VALID-E-RECORD  VALUE "1".                                 091210ma
+111000                                                                  091210ma
+111100 01 VALID-F-SW         PIC X VALUE "0".                           091210ma
+111200    88 VALID-F-RECORD  VALUE "1".                                 091210ma
+111300                                                                  091210ma
+111400 01 VALID-V-SW         PIC X VALUE "0".                           091210ma
+111500    88 VALID-V-RECORD  VALUE "1".                                 091210ma
+111600                                                                  091210ma
+111700 01  DONE-READING-SW   PIC X VALUE "0".                           091210ma
+111800    88 DONE-READING    VALUE "1".                                 091210ma
+111900                                                                  091210ma
+112000 LINKAGE SECTION.                                                 090726ma
+112100                                                                  090726ma
+112200 01 LINK-FORMNAME  PIC X(16).                                     090726ma
+112300 01 LINK-REPRONAME PIC X(16).                                     090726ma
+112400 01 LINK-RECORD    PIC X(4096).                                   091210ma
+112500 01 LINK-LEN       PIC S9(9) COMP.                                091210ma
+112600 PROCEDURE DIVISION USING LINK-FORMNAME LINK-REPRONAME            091210ma
+112700                          LINK-RECORD LINK-LEN.                   091210ma
+112800*---------------------------------------------------------------  090726ma
+112900 Link-VF-Pointers.                                                090726ma
+113000     INITIALIZE LINK-RECORD LINK-LEN.                             091210ma
+113100     OPEN INPUT E-FILE.                                           091210ma
+113200     IF E-STATUS <> "00"                                          091210ma
+113300      DISPLAY "ERROR OPENING E FILE"                              091210ma
+113400      GO TO ABEND-J3KFORMDESIGN.                                  091210ma
+113500                                                                  091210ma
+113600     IF F-STATUS <> "00"                                          091210ma
+113700      DISPLAY "ERROR OPENING F FILE"                              091210ma
+113800      GO TO ABEND-J3KFORMDESIGN.                                  091210ma
+113900                                                                  091210ma
+114000     IF V-STATUS <> "00"                                          091210ma
+114100      DISPLAY "ERROR OPENING V FILE"                              091210ma
+114200      GO TO ABEND-J3KFORMDESIGN.                                  091210ma
+114300*                                                                 091210ma
+114400* If an "E" record type is found, then this is a valid form.      091210ma
+114500*                                                                 091210ma
+114600     PERFORM GET-E-RECORD.                                        091210ma
+114700     IF NOT VALID-E-RECORD                                        091210ma
+114800      DISPLAY LINK-FORMNAME " IS NOT A VALID FORMNAME"            091210ma
+114900      GO TO ABEND-J3KFORMDESIGN.                                  091210ma
+115000*                                                                 091210ma
+115100* -- N O T E --                                                   091210ma
+115200*            If FDATA-REPRODUCED-FR is not blank, then this       091210ma
+115300*            form will not have a "V" and "F" record type.        091210ma
+115400*            Instead find the "V" and "F" records where the       091210ma
+115500*            Design-Name matches the value in FDATA-REPRODUCED-FR.091210ma
+115600*                                                                 091210ma
+115700     If LINK-REPRONAME > SPACES                                   091210ma
+115800      Move LINK-REPRONAME to Design-name                          091210ma
+115900     ELSE                                                         091210ma
+116000      MOVE LINK-FORMNAME TO Design-name.                          091210ma
+116100                                                                  091210ma
+116200*           Now lets get the design form records.                 091210ma
+116300*                                                                 091210ma
+116400* Formspec stores the screen data in two separate records,        091210ma
+116500* the "V" and "F" record.                                         091210ma
+116600*                                                                 091210ma
+116700* If both records are not found with the same record length       091210ma
+116800* then this is not a valid form DESIGN.                           091210ma
+116900*                                                                 091210ma
+117000     PERFORM GET-F-RECORD.                                        091210ma
+117100     PERFORM GET-V-RECORD.                                        091210ma
+117200     IF F-LENGTH = V-LENGTH                                       091210ma
+117300      MOVE F-DESIGN   TO LINK-RECORD                              091210ma
+117400      MOVE F-LENGTH   TO LINK-LEN.                                091210ma
+117500*                                                                 091210ma
+117600* Caller should check LINK-LEN                                    091210ma
+117700*  0 = FAILED                                                     091210ma
+117800*                                                                 091210ma
+117900     GO TO END-J3KFORMDESIGN.                                     091210ma
+118000*---------------------------------------------------------------- 091210ma
+118100 GET-E-RECORD.                                                    091210ma
+118200     MOVE "0" TO VALID-E-SW DONE-READING-SW.                      091210ma
+118300     PERFORM UNTIL DONE-READING                                   091210ma
+118400      READ E-FILE                                                 091210ma
+118500       AT END                                                     091210ma
+118600        MOVE "1" TO DONE-READING-SW                               091210ma
+118700      NOT AT END                                                  091210ma
+118800       IF LINK-FORMNAME = E-FORM1                                 091210ma
+118900       OR LINK-FORMNAME = E-FORM2                                 091210ma
+119000        MOVE "1" TO VALID-E-SW                                    091210ma
+119100        MOVE "1" TO DONE-READING-SW                               091210ma
+119200       END-IF                                                     091210ma
+119300      END-READ                                                    091210ma
+119400     END-PERFORM.                                                 091210ma
+119500*---------------------------------------------------------------- 091210ma
+119600 GET-F-RECORD.                                                    091210ma
+119700     MOVE "0" TO VALID-F-SW DONE-READING-SW.                      091210ma
+119800     PERFORM UNTIL DONE-READING                                   091210ma
+119900      READ F-FILE                                                 091210ma
+120000       AT END                                                     091210ma
+120100        MOVE "1" TO DONE-READING-SW                               091210ma
+120200      NOT AT END                                                  091210ma
+120300       IF F-FORM = Design-name                                    091210ma
+120400        MOVE "1" TO VALID-F-SW                                    091210ma
+120500        MOVE "1" TO DONE-READING-SW                               091210ma
+120600       END-IF                                                     091210ma
+120700      END-READ                                                    091210ma
+120800     END-Perform.                                                 090726ma
+120900*---------------------------------------------------------------- 091210ma
+121000 GET-V-RECORD.                                                    091210ma
+121100     MOVE "0" TO VALID-V-SW DONE-READING-SW.                      091210ma
+121200     PERFORM UNTIL DONE-READING                                   091210ma
+121300      READ V-FILE                                                 091210ma
+121400       AT END                                                     091210ma
+121500        MOVE "1" TO DONE-READING-SW                               091210ma
+121600      NOT AT END                                                  091210ma
+121700       IF V-FORM = Design-name                                    091210ma
+121800        MOVE "1" TO VALID-V-SW                                    091210ma
+121900        MOVE "1" TO DONE-READING-SW                               091210ma
+122000       END-IF                                                     091210ma
+122100      END-READ                                                    091210ma
+122200     END-Perform.                                                 091210ma
+122300*---------------------------------------------------------------  091210ma
+122400 ABEND-J3KFORMDESIGN.                                             091210ma
+122500     DISPLAY "ABNORMAL END OF J3KFORMDESIGN".                     091210ma
+122600*---------------------------------------------------------------  091210ma
+122700 END-J3KFORMDESIGN.                                               091210ma
+122800     CLOSE E-FILE.                                                091210ma
+122900     CLOSE F-FILE.                                                091210ma
+123000     CLOSE V-FILE.                                                091210ma
+123100     GOBACK.                                                      091210ma
+123200*                                                                 090726ma
+123300 END PROGRAM J3KFORMDESIGN.                                       090726ma
+123400                                                                  090726ma
+123500*      COMPUTE Y = LINK-LEN * -1 END-COMPUTE                      090726ma
+123600*      CALL INTRINSIC "FWRITE" USING \1\ clearscreen \-2\ \0\     090726ma
+123700*      MOVE "PAUSE 2" TO CMD                                      090726ma
+123800*      PERFORM MPE-COMMAND                                        090726ma
+123900*      CALL INTRINSIC "FWRITE" USING \1\ LINK-RECORD Y \0\        091210ma
+124000*      MOVE "PAUSE 2" TO CMD                                      090726ma
+124100*      PERFORM MPE-COMMAND                                        090726ma
+124200$PAGE "THIS PROGRAM ---> J3KFIELDINFO   "                         090726ma
+124300                                                                  090726ma
+124400*                                                                 090726ma
+124500*     |           |           |           |           |           090726ma
+124600*     |           |           |           |           |           090726ma
+124700*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      090726ma
+124800* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       090726ma
+124900*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        090726ma
+125000*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         090726ma
+125100*    \|/         \|/         \|/         \|/         \|/          090726ma
+125200*     Y           Y           Y           Y           Y           090726ma
+125300*                                                                 090726ma
+125400$TITLE "J3KFIELDINFO, GET MOTE FIELD INFO"                        090726ma
+125500$CONTROL LIST,DYNAMIC,BOUNDS,POST85                               090726ma
+125600 IDENTIFICATION DIVISION.                                         090726ma
+125700 PROGRAM-ID. J3KFIELDINFO.                                        090726ma
+125800 AUTHOR.     MICHAEL ANDERSON.                                    090726ma
+125900 DATE-COMPILED.                                                   090726ma
+126000 ENVIRONMENT DIVISION.                                            090726ma
+126100 CONFIGURATION SECTION.                                           090726ma
+126200 SOURCE-COMPUTER. HP3000.                                         090726ma
+126300 OBJECT-COMPUTER. HP3000.                                         090726ma
+126400 INPUT-OUTPUT SECTION.                                            091210ma
+126500 FILE-CONTROL.                                                    091210ma
+126600     SELECT G-FILE      ASSIGN TO "G"                             091210ma
+126700            FILE STATUS IS G-STATUS.                              091210ma
+126800     SELECT T-FILE      ASSIGN TO "T"                             091210ma
+126900            FILE STATUS IS T-STATUS.                              091210ma
+127000                                                                  091210ma
+127100 DATA DIVISION.                                                   091210ma
+127200 FILE SECTION.                                                    091210ma
+127300 FD G-FILE                                                        091210ma
+127400     RECORD CONTAINS 1427 CHARACTERS                              091210ma
+127500     DATA RECORD IS G-FILE-RECORD.                                091210ma
+127600 01 G-FILE-RECORD.                                                091210ma
+127700    05 G-FORM       PIC X(15).                                    091210ma
+127800    05 G-FIELD      PIC X(15).                                    091210ma
+127900    05 G-NUMX       PIC X(4).                                     091210ma
+128000    05 G-LENX       PIC X(4).                                     091210ma
+128100    05 G-FIELD2     PIC X(15).                                    091210ma
+128200    05 G-ENH        PIC X(4).                                     091210ma
+128300    05 G-FTYPE      PIC X.                                        091210ma
+128400    05 G-DTYPE      PIC X(4).                                     091210ma
+128500    05 G-INIT       PIC X(65).                                    091210ma
+128600    05 G-PROCSPECS  PIC X(1300).                                  091210ma
+128700*                                                                 091210ma
+128800 FD T-FILE                                                        091210ma
+128900     RECORD CONTAINS 12840 CHARACTERS                             091210ma
+129000     DATA RECORD IS T-FILE-RECORD.                                091210ma
+129100 01 T-FILE-RECORD.                                                091210ma
+129200    05 T-LENGTH       PIC S9(4) COMP.                             091210ma
+129300    05 T-TYPE         PIC X.                                      091210ma
+129400    05 T-FORM         PIC X(15).                                  091210ma
+129500    05 T-CNT1         PIC S9(4) COMP.                             091210ma
+129600    05 T-CNT2         PIC S9(4) COMP.                             091210ma
+129700    05 FILLER         PIC X(18).                                  091210ma
+129800    05 T-FIELDS OCCURS 256 TIMES.                                 091210ma
+129900       10 T-FLD1         PIC X(15).                               091210ma
+130000       10 T-FLD2         PIC X(15).                               091210ma
+130100       10 T-ENH          PIC X(4).                                091210ma
+130200       10 T-ESCVAL       PIC X.                                   091210ma
+130300       10 T-A            PIC X.                                   091210ma
+130400       10 T-FLDNUM       PIC S9(4) COMP.                          091210ma
+130500       10 T-SCRNODR      PIC S9(4) COMP.                          091210ma
+130600       10 FILLER         PIC S9(4) COMP.                          091210ma
+130700       10 FILLER         PIC S9(4) COMP.                          091210ma
+130800       10 T-LEN          PIC S9(4) COMP.                          091210ma
+130900       10 T-ROW          PIC S9(4) COMP.                          091210ma
+131000       10 T-COL          PIC S9(4) COMP.                          091210ma
+131100                                                                  091210ma
+131200 WORKING-STORAGE SECTION.                                         090726ma
+131300 01 G-STATUS           PIC XX VALUE "00".                         091210ma
+131400 01 T-STATUS           PIC XX VALUE "00".                         091210ma
+131500                                                                  091210ma
+131600 01  VALID-G-SW         PIC X.                                    091210ma
+131700     88  VALID-G        VALUE "1".                                091210ma
+131800                                                                  091210ma
+131900 01  DONE-READING-SW    PIC X.                                    091210ma
+132000     88  DONE-READING   VALUE "1".                                091210ma
+132100                                                                  091210ma
+132200 01  VALID-T-SW         PIC X.                                    090726ma
+132300     88  VALID-T        VALUE "1".                                090726ma
+132400                                                                  090726ma
+132500 01  Ascii-Value                 PIC S9(4) COMP VALUE 0.          090726ma
+132600 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 090726ma
+132700     02 ASCII-BYTE1              PIC X.                           090726ma
+132800     02 ASCII-BYTE2              PIC X.                           090726ma
+132900                                                                  090907ma
+133000 01 FILE-DATA.                                                    090907ma
+133100    02 FILE-ERR-ENH PIC X(4) VALUE SPACES.                        090907ma
+133200    02 FILE-FLD-ENH PIC X(4) VALUE SPACES.                        090907ma
+133300    02 FILE-VERSION PIC X(8) VALUE SPACES.                        090907ma
+133400 01 HP-Enhancements.                                              090907ma
+133500    02 FILLER  PIC X value "@".                                   090907ma
+133600    02 FILLER  PIC X value "A".                                   090907ma
+133700    02 FILLER  PIC X value "B".                                   090907ma
+133800    02 FILLER  PIC X value "C".                                   090907ma
+133900    02 FILLER  PIC X value "D".                                   090907ma
+134000    02 FILLER  PIC X value "E".                                   090907ma
+134100    02 FILLER  PIC X value "F".                                   090907ma
+134200    02 FILLER  PIC X value "G".                                   090907ma
+134300    02 FILLER  PIC X value "H".                                   090907ma
+134400    02 FILLER  PIC X value "I".                                   090907ma
+134500    02 FILLER  PIC X value "J".                                   090907ma
+134600    02 FILLER  PIC X value "K".                                   090907ma
+134700    02 FILLER  PIC X value "L".                                   090907ma
+134800    02 FILLER  PIC X value "M".                                   090907ma
+134900    02 FILLER  PIC X value "N".                                   090907ma
+135000    02 FILLER  PIC X value "O".                                   090907ma
+135100    02 FILLER  PIC X value "S".                                   090907ma
+135200    02 FILLER  PIC X VALUE "Z".                                   090907ma
+135300 01 HPENH-TABLE REDEFINES HP-Enhancements.                        090907ma
+135400    02 HPENH-ENTRIES OCCURS 18 TIMEs.                             090907ma
+135500       05 HPENH PIC X.                                            090907ma
+135600                                                                  090907ma
+135700 01 ENHIDX PIC S9(4) COMP VALUE 0.                                090907ma
+135800                                                                  090907ma
+135900 01 VPLUS-Enhancements.                                           090907ma
+136000    02 FILLER PIC X(4) VALUE "NONE".                              090907ma
+136100    02 FILLER PIC X(4) VALUE "B   ".                              090907ma
+136200    02 FILLER PIC X(4) VALUE "I   ".                              090907ma
+136300    02 FILLER PIC X(4) VALUE "BI  ".                              090907ma
+136400    02 FILLER PIC X(4) VALUE "U   ".                              090907ma
+136500    02 FILLER PIC X(4) VALUE "BU  ".                              090907ma
+136600    02 FILLER PIC X(4) VALUE "IU  ".                              090907ma
+136700    02 FILLER PIC X(4) VALUE "BIU ".                              090907ma
+136800    02 FILLER PIC X(4) VALUE "H   ".                              090907ma
+136900    02 FILLER PIC X(4) VALUE "BH  ".                              090907ma
+137000    02 FILLER PIC X(4) VALUE "IH  ".                              090907ma
+137100    02 FILLER PIC X(4) VALUE "BIH ".                              090907ma
+137200    02 FILLER PIC X(4) VALUE "UH  ".                              090907ma
+137300    02 FILLER PIC X(4) VALUE "BUH ".                              090907ma
+137400    02 FILLER PIC X(4) VALUE "IUH ".                              090907ma
+137500    02 FILLER PIC X(4) VALUE "BIUH".                              090907ma
+137600    02 FILLER PIC X(4) VALUE "S   ".                              090907ma
+137700    02 FILLER PIC X(4) VALUE "ERR ".                              090907ma
+137800 01 VPLUSENH-TABLE REDEFINES VPLUS-Enhancements.                  090907ma
+137900    02 VPLUSENH-ENTRIES OCCURS 18 TIMEs.                          090907ma
+138000       05 VPLUSENH PIC X(4).                                      090907ma
+138100 01 NUMDEC        PIC S9(4) COMP.                                 090907ma
+138200 01 NUMERR        PIC S9(4) COMP.                                 090907ma
+138300 01 NUM1          PIC X(14).                                      090907ma
+138400 01 NUM2          PIC S9(14).                                     090907ma
+138500 01 LFTIDX        PIC S9(4) COMP.                                 091210ma
+138600 01 G-NUM         PIC S9(4) COMP.                                 091210ma
+138700                                                                  091210ma
+138800                                                                  090907ma
+138900 LINKAGE SECTION.                                                 090726ma
+139000                                                                  090726ma
+139100 01 LINK-FORMNAME  PIC X(16).                                     090726ma
+139200 01 LINK-FIELD     PIC X(16).                                     090726ma
+139300 01 LINK-FIELD-DATA.                                              090726ma
+139400  02 LFTCNT             PIC S9(4) COMP.                           090901ma
+139500  02 LFT-ENTRIES OCCURS 128.                                      090901ma
+139600    05 LFT-FLD1         PIC X(15).                                090726ma
+139700    05 LFT-FLD2         PIC X(15).                                090726ma
+139800    05 LFT-ENH          PIC X(4).                                 090726ma
+139900    05 LFT-ESCVAL       PIC X.                                    090726ma
+140000    05 LFT-A            PIC X.                                    090726ma
+140100    05 LFT-FLDNUM       PIC S9(4) COMP.                           090726ma
+140200    05 LFT-SCRNODR      PIC S9(4) COMP.                           090726ma
+140300    05 LFT-LEN          PIC S9(4) COMP.                           090726ma
+140400    05 LFT-ROW          PIC S9(4) COMP.                           090726ma
+140500    05 LFT-COL          PIC S9(4) COMP.                           090726ma
+140600    05 LFT-FTYPE        PIC XX.                                   090907ma
+140700    05 LFT-DTYPE        PIC X(4).                                 090907ma
+140800    05 LFT-INIT         PIC X(65).                                090907ma
+140900    05 LFT-PROCSPECS    PIC X(1300).                              090907ma
+141000                                                                  090907ma
+141100 PROCEDURE DIVISION USING LINK-FORMNAME LINK-FIELD-DATA.          091210ma
+141200*---------------------------------------------------------------- 090726ma
+141300 START-J3KFIELDINFO.                                              091210ma
+141400     INITIALIZE LINK-FIELD-DATA G-FILE-RECORD T-FILE-RECORD.      091210ma
+141500     OPEN INPUT G-FILE.                                           091210ma
+141600     IF G-STATUS <> "00"                                          091210ma
+141700      DISPLAY "ERROR OPENING G-FILE: " G-STATUS                   091210ma
+141800      GO TO ABEND-J3KFIELDINFO.                                   091210ma
+141900                                                                  091210ma
+142000     OPEN INPUT T-FILE.                                           091210ma
+142100     IF T-STATUS <> "00"                                          091210ma
+142200      DISPLAY "ERROR OPENING T-FILE: " T-STATUS                   091210ma
+142300      GO TO ABEND-J3KFIELDINFO.                                   091210ma
+142400                                                                  091210ma
+142500     PERFORM GET-T-RECORDS.                                       091210ma
+142600     PERFORM GET-G-RECORDS.                                       091210ma
+142700     GO TO END-J3KFIELDINFO.                                      091210ma
+142800                                                                  091210ma
+142900*---------------------------------------------------------------- 091210ma
+143000 GET-T-RECORDS.                                                   090726ma
+143100D    DISPLAY "GET-T-RECORDS".                                     090726ma
+143200     MOVE "0" TO VALID-T-SW DONE-READING-SW.                      091210ma
+143300     PERFORM UNTIL DONE-READING                                   091210ma
+143400      READ T-FILE                                                 091210ma
+143500       AT END MOVE "1" TO DONE-READING-SW                         091210ma
+143600      NOT AT END                                                  091210ma
+143700       If T-FORM = LINK-FORMNAME                                  091210ma
+143800        PERFORM VARYING LFTIDX FROM 1 BY 1                        091210ma
+143900          UNTIL LFTIDX > T-CNT1                                   091210ma
+144000         MOVE %0 TO ASCII-BYTE1                                   091210ma
+144100         MOVE T-A(LFTIDX) TO ASCII-BYTE2                          091210ma
+144200         ADD 1                     TO LFTCNT                      091210ma
+144300         MOVE T-FLD1(LFTIDX)               TO LFT-FLD1(LFTCNT)    091210ma
+144400         MOVE T-FLD2(LFTIDX)       TO LFT-FLD2(LFTCNT)            091210ma
+144500         MOVE T-ENH(LFTIDX)        TO LFT-ENH(LFTCNT)             091210ma
+144600         MOVE T-ESCVAL(LFTIDX)     TO LFT-ESCVAL(LFTCNT)          091210ma
+144700         MOVE T-A(LFTIDX)          TO LFT-A(LFTCNT)               091210ma
+144800         MOVE T-FLDNUM(LFTIDX)     TO LFT-FLDNUM(LFTCNT)          091210ma
+144900         MOVE T-SCRNODR(LFTIDX)    TO LFT-SCRNODR(LFTCNT)         091210ma
+145000         MOVE T-LEN(LFTIDX)        TO LFT-LEN(LFTCNT)             091210ma
+145100         MOVE T-ROW(LFTIDX)        TO LFT-ROW(LFTCNT)             091210ma
+145200         MOVE T-COL(LFTIDX)        TO LFT-COL(LFTCNT)             091210ma
+145300        END-PERFORM                                               091210ma
+145400        MOVE "1" TO DONE-READING-SW                               091210ma
+145500       END-IF                                                     091210ma
+145600      END-READ                                                    091210ma
+145700     END-PERFORM.                                                 091210ma
+145800*---------------------------------------------------------------- 090907ma
+145900 GET-G-RECORDS.                                                   090907ma
+146000D    DISPLAY "GET-G-RECORDS".                                     090907ma
+146100     MOVE "0" TO VALID-G-SW DONE-READING-SW.                      091210ma
+146200     PERFORM UNTIL DONE-READING                                   091210ma
+146300      READ T-FILE                                                 091210ma
+146400       AT END MOVE "1" TO DONE-READING-SW                         091210ma
+146500      NOT AT END                                                  091210ma
+146600       If G-FORM = LINK-FORMNAME                                  091210ma
+146700        MOVE G-NUMX TO NUM1                                       091210ma
+146800        INITIALIZE NUM2 NUMDEC NUMERR                             091210ma
+146900        CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR               091210ma
+147000        MOVE NUM2 TO G-NUM                                        091210ma
+147100        PERFORM VARYING LFTIDX FROM 1 BY 1                        091210ma
+147200          UNTIL LFTIDX > LFTCNT                                   091210ma
+147300         IF ((LFT-FLD1(LFTIDX) = G-FIELD OR                       091210ma
+147400              LFT-FLD2(LFTIDX) = G-FIELD) AND                     091210ma
+147500             (LFT-FLDNUM(LFTIDX) =  G-NUM))                       091210ma
+147600          MOVE G-FTYPE           TO LFT-FTYPE(LFTIDX)             091210ma
+147700          MOVE G-DTYPE           TO LFT-DTYPE(LFTIDX)             091210ma
+147800          MOVE G-INIT            TO LFT-INIT(LFTIDX)              091210ma
+147900          MOVE G-PROCSPECS       TO LFT-PROCSPECS(LFTIDX)         091210ma
+148000         END-IF                                                   091210ma
+148100        END-PERFORM                                               091210ma
+148200       END-IF                                                     091210ma
+148300      END-READ                                                    091210ma
+148400     END-PERFORM.                                                 090907ma
+148500*---------------------------------------------------------------  090726ma
+148600 ABEND-J3KFIELDINFO.                                              091210ma
+148700     DISPLAY "ABNORMAL END OF J3KFIELDINFO".                      091210ma
+148800*---------------------------------------------------------------  091210ma
+148900 END-J3KFIELDINFO.                                                091210ma
+149000     CLOSE G-FILE.                                                091210ma
+149100     CLOSE T-FILE.                                                091210ma
+149200     GOBACK.                                                      091210ma
+149300                                                                  091210ma
+149400 END PROGRAM J3KFIELDINFO.                                        090726ma
+149500$PAGE "THIS PROGRAM ---> J3KLOADFORM   "                          090904ma
+149600                                                                  090904ma
+149700*                                                                 090904ma
+149800*     |           |           |           |           |           090904ma
+149900*     |           |           |           |           |           090904ma
+150000*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      090904ma
+150100* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       090904ma
+150200*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        090904ma
+150300*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         090904ma
+150400*    \|/         \|/         \|/         \|/         \|/          090904ma
+150500*     Y           Y           Y           Y           Y           090904ma
+150600*                                                                 090904ma
+150700$TITLE "J3KLOADFORM"                                              090904ma
+150800$CONTROL LIST,DYNAMIC,BOUNDS,POST85                               090904ma
+150900 IDENTIFICATION DIVISION.                                         090904ma
+151000 PROGRAM-ID.     J3KLOADFORM.                                     090904ma
+151100 AUTHOR.     MICHAEL ANDERSON.                                    090904ma
+151200 ENVIRONMENT DIVISION.                                            090904ma
+151300 CONFIGURATION SECTION.                                           090904ma
+151400 SOURCE-COMPUTER. HP-3000.                                        090904ma
+151500*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  090904ma
+151600 OBJECT-COMPUTER. HP-3000.                                        090904ma
+151700*                                                                 090904ma
+151800 INPUT-OUTPUT SECTION.                                            090904ma
+151900 FILE-CONTROL.                                                    090904ma
+152000*                                                                 090904ma
+152100     SELECT FORMA-FILE      ASSIGN TO "FORM,,,DISC"               091207ma
+152200            FILE STATUS IS FORMFILE-STATUS.                       091207ma
+152300     SELECT B-FILE      ASSIGN TO "B"                             091207ma
+152400            FILE STATUS IS B-STATUS.                              091207ma
+152500     SELECT D-FILE      ASSIGN TO "D"                             091207ma
+152600            FILE STATUS IS D-STATUS.                              091207ma
+152700     SELECT E-FILE      ASSIGN TO "E"                             091207ma
+152800            FILE STATUS IS E-STATUS.                              091207ma
+152900     SELECT F-FILE      ASSIGN TO "F"                             091207ma
+153000            FILE STATUS IS F-STATUS.                              091207ma
+153100     SELECT G-FILE      ASSIGN TO "G"                             091207ma
+153200            FILE STATUS IS G-STATUS.                              091207ma
+153300     SELECT H-FILE      ASSIGN TO "H"                             091207ma
+153400            FILE STATUS IS H-STATUS.                              091207ma
+153500     SELECT J-FILE      ASSIGN TO "J"                             091207ma
+153600            FILE STATUS IS J-STATUS.                              091207ma
+153700     SELECT K-FILE      ASSIGN TO "K"                             091207ma
+153800            FILE STATUS IS K-STATUS.                              091207ma
+153900     SELECT L-FILE      ASSIGN TO "L"                             091207ma
+154000            FILE STATUS IS L-STATUS.                              091207ma
+154100     SELECT M-FILE      ASSIGN TO "M"                             091207ma
+154200            FILE STATUS IS M-STATUS.                              091207ma
+154300     SELECT P-FILE      ASSIGN TO "P"                             091207ma
+154400            FILE STATUS IS P-STATUS.                              091207ma
+154500     SELECT R-FILE      ASSIGN TO "R"                             091207ma
+154600            FILE STATUS IS R-STATUS.                              091207ma
+154700     SELECT S-FILE      ASSIGN TO "S"                             091207ma
+154800            FILE STATUS IS S-STATUS.                              091207ma
+154900     SELECT T-FILE      ASSIGN TO "T"                             091207ma
+155000            FILE STATUS IS T-STATUS.                              091207ma
+155100     SELECT V-FILE      ASSIGN TO "V"                             091207ma
+155200            FILE STATUS IS V-STATUS.                              091207ma
+155300     SELECT W-FILE      ASSIGN TO "W"                             091207ma
+155400            FILE STATUS IS W-STATUS.                              091207ma
+155500                                                                  091207ma
+155600 DATA DIVISION.                                                   090904ma
+155700 FILE SECTION.                                                    090904ma
+155800                                                                  090904ma
+155900                                                                  090904ma
+156000 FD  FORMA-FILE                                                   090904ma
+156100     RECORD CONTAINS 256 CHARACTERS                               090904ma
+156200     DATA RECORD IS Form-File.                                    090904ma
+156300*                                                                 091210ma
+156400 01  Form-File.                                                   091210ma
+156500     05  Form-Rec                     PIC X(256).                 091210ma
+156600*                                                                 091207ma
+156700 FD B-FILE                                                        091210ma
+156800     RECORD CONTAINS 106 CHARACTERS                               091210ma
+156900     DATA RECORD IS B-FILE-RECORD.                                091210ma
+157000 01 B-FILE-RECORD.                                                091210ma
+157100    05  B-LENGTH       PIC S9(4) COMP.                            091210ma
+157200    05  B-DATA         PIC X(104).                                091210ma
+157300*                                                                 091207ma
+157400 FD D-FILE                                                        091210ma
+157500     RECORD CONTAINS 99 CHARACTERS                                091210ma
+157600     DATA RECORD IS D-FILE-RECORD.                                091210ma
+157700 01 D-FILE-RECORD.                                                091210ma
+157800    05 D-FLD1    PIC X(15).                                       091210ma
+157900    05 D-FLD2    PIC X(15).                                       091210ma
+158000    05 D-LEN     PIC XXX.                                         091210ma
+158100    05 D-DTYPE   PIC XXXX.                                        091210ma
+158200    05 D-INIT    PIC X(62).                                       091210ma
+158300*                                                                 091210ma
+158400 FD E-FILE                                                        091210ma
+158500     RECORD CONTAINS 122 CHARACTERS                               091210ma
+158600     DATA RECORD IS E-FILE-RECORD.                                091210ma
+158700 01 E-FILE-RECORD.                                                091210ma
+158800    05 E-LENGTH            PIC S9(4) COMP.                        091210ma
+158900    05 E-TYPE              PIC X.                                 091210ma
+159000    05 E-FORM1             PIC X(15).                             091210ma
+159100    05 E-FORM2             PIC X(15).                             091210ma
+159200    05 E-REPEAT-OPTION     PIC X.                                 091210ma
+159300    05 E-NFORM-OPTION      PIC X.                                 091210ma
+159400    05 E-NFORM             PIC X(15).                             091210ma
+159500    05 E-FKEY-DEF          PIC X.                                 091210ma
+159600    05 E-REPRODUCED-FR     PIC X(15).                             091210ma
+159700    05 E-COMMENTS          PIC X(56).                             091210ma
+159800*                                                                 091207ma
+159900 FD F-FILE                                                        091210ma
+160000     RECORD CONTAINS 4114 CHARACTERS                              091210ma
+160100     DATA RECORD IS F-FILE-RECORD.                                091210ma
+160200 01 F-FILE-RECORD.                                                091210ma
+160300    05  F-LENGTH       PIC S9(4) COMP.                            091210ma
+160400    05  F-TYPE         PIC X.                                     091210ma
+160500    05  F-FORM         PIC X(15).                                 091210ma
+160600    05  F-DESIGN       PIC X(4096).                               091210ma
+160700                                                                  091210ma
+160800 FD G-FILE                                                        091210ma
+160900     RECORD CONTAINS 1427 CHARACTERS                              091210ma
+161000     DATA RECORD IS G-FILE-RECORD.                                091210ma
+161100 01 G-FILE-RECORD.                                                091210ma
+161200    05 G-FORM       PIC X(15).                                    091210ma
+161300    05 G-FIELD      PIC X(15).                                    091210ma
+161400    05 G-NUMX       PIC X(4).                                     091210ma
+161500    05 G-LENX       PIC X(4).                                     091210ma
+161600    05 G-FIELD2     PIC X(15).                                    091210ma
+161700    05 G-ENH        PIC X(4).                                     091210ma
+161800    05 G-FTYPE      PIC X.                                        091210ma
+161900    05 G-DTYPE      PIC X(4).                                     091210ma
+162000    05 G-INIT       PIC X(65).                                    091210ma
+162100    05 G-PROCSPECS  PIC X(1300).                                  091210ma
+162200                                                                  091210ma
+162300                                                                  091210ma
+162400 FD H-FILE                                                        091210ma
+162500     RECORD CONTAINS 146 CHARACTERS                               091210ma
+162600     DATA RECORD IS H-FILE-RECORD.                                091210ma
+162700 01 H-FILE-RECORD.                                                091210ma
+162800    05  H-LENGTH       PIC S9(4) COMP.                            091210ma
+162900    05  H-TYPE         PIC X.                                     091210ma
+163000    05  H-FORM         PIC X(15).                                 091210ma
+163100    05  H-FUNCTION-KEYS.                                          091210ma
+163200        10 H-FKEY OCCURS 8 TIMES.                                 091210ma
+163300           15 H-FKEY-LINE1 PIC X(8).                              091210ma
+163400           15 H-FKEY-LINE2 PIC X(8).                              091210ma
+163500*                                                                 091207ma
+163600 FD J-FILE                                                        091210ma
+163700     RECORD CONTAINS 52 CHARACTERS                                091210ma
+163800     DATA RECORD IS J-FILE-RECORD.                                091210ma
+163900 01 J-FILE-RECORD.                                                091210ma
+164000    05  J-LENGTH       PIC S9(4) COMP.                            091210ma
+164100    05  J-DATA         PIC X(50).                                 091210ma
+164200*                                                                 091207ma
+164300 FD K-FILE                                                        091210ma
+164400     RECORD CONTAINS 90 CHARACTERS                                091210ma
+164500     DATA RECORD IS K-FILE-RECORD.                                091210ma
+164600 01 K-FILE-RECORD.                                                091210ma
+164700    05  K-LENGTH       PIC S9(4) COMP.                            091210ma
+164800    05  K-DATA         PIC X(88).                                 091210ma
+164900*                                                                 091207ma
+165000 FD L-FILE                                                        091210ma
+165100     RECORD CONTAINS 3520 CHARACTERS                              091210ma
+165200     DATA RECORD IS L-FILE-RECORD.                                091210ma
+165300 01 L-FILE-RECORD.                                                091210ma
+165400    05  L-LENGTH       PIC S9(4) COMP.                            091210ma
+165500    05  L-DATA         PIC X(3518).                               091210ma
+165600*                                                                 091207ma
+165700 FD M-FILE                                                        091210ma
+165800     RECORD CONTAINS 1268 CHARACTERS                              091210ma
+165900     DATA RECORD IS M-FILE-RECORD.                                091210ma
+166000 01 M-FILE-RECORD.                                                091210ma
+166100    05  M-LENGTH       PIC S9(4) COMP.                            091210ma
+166200    05  M-DATA         PIC X(1266).                               091210ma
+166300*                                                                 091207ma
+166400 FD P-FILE                                                        091210ma
+166500     RECORD CONTAINS 156 CHARACTERS                               091210ma
+166600     DATA RECORD IS P-FILE-RECORD.                                091210ma
+166700 01 P-FILE-RECORD.                                                091210ma
+166800    05  P-LENGTH       PIC S9(4) COMP.                            091210ma
+166900    05  P-DATA         PIC X(154).                                091210ma
+167000*                                                                 091207ma
+167100 FD R-FILE                                                        091210ma
+167200     RECORD CONTAINS 584 CHARACTERS                               091210ma
+167300     DATA RECORD IS R-FILE-RECORD.                                091210ma
+167400 01 R-FILE-RECORD.                                                091210ma
+167500    05  R-LENGTH       PIC S9(4) COMP.                            091210ma
+167600    05  R-DATA         PIC X(582).                                091210ma
+167700*                                                                 091207ma
+167800 FD S-FILE                                                        091210ma
+167900     RECORD CONTAINS 72 CHARACTERS                                091210ma
+168000     DATA RECORD IS S-FILE-RECORD.                                091210ma
+168100 01 S-FILE-RECORD.                                                091210ma
+168200    05  S-LENGTH       PIC S9(4) COMP.                            091210ma
+168300    05  S-DATA         PIC X(70).                                 091210ma
+168400*                                                                 091210ma
+168500 FD T-FILE                                                        091210ma
+168600     RECORD CONTAINS 12840 CHARACTERS                             091210ma
+168700     DATA RECORD IS T-FILE-RECORD.                                091210ma
+168800 01 T-FILE-RECORD.                                                091210ma
+168900    05 T-LENGTH       PIC S9(4) COMP.                             091210ma
+169000    05 T-TYPE         PIC X.                                      091210ma
+169100    05 T-FORM         PIC X(15).                                  091210ma
+169200    05 T-CNT1         PIC S9(4) COMP.                             091210ma
+169300    05 T-CNT2         PIC S9(4) COMP.                             091210ma
+169400    05 FILLER         PIC X(18).                                  091210ma
+169500    05 T-FIELDS OCCURS 256 TIMES.                                 091210ma
+169600       10 T-FLD1         PIC X(15).                               091210ma
+169700       10 T-FLD2         PIC X(15).                               091210ma
+169800       10 T-ENH          PIC X(4).                                091210ma
+169900       10 T-ESCVAL       PIC X.                                   091210ma
+170000       10 T-A            PIC X.                                   091210ma
+170100       10 T-FLDNUM       PIC S9(4) COMP.                          091210ma
+170200       10 T-SCRNODR      PIC S9(4) COMP.                          091210ma
+170300       10 FILLER         PIC S9(4) COMP.                          091210ma
+170400       10 FILLER         PIC S9(4) COMP.                          091210ma
+170500       10 T-LEN          PIC S9(4) COMP.                          091210ma
+170600       10 T-ROW          PIC S9(4) COMP.                          091210ma
+170700       10 T-COL          PIC S9(4) COMP.                          091210ma
+170800*                                                                 091210ma
+170900 FD V-FILE                                                        091210ma
+171000     RECORD CONTAINS 4114 CHARACTERS                              091210ma
+171100     DATA RECORD IS V-FILE-RECORD.                                091210ma
+171200 01 V-FILE-RECORD.                                                091210ma
+171300    05  V-LENGTH       PIC S9(4) COMP.                            091210ma
+171400    05  V-TYPE         PIC X.                                     091210ma
+171500    05  V-FORM         PIC X(15).                                 091210ma
+171600    05  V-DESIGN       PIC X(4096).                               091210ma
+171700*                                                                 091207ma
+171800 FD W-FILE                                                        091210ma
+171900     RECORD CONTAINS 108 CHARACTERS                               091210ma
+172000     DATA RECORD IS W-FILE-RECORD.                                091210ma
+172100 01 W-FILE-RECORD.                                                091210ma
+172200    05  W-LENGTH       PIC S9(4) COMP.                            091210ma
+172300    05  W-DATA         PIC X(106).                                091210ma
+172400*                                                                 091207ma
+172500$PAGE "WORKING STORAGE"                                           090904ma
+172600 WORKING-STORAGE SECTION.                                         090904ma
+172700***************************************************************** 090904ma
+172800 01  FILE-ERROR-DATA.                                             090904ma
+172900     05 ERROR-NUMBER             PIC XX    VALUE SPACES.          090904ma
+173000     05 FNAME                    PIC X(8)  VALUE SPACES.          090904ma
+173100     05 FILE-ERROR-RECORD        PIC X(79) VALUE SPACES.          090904ma
+173200 01 CSTR                         PIC X(255)      VALUE SPACES.    090904ma
+173300 01 CERR                         PIC S9(4) COMP  VALUE 0.         090904ma
+173400 01 CPARM                        PIC S9(4) COMP  VALUE 0.         090904ma
+173500 01 CMSG                         PIC S9(4) COMP  VALUE 2.         090904ma
+173600 01 CMD                          PIC X(255)      VALUE SPACES.    090904ma
+173700 01  DATA-LEN                    PIC S9(4) COMP.                  090904ma
+173800 01 FORMSFILE-SW                 PIC X VALUE "0".                 090904ma
+173900    88 END-OF-FORMSFILE                VALUE "1".                 090904ma
+174000 01  EXTFILE-STATUS              PIC X   VALUE "0".               090904ma
+174100     88 EXTFILE-EOF                      VALUE "9".               090904ma
+174200 01 MISMATCH-SW                  PIC X VALUE "0".                 090904ma
+174300    88 MISMATCH-OCCURED VALUE "1".                                090904ma
+174400                                                                  090904ma
+174500 01  Ascii-Value                 PIC S9(4) COMP VALUE 0.          090904ma
+174600 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 090904ma
+174700     02 ASCII-BYTE1              PIC X.                           090904ma
+174800     02 ASCII-BYTE2              PIC X.                           090904ma
+174900 01 S1                           PIC S9(9) COMP VALUE 0.          090904ma
+175000 01 FORMFILES-REC-TYPE-SW        PIC X VALUE "~".                 090904ma
+175100    88 Type-is-Valid VALUES ARE                                   090904ma
+175200        "B" "D" "E" "F" "G"                                       091210ma
+175300        "H" "J" "K" "L" "M"                                       091210ma
+175400        "P" "R" "S" "T" "V" "W".                                  091210ma
+175500 01 FILE-LIST.                                                    091207ma
+175600    02 FILLER PIC X VALUE "B".                                    091210ma
+175700    02 FILLER PIC X VALUE "D".                                    091210ma
+175800    02 FILLER PIC X VALUE "E".                                    091210ma
+175900    02 FILLER PIC X VALUE "F".                                    091210ma
+176000    02 FILLER PIC X VALUE "G".                                    091210ma
+176100    02 FILLER PIC X VALUE "H".                                    091210ma
+176200    02 FILLER PIC X VALUE "J".                                    091210ma
+176300    02 FILLER PIC X VALUE "K".                                    091210ma
+176400    02 FILLER PIC X VALUE "L".                                    091210ma
+176500    02 FILLER PIC X VALUE "M".                                    091210ma
+176600    02 FILLER PIC X VALUE "P".                                    091210ma
+176700    02 FILLER PIC X VALUE "R".                                    091210ma
+176800    02 FILLER PIC X VALUE "S".                                    091210ma
+176900    02 FILLER PIC X VALUE "T".                                    091210ma
+177000    02 FILLER PIC X VALUE "V".                                    091210ma
+177100    02 FILLER PIC X VALUE "W".                                    091210ma
+177200 01 FILE-TABLE REDEFINES FILE-LIST.                               091207ma
+177300    02 FILECHAR PIC X OCCURS 16 TIMES.                            091210ma
+177400                                                                  091207ma
+177500 01  B-STATUS             PIC XX    VALUE SPACES.                 091207ma
+177600 01  D-STATUS             PIC XX    VALUE SPACES.                 091207ma
+177700 01  E-STATUS             PIC XX    VALUE SPACES.                 091207ma
+177800 01  F-STATUS             PIC XX    VALUE SPACES.                 091207ma
+177900 01  G-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178000 01  H-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178100 01  J-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178200 01  K-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178300 01  L-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178400 01  M-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178500 01  P-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178600 01  R-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178700 01  S-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178800 01  T-STATUS             PIC XX    VALUE SPACES.                 091207ma
+178900 01  V-STATUS             PIC XX    VALUE SPACES.                 091207ma
+179000 01  W-STATUS             PIC XX    VALUE SPACES.                 091207ma
+179100 01  FORMFILE-STATUS             PIC XX    VALUE SPACES.          091207ma
+179200 01  FORMFILE-COUNT              PIC S9(9) COMP VALUE 0.          090904ma
+179300 01  FORMFILE-FLAG               PIC XX    VALUE SPACES.          090904ma
+179400     88 FORMFILE-CLOSED        VALUE SPACES.                      090904ma
+179500     88 FORMFILE-OPENED-INPUT  VALUE "01".                        090904ma
+179600     88 FORMFILE-OPENED-OUTPUT VALUE "02".                        090904ma
+179700     88 FORMFILE-EOF           VALUE "99".                        090904ma
+179800 01 NUMDEC                       PIC S9(4) COMP.                  090904ma
+179900 01 NUMERR                       PIC S9(4) COMP.                  090904ma
+180000 01 NUM1                         PIC X(14).                       090904ma
+180100 01 NUM2                         PIC S9(14).                      090904ma
+180200 01  I                 PIC S9(4) COMP VALUE 0.                    091207ma
+180300 01  Y                 PIC S9(4) COMP VALUE 0.                    091207ma
+180400 01  FIDX              PIC S9(4) COMP VALUE 0.                    091207ma
+180500 01  FCNT              PIC S9(4) COMP VALUE 22.                   091207ma
+180600 01  ENTRY-COUNT       PIC S9(4) COMP VALUE 0.                    090904ma
+180700                                                                  090904ma
+180800 01  GETINFO-DATA.                                                090904ma
+180900    05  GINFO-LEN                PIC S9(4) COMP.                  090904ma
+181000    05  GINFO-STR                PIC X(128).                      090904ma
+181100    05  GINFO-PARM               PIC S9(4) COMP.                  090904ma
+181200                                                                  090904ma
+181300 01 FILE-POINTERS.                                                090904ma
+181400    05 FDPIDX PIC S9(4) COMP VALUE 0.                             090904ma
+181500    05 FDPCNT PIC S9(4) COMP VALUE 0.                             090904ma
+181600    05 FDP-ARRAY.                                                 090904ma
+181700       10 FDP-LEN  PIC S9(9) COMP.                                090904ma
+181800       10 FDP-STRT PIC S9(9) COMP.                                090904ma
+181900       10 FDP-END  PIC S9(9) COMP.                                090904ma
+182000                                                                  091210ma
+182100 01 FORMS-DATA.                                                   091210ma
+182200    05 FRDIDX                    PIC S9(9) COMP.                  091210ma
+182300    05 FRDPTR                    PIC S9(9) COMP.                  091210ma
+182400    05 PRCPTR                    PIC S9(9) COMP.                  091210ma
+182500    05 FRDCNT                    PIC S9(9) COMP.                  091210ma
+182600    05 PRCCNT                    PIC S9(9) COMP.                  091210ma
+182700    05 FRD-TABLE.                                                 091210ma
+182800       10 FRD-ENTRIES OCCURS 2000  TIMES.                         091210ma
+182900          20 FRDSTR              PIC X(256).                      091210ma
+183000                                                                  091210ma
+183100 LINKAGE SECTION.                                                 090904ma
+183200 01 FORMNAME       PIC X(36).                                     090904ma
+183300 01 SUMM-TABLE.                                                   090904ma
+183400    02 SUMIDX PIC S9(9) COMP.                                     090904ma
+183500    02 SUMCNT PIC S9(9) COMP.                                     090904ma
+183600    02 SUMPTR PIC S9(9) COMP.                                     090904ma
+183700    02 SUMMAX PIC S9(9) COMP.                                     090904ma
+183800    02 SUMM-ENTRIES OCCURS 26 TIMES.                              090904ma
+183900       10 SUMM-TYPE   PIC XX.                                     090904ma
+184000       10 SUMM-MIN    PIC S9(9) COMP.                             090904ma
+184100       10 SUMM-AVR    PIC S9(9) COMP.                             090904ma
+184200       10 SUMM-MAX    PIC S9(9) COMP.                             090904ma
+184300       10 SUMM-TOTAL  PIC S9(9) COMP.                             090904ma
+184400       10 SUMM-FIRST  PIC S9(9) COMP.                             090904ma
+184500       10 SUMM-COUNT  PIC S9(9) COMP.                             090904ma
+184600                                                                  090904ma
+184700 PROCEDURE DIVISION USING FORMNAME SUMM-TABLE.                    091210ma
+184800 BEGIN-0000.                                                      090904ma
+184900     Initialize CSTR CERR CPARM CMSG.                             090904ma
+185000     PERFORM PURGE-FILES.                                         091207ma
+185100     PERFORM EQUATE-FILES.                                        091207ma
+185200     PERFORM BUILD-FILES.                                         091207ma
+185300     PERFORM OPEN-FILES.                                          091207ma
+185400     PERFORM LOAD-FORM-SOURCE.                                    091207ma
+185500     PERFORM SUMMARIZE-DATA.                                      090904ma
+185600     PERFORM DISPLAY-SUMMS.                                       090904ma
+185700 9999-RETURN.                                                     090904ma
+185800     PERFORM CLOSE-FILES.                                         091210ma
+185900     GOBACK.                                                      090904ma
+186000                                                                  090904ma
+186100*----------------------------                                     090904ma
+186200 Load-Form-Source.                                                090904ma
+186300     Display " Load-Form-Source.".                                090904ma
+186400     INITIALIZE CMD forms-data.                                   090904ma
+186500     Perform Fopen-Formsfile.                                     090904ma
+186600     MOVE 256 TO DATA-LEN.                                        090904ma
+186700     Perform varying i From 1 By 1                                090904ma
+186800       Until ( END-OF-FORMSFILE  ) Or ( i > 32800 )               090904ma
+186900      Read Forma-File                                             090904ma
+187000          At End     Move '1' To Formsfile-Sw                     090904ma
+187100          Not At End                                              090904ma
+187200       Move '0' To Formsfile-Sw                                   090904ma
+187300       Add 1 to frdcnt                                            090904ma
+187400       Move Form-Rec to frdstr(frdcnt)                            090904ma
+187500       PERFORM GET-TYPE-SIZE                                      091210ma
+187600       IF RECSIZE > 256                                           091210ma
+187610        PERFORM VARYING FRDIDX FROM 1 BY 1                        091210ma
+187620          UNTIL ((FRDIDX * 256) > RECSIZE)                        091210ma
+187630             OR (FORMSFILE-SW = "1" )                             091210ma
+187631         Read Forma-File                                          091210ma
+187650             At End     Move '1' To Formsfile-Sw                  091210ma
+187660             Not At End                                           091210ma
+187670           Move '0' To Formsfile-Sw                               091210ma
+187671           Add 1 to frdcnt                                        091210ma
+187681           Move Form-Rec to frdstr(frdcnt)                        091210ma
+187682         END-READ                                                 091210ma
+187692        END-PERFORM                                               091210ma
+187700       END-IF                                                     091210ma
+187800       MOVE RECTYP TO OUTPUT-TYPE                                 091210ma
+187900       PERFORM OUTPUT-RECORD                                      091210ma
+188000       INITIALIZE forms-data                                      091210ma
+188200      End-Read                                                    090904ma
+188300     End-Perform.                                                 090904ma
+188400     CLOSE FORMA-FILE.                                            090904ma
+188500     Display formname "Records : " frdcnt.                        090904ma
+188600*--------------------------------                                 090904ma
+188700 Fopen-Formsfile.                                                 090904ma
+188800D    DISPLAY "Fopen-Formsfile".                                   090904ma
+188900     MOVE 1 TO S1.                                                090904ma
+189000     INSPECT formname                                             090904ma
+189100      TALLYING S1 FOR CHARACTERS BEFORE ' '.                      090904ma
+189200     IF S1 > 28 MOVE 28 TO S1.                                    090904ma
+189300     MOVE 'FILE FORM='           TO CMD.                          090904ma
+189400     MOVE formname(1:S1) TO CMD(11:).                             090904ma
+189500     Perform MPE-COMMAND.                                         090904ma
+189600     MOVE "FORMFILE" TO FNAME.                                    090904ma
+189700     OPEN INPUT FORMA-FILE.                                       090904ma
+189800     IF FORMFILE-STATUS <> "00"                                   090904ma
+189900        display formname " Open FAILED!".                         090904ma
+190000     MOVE ZERO TO FORMFILE-COUNT.                                 090904ma
+190100     MOVE "01" TO  FORMFILE-FLAG.                                 090904ma
+190200*=================================================================090904ma
+190300 GET-NUM.                                                         090904ma
+190400D    DISPLAY "GET-NUM".                                           090904ma
+190500     INITIALIZE NUM2 NUMDEC NUMERR.                               090904ma
+190600     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 090904ma
+190700     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            090904ma
+190800     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            090904ma
+190900*---------------------------------------------------------        090904ma
+191000 MPE-COMMAND.                                                     090904ma
+191100D    DISPLAY "MPE-COMMAND".                                       090904ma
+191200     INITIALIZE CSTR.                                             090904ma
+191300     STRING CMD DELIMITED BY "  " %15                             090904ma
+191400      DELIMITED BY SIZE INTO CSTR.                                090904ma
+191500     Move 2 To CMSG.                                              090904ma
+191600D    DISPLAY CMD(1:79).                                           090904ma
+191700     CALL INTRINSIC "HPCICOMMAND" USING                           090904ma
+191800          CSTR CERR CPARM CMSG.                                   090904ma
+191900     IF CERR <> 0                                                 090904ma
+192000      DISPLAY CERR                                                090904ma
+192100      DISPLAY CMD                                                 090904ma
+192200      DISPLAY CMSG.                                               090904ma
+192300     INITIALIZE CMD.                                              090904ma
+192400*---------------------------------------------------------        090904ma
+192500 SUMMARIZE-DATA.                                                  090904ma
+192600     INITIALIZE SUMM-TABLE.                                       090904ma
+192700     MOVE 1 TO FDP-STRT.                                          090904ma
+192800     MOVE 256 TO FDP-LEN.                                         090904ma
+192900     COMPUTE FDP-END = ( FDP-STRT + (FDP-LEN - 1)).               090904ma
+193000     Perform Varying Frdidx From 1 By 1                           090904ma
+193100       Until ( Frdidx > Frdcnt )                                  090904ma
+193200      Compute FDP-STRT =                                          090904ma
+193300        ((Frdidx * 256) - 255 )                                   090904ma
+193400      End-compute                                                 090904ma
+193500      Move frd-table(FDP-STRT:2) To Ascii-Character               090904ma
+193600      MOVE frd-table(FDP-STRT + 2:1) TO FORMFILES-REC-TYPE-SW     090904ma
+193700      If Type-is-Valid AND Ascii-Value < 5000                     090904ma
+193800*       DISPLAY Frdidx " " FDP-STRT " "                           090904ma
+193900*               Ascii-Value " "                                   090904ma
+194000*               FORMFILES-REC-TYPE-SW                             090904ma
+194100       PERFORM ADD-TO-TABLE                                       090904ma
+194200       Compute FDP-END =                                          090904ma
+194300          FDP-STRT + (Ascii-Value - 1)                            090904ma
+194400       End-Compute                                                090904ma
+194500       Move Ascii-Value To FDP-LEN                                090904ma
+194600       COMPUTE ENTRY-COUNT =                                      090904ma
+194700        (( FDP-LEN / 256) + 1 )                                   090904ma
+194800       END-COMPUTE                                                090904ma
+194900       COMPUTE FRDIDX =                                           090904ma
+195000        FRDIDX + ( ENTRY-COUNT - 1 )                              090904ma
+195100       END-COMPUTE                                                090904ma
+195200      ELSE                                                        090904ma
+195300       Compute FDP-END =                                          090904ma
+195400          FDP-STRT + (Ascii-Value - 1)                            090904ma
+195500       End-Compute                                                090904ma
+195600*       DISPLAY Frdidx " "                                        090904ma
+195700*               Ascii-Value " "                                   090904ma
+195800*               " F S=" FDP-STRT                                  090904ma
+195900*               " F E=" FDP-END                                   090904ma
+196000*               " F L=" FDP-LEN                                   090904ma
+196100      END-IF                                                      090904ma
+196200     END-Perform.                                                 090904ma
+196300*-----------------------------------------------------------      090904ma
+196400 ADD-TO-TABLE.                                                    090904ma
+196500     PERFORM VARYING SUMIDX FROM 1 BY 1                           090904ma
+196600       UNTIL SUMIDX > 25                                          090904ma
+196700          OR SUMM-TYPE(SUMIDX) = FORMFILES-REC-TYPE-SW            090904ma
+196800      CONTINUE                                                    090904ma
+196900     END-PERFORM.                                                 090904ma
+197000     MOVE SUMIDX TO SUMPTR.                                       090904ma
+197100     IF SUMIDX > 25                                               090904ma
+197200      ADD 1 TO SUMCNT                                             090904ma
+197300      MOVE FORMFILES-REC-TYPE-SW TO SUMM-TYPE(SUMCNT)             090904ma
+197400      MOVE ASCII-VALUE TO SUMM-MIN(SUMCNT)                        090904ma
+197500      MOVE 0           TO SUMM-AVR(SUMCNT)                        090904ma
+197600      MOVE ASCII-VALUE TO SUMM-MAX(SUMCNT)                        090904ma
+197700      MOVE ASCII-VALUE TO SUMM-TOTAL(SUMCNT)                      090904ma
+197800      MOVE Frdidx      TO SUMM-FIRST(SUMCNT)                      090904ma
+197900      MOVE 1           TO SUMM-COUNT(SUMCNT)                      090904ma
+198000     ELSE                                                         090904ma
+198100      ADD  ASCII-VALUE TO SUMM-TOTAL(SUMPTR)                      090904ma
+198200      ADD  1           TO SUMM-COUNT(SUMPTR)                      090904ma
+198300      IF ASCII-VALUE < SUMM-MIN(SUMPTR)                           090904ma
+198400       MOVE ASCII-VALUE TO SUMM-MIN(SUMPTR)                       090904ma
+198500      END-IF                                                      090904ma
+198600      IF ASCII-VALUE > SUMM-MAX(SUMPTR)                           090904ma
+198700       MOVE ASCII-VALUE TO SUMM-MAX(SUMPTR)                       090904ma
+198800      END-IF                                                      090904ma
+198900      COMPUTE SUMM-AVR(SUMPTR) =                                  090904ma
+199000       SUMM-TOTAL(SUMPTR) / SUMM-COUNT(SUMPTR).                   090904ma
+199100*-----------------------------------------------------------      090904ma
+199200 DISPLAY-SUMMS.                                                   090904ma
+199300     DISPLAY "SUMM-TYPE "                                         090904ma
+199400             "SUMM-MIN "                                          090904ma
+199500             "SUMM-AVR "                                          090904ma
+199600             "SUMM-MAX "                                          090904ma
+199700             "SUMM-TOTAL "                                        090904ma
+199800             "SUMM-FIRST "                                        090904ma
+199900             "SUMM-COUNT ".                                       090904ma
+200000     PERFORM VARYING SUMIDX FROM 1 BY 1                           090904ma
+200100       UNTIL SUMIDX > SUMCNT                                      090904ma
+200200      DISPLAY SUMM-TYPE(SUMIDX)  " "                              090904ma
+200300              SUMM-MIN(SUMIDX)   " "                              090904ma
+200400              SUMM-AVR(SUMIDX)   " "                              090904ma
+200500              SUMM-MAX(SUMIDX)   " "                              090904ma
+200600              SUMM-TOTAL(SUMIDX) " "                              090904ma
+200700              SUMM-FIRST(SUMIDX) " "                              090904ma
+200800              SUMM-COUNT(SUMIDX)                                  090904ma
+200900                                                                  090904ma
+201000     END-PERFORM.                                                 090904ma
+201100*-----------------------------------------------------------      091207ma
+201200 PURGE-FILES.                                                     091207ma
+201300     PERFORM VARYING FIDX FROM 1 BY 1 UNTIL FIDX > FCNT           091207ma
+201400      INITIALIZE CMD                                              091207ma
+201500      STRING "PURGE " FILECHAR(FIDX) ",TEMP"                      091207ma
+201600       DELIMITED BY SIZE INTO CMD                                 091207ma
+201700      PERFORM MPE-COMMAND                                         091207ma
+201800     END-PERFORM.                                                 091207ma
+201900                                                                  091207ma
+202000*-----------------------------------------------------------      091207ma
+202100 EQUATE-FILES.                                                    091207ma
+202200     PERFORM VARYING FIDX FROM 1 BY 1 UNTIL FIDX > FCNT           091207ma
+202300      INITIALIZE CMD                                              091207ma
+202400      STRING "FILE " FILECHAR(FIDX)                               091207ma
+202500                 "=" FILECHAR(FIDX) ";OLDTEMP"                    091207ma
+202600       DELIMITED BY SIZE INTO CMD                                 091207ma
+202700      PERFORM MPE-COMMAND                                         091207ma
+202800     END-PERFORM.                                                 091207ma
+202900                                                                  091207ma
+203000*-----------------------------------------------------------      091207ma
+203100 BUILD-FILES.                                                     091207ma
+203200     PERFORM VARYING FIDX FROM 1 BY 1 UNTIL FIDX > FCNT           091207ma
+203300      INITIALIZE CMD                                              091207ma
+203400      STRING "BUILD " FILECHAR(FIDX)                              091207ma
+203500             ";REC=-256,1,F,ASCII;DISC=10000;TEMP"                091207ma
+203600       DELIMITED BY SIZE INTO CMD                                 091207ma
+203700      PERFORM MPE-COMMAND                                         091207ma
+203800     END-PERFORM.                                                 091207ma
+203900*-----------------------------------------------------------      091207ma
+204000 OPEN-FILES.                                                      091207ma
+204100     OPEN OUTPUT B-FILE.                                          091207ma
+204200     IF B-STATUS <> "00"                                          091207ma
+204300      display "B Open FAILED!".                                   091207ma
+204400     OPEN OUTPUT D-FILE.                                          091207ma
+204500     IF D-STATUS <> "00"                                          091207ma
+204600      display "D Open FAILED!".                                   091207ma
+204700     OPEN OUTPUT E-FILE.                                          091207ma
+204800     IF E-STATUS <> "00"                                          091207ma
+204900      display "E Open FAILED!".                                   091207ma
+205000     OPEN OUTPUT F-FILE.                                          091207ma
+205100     IF F-STATUS <> "00"                                          091207ma
+205200      display "F Open FAILED!".                                   091207ma
+205300     OPEN OUTPUT G-FILE.                                          091207ma
+205400     IF G-STATUS <> "00"                                          091207ma
+205500      display "G Open FAILED!".                                   091207ma
+205600     OPEN OUTPUT H-FILE.                                          091207ma
+205700     IF H-STATUS <> "00"                                          091207ma
+205800      display "H Open FAILED!".                                   091207ma
+205900     OPEN OUTPUT J-FILE.                                          091207ma
+206000     IF J-STATUS <> "00"                                          091207ma
+206100      display "J Open FAILED!".                                   091207ma
+206200     OPEN OUTPUT K-FILE.                                          091207ma
+206300     IF K-STATUS <> "00"                                          091207ma
+206400      display "K Open FAILED!".                                   091207ma
+206500     OPEN OUTPUT L-FILE.                                          091207ma
+206600     IF L-STATUS <> "00"                                          091207ma
+206700      display "L Open FAILED!".                                   091207ma
+206800     OPEN OUTPUT M-FILE.                                          091207ma
+206900     IF M-STATUS <> "00"                                          091207ma
+207000      display "M Open FAILED!".                                   091207ma
+207100     OPEN OUTPUT P-FILE.                                          091207ma
+207200     IF P-STATUS <> "00"                                          091207ma
+207300      display "P Open FAILED!".                                   091207ma
+207400     OPEN OUTPUT R-FILE.                                          091207ma
+207500     IF R-STATUS <> "00"                                          091207ma
+207600      display "R Open FAILED!".                                   091207ma
+207700     OPEN OUTPUT S-FILE.                                          091207ma
+207800     IF S-STATUS <> "00"                                          091207ma
+207900      display "S Open FAILED!".                                   091207ma
+208000     OPEN OUTPUT T-FILE.                                          091207ma
+208100     IF T-STATUS <> "00"                                          091207ma
+208200      display "T Open FAILED!".                                   091207ma
+208300     OPEN OUTPUT V-FILE.                                          091207ma
+208400     IF V-STATUS <> "00"                                          091207ma
+208500      display "V Open FAILED!".                                   091207ma
+208600     OPEN OUTPUT W-FILE.                                          091207ma
+208700     IF W-STATUS <> "00"                                          091207ma
+208800      display "W Open FAILED!".                                   091207ma
+208900                                                                  091207ma
+209000*-----------------------------------------------------------      091210ma
+209100 CLOSE-FILES.                                                     091210ma
+209200     CLOSE B-FILE.                                                091210ma
+209300     CLOSE D-FILE.                                                091210ma
+209400     CLOSE E-FILE.                                                091210ma
+209500     CLOSE F-FILE.                                                091210ma
+209600     CLOSE G-FILE.                                                091210ma
+209700     CLOSE H-FILE.                                                091210ma
+209800     CLOSE J-FILE.                                                091210ma
+209900     CLOSE K-FILE.                                                091210ma
+210000     CLOSE L-FILE.                                                091210ma
+210100     CLOSE M-FILE.                                                091210ma
+210200     CLOSE P-FILE.                                                091210ma
+210300     CLOSE R-FILE.                                                091210ma
+210400     CLOSE S-FILE.                                                091210ma
+210500     CLOSE T-FILE.                                                091210ma
+210600     CLOSE V-FILE.                                                091210ma
+210700     CLOSE W-FILE.                                                091210ma
+210800 END PROGRAM J3KLOADFORM.                                         091207ma
+210900                                                                  091207ma
+211000                                                                  091207ma

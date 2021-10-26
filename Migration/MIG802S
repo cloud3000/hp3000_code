@@ -1,0 +1,608 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST, MAP, CROSSREF            MA100202
+001100******************************************************************MA100202
+001200*                                                                 MA100202
+001300*                ****************************                     MA100202
+001400*                  FORMSPEC export utility                        MA100202
+001500*                ****************************                     MA100202
+001600*                                                                 MA100202
+001700*  This program will add the following VPLUS data to MIGDB.       MA100202
+001800*                                                                 MA100202
+001900*  FASTFORMS filenames, based on source formsfile version match.  MA100202
+002000*  PATH NAMEs.                                                    MA100202
+002100*                                                                 MA100202
+002200*   http://www.j3ksolutions.com                                   MA100202
+002300*   mailto:support@j3ksolutions.com                               MA100202
+002400******************************************************************MA100202
+002500 IDENTIFICATION DIVISION.                                         MA100202
+002600 PROGRAM-ID.     MIG802.                                          MA100202
+002700 AUTHOR.     MICHAEL ANDERSON.                                    MA100202
+002800 ENVIRONMENT DIVISION.                                            MA100202
+002900 CONFIGURATION SECTION.                                           MA100202
+003000  SOURCE-COMPUTER. HP-3000.                                       MA100202
+003100* SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                   MA100202
+003200 OBJECT-COMPUTER. HP-3000.                                        MA100202
+003300*                                                                 MA100202
+003400 INPUT-OUTPUT SECTION.                                            MA100202
+003500 FILE-CONTROL.                                                    MA100211
+003600**                                                                MA100211
+003800     SELECT SORTFILE        ASSIGN TO "DMG01SRT,,,,9000000".      MA100211
+003900     SELECT EXTFILE1        ASSIGN TO "DMG01A1,,,,9000000".       MA100211
+004000     SELECT EXTFILE2        ASSIGN TO "DMG01A2,,,,9000000".       MA100211
+004100     SELECT DMG01A3-FILE    ASSIGN TO "VPLUSRR,,,,9000000".       MA100211
+004700**                                                                MA100211
+004800 DATA DIVISION.                                                   MA100202
+004900 FILE SECTION.                                                    MA100211
+005000*                                                                 MA100211
+005900 FD  EXTFILE2 DATA RECORD IS EXT-REC                              MA100211
+006000     RECORD CONTAINS 62 CHARACTERS.                               MA100211
+006100 01  EXT-REC2.                                                    MA100211
+006200     05  FILLER                PIC X(62).                         MA100211
+006300                                                                  MA100211
+006400 FD  EXTFILE1 DATA RECORD IS EXT-REC                              MA100211
+006500     RECORD CONTAINS 62 CHARACTERS.                               MA100211
+006600 01  EXT-REC.                                                     MA100211
+006700     05  FILLER                PIC X(62).                         MA100211
+006800*                                                                 MA100211
+006900 SD  SORTFILE DATA RECORD IS SORT-REC                             MA100211
+007000          RECORD CONTAINS 62 CHARACTERS.                          MA100211
+007100 01  SORT-REC.                                                    MA100211
+007200     02 SORT-KEY PIC X(62).                                       MA100211
+007210*                                                                 MA100211
+007310 FD  DMG01A3-FILE                                                 MA100211
+007400     RECORD CONTAINS 256 CHARACTERS                               MA100211
+007500     DATA RECORD IS Script-File.                                  MA100211
+007600 01  Script-File.                                                 MA100211
+007700     05  Script-Str                     PIC X(256).               MA100211
+007800*                                                                 MA100211
+009500$PAGE "WORKING STORAGE"                                           MA100202
+009600 WORKING-STORAGE SECTION.                                         MA100202
+009700***************************************************************** MA100202
+009800 01  FILE-ERROR-DATA.                                             MA100211
+009900     05 ERROR-NUMBER        PIC XX    VALUE SPACES.               MA100211
+010000     05 FNAME               PIC X(8)  VALUE SPACES.               MA100211
+010100     05 FILE-ERROR-RECORD   PIC X(79) VALUE SPACES.               MA100211
+010200                                                                  MA100211
+013400 01  HPVAR-NAME        PIC X(20) VALUE "ITOSQLS_STATUS~  ".       MA100211
+013500 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                   MA100211
+013600 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                    MA100211
+013700 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                    MA100211
+045000 01  GETINFO-DATA.                                                MA100211
+045100    05  GINFO-LEN                PIC S9(4) COMP.                  MA100211
+045200    05  GINFO-STR                PIC X(128).                      MA100211
+045300    05  GINFO-PARM               PIC S9(4) COMP.                  MA100211
+046300 01 ITEM-1                  PIC S9(9)  COMP VALUE 1.              MA100211
+046400 01 ITEM-2                  PIC S9(9)  COMP VALUE 2.              MA100211
+046500 01 ITEM-11                 PIC S9(9)  COMP VALUE 11.             MA100211
+046600 01 VAR-VALUE                PIC 9(3)       VALUE ZERO.           MA100211
+046700 01 VAR-NAME                PIC X(15)       VALUE SPACES.         MA100211
+046800 01 VAR-STATUS              PIC S9(9)  COMP VALUE 0.              MA100211
+046900 01 VAR-VALUE-I             PIC S9(9)  COMP VALUE 0.              MA100211
+047000 01 VAR-VALUE-S             PIC X(20)       VALUE SPACES.         MA100211
+047100 01 VAR-VALUE-S-SIZE        PIC S9(9)  COMP VALUE 20.             MA100211
+047400 01 MY-NEW-FILCNT          PIC S9(9) COMP VALUE 0.                MA100211
+047500 01 MY-NEW-FRMCNT          PIC S9(9) COMP VALUE 0.                MA100211
+047600 01 MY-NEW-FLDCNT          PIC S9(9) COMP VALUE 0.                MA100211
+047700 01 MY-NEW-SPCCNT          PIC S9(9) COMP VALUE 0.                MA100211
+047900 01  FULL-CURRENT-DATE.                                           MA100211
+048000         05  C-DATE.                                              MA100211
+048100             10  C-YEAR       PIC 9(4).                           MA100211
+048200             10  C-MONTH      PIC 99.                             MA100211
+048300             10  C-DAY        PIC 99.                             MA100211
+048400         05  C-TIME.                                              MA100211
+048500             10  C-HOUR       PIC 99.                             MA100211
+048600             10  C-MINUTES    PIC 99.                             MA100211
+048700             10  C-SECONDS    PIC 99.                             MA100211
+048800             10  C-SEC-HUND   PIC 99.                             MA100211
+048900         05  C-TIME-DIFF.                                         MA100211
+049000             10  O-GMT-DIR    PIC X.                              MA100211
+049100             10  O-HOUR       PIC 99.                             MA100211
+049200             10  O-MINUTES    PIC 99.                             MA100211
+049300 01 ERROR-MSG                PIC X(80) VALUE SPACES.              MA100211
+049400 01 CALLTYPE                 PIC X(20) VALUE SPACES.              MA100211
+049500*                                                                 MA100211
+049600 01 NUMDEC                 PIC S9(4) COMP.                        MA100211
+049700 01 NUMERR                 PIC S9(4) COMP.                        MA100211
+049800 01 NUM1                   PIC X(14).                             MA100211
+049900 01 NUM2                   PIC S9(14).                            MA100211
+055600 01 MYIDX                           PIC S9(4) COMP VALUE 0.       MA100211
+056600 01  MY-TIMESTAMP             PIC X(28) VALUE SPACES.             MA100211
+058400 01  MIGDB-STATUS.                                                MA100211
+058500     03  FILLER    PIC S9(4) COMP VALUE  0.                       MA100211
+058600     03  FILLER    PIC S9(4) COMP VALUE  0.                       MA100211
+058700     03  FILLER    PIC S9(9) COMP VALUE  0.                       MA100211
+058800     03  FILLER    PIC S9(9) COMP VALUE  0.                       MA100211
+058900     03  FILLER    PIC S9(9) COMP VALUE  0.                       MA100211
+059000     03  FILLER    PIC S9(9) COMP VALUE  0.                       MA100211
+059400 01 WHO-INTRINSIC-PARMS.                                          MA100211
+059500    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                    MA100211
+059600    15  WHO-MODE               PIC S9999 COMP.                    MA100211
+059700    15  WHO-CAPABILITY         PIC S9(6) COMP.                    MA100211
+059800    15  WHO-LATTR              PIC S9(6) COMP.                    MA100211
+059900    15  WHO-USERN.                                                MA100211
+060000        20 BYTE1-6             PIC X(6).                          MA100211
+060100        20 SCHOOL-NUMBER       PIC XX.                            MA100211
+060200    15  WHO-GROUPN             PIC X(8).                          MA100211
+060300    15  WHO-ACCTN              PIC X(8).                          MA100211
+060400    15  WHO-HOMEN              PIC X(8).                          MA100211
+060700 01 MyHpSusan               PIC S9(9) COMP  VALUE 0.              MA100211
+062500 01 TOTAL-FORMS       PIC S9(18) COMP VALUE 0.                    MA100211
+063500 01 CMD                      PIC X(255)      VALUE SPACES.        MA100211
+063600 01 M                        Pic X(78) Value Spaces.              MA100211
+063700 01 CSTR                     PIC X(255)      VALUE SPACES.        MA100211
+063800 01 CERR                     PIC S9(4) COMP  VALUE 0.             MA100211
+063900 01 CPARM                    PIC S9(4) COMP  VALUE 0.             MA100211
+064000 01 CMSG                     PIC S9(4) COMP  VALUE 2.             MA100211
+064100 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.             MA100211
+064300 01  EXTFILE-STATUS            PIC X   VALUE "0".                 MA100211
+064400     88 EXTFILE-EOF                    VALUE "9".                 MA100211
+065000 01 MY-PRODNAME              PIC X(36) VALUE SPACES.              MA100211
+065100 01 MY-PRODPATH              PIC X(128) VALUE SPACES.             MA100211
+065600 01 SHOWTIME-STR.                                                 MA100211
+065700    02 FILLER PIC X(8) VALUE "SHOWTIME".                          MA100211
+065800    02 FILLER PIC X    VALUE %15.                                 MA100211
+065900 01 DATE-EDITING.                                                 MA100211
+066000    05 RAW-DATE.                                                  MA100211
+066100       10 D1     PIC X   VALUE SPACES.                            MA100211
+066200       10 D2     PIC X   VALUE SPACES.                            MA100211
+066300       10 D3     PIC X   VALUE SPACES.                            MA100211
+066400       10 D4     PIC X   VALUE SPACES.                            MA100211
+066500       10 D5     PIC X   VALUE SPACES.                            MA100211
+066600       10 D6     PIC X   VALUE SPACES.                            MA100211
+066700       10 D7     PIC X   VALUE SPACES.                            MA100211
+066800       10 D8     PIC X   VALUE SPACES.                            MA100211
+066900    05 EDITED-DATE.                                               MA100211
+067000       10 D5     PIC X   VALUE SPACES.                            MA100211
+067100       10 D6     PIC X   VALUE SPACES.                            MA100211
+067200       10 FILLER PIC X   VALUE "/".                               MA100211
+067300       10 D7     PIC X   VALUE SPACES.                            MA100211
+067400       10 D8     PIC X   VALUE SPACES.                            MA100211
+067500       10 FILLER PIC X   VALUE "/".                               MA100211
+067600       10 D1     PIC X   VALUE SPACES.                            MA100211
+067700       10 D2     PIC X   VALUE SPACES.                            MA100211
+067800       10 D3     PIC X   VALUE SPACES.                            MA100211
+067900       10 D4     PIC X   VALUE SPACES.                            MA100211
+075900 01 SOURCEFILE-DATA.                                              MA100211
+076000    02 SOURCEIDX        PIC S9(4) COMP.                           MA100211
+076100    02 SOURCEPTR        PIC S9(4) COMP.                           MA100211
+076200    02 SOURCELEN        PIC S9(4) COMP.                           MA100211
+076300    02 SOURCE-DOT1      PIC S9(4) COMP.                           MA100211
+076400    02 SOURCE-DOT2      PIC S9(4) COMP.                           MA100211
+076500    02 SOURCE-FILLEN    PIC S9(4) COMP.                           MA100211
+076600    02 SOURCE-GRPSRT    PIC S9(4) COMP.                           MA100211
+076700    02 SOURCE-GRPLEN    PIC S9(4) COMP.                           MA100211
+076800    02 SOURCE-ACTSRT    PIC S9(4) COMP.                           MA100211
+076900    02 SOURCE-ACTLEN    PIC S9(4) COMP.                           MA100211
+077000    02 SOURCE-FILENAME  PIC X(8).                                 MA100211
+077100    02 SOURCE-GROUPNAME PIC X(8).                                 MA100211
+077200    02 SOURCE-ACCTNAME  PIC X(8).                                 MA100211
+077300    02 SOURCE-CREATOR   PIC X(18).                                MA100211
+077400 01 SOURCE-TIMESTAMP PIC X(28).                                   MA100211
+077700 01 FASTFILE-DATA.                                                MA100211
+077800    02 FASTIDX        PIC S9(4) COMP.                             MA100211
+077900    02 FASTPTR        PIC S9(4) COMP.                             MA100211
+078000    02 FASTLEN        PIC S9(4) COMP.                             MA100211
+078100    02 FAST-DOT1      PIC S9(4) COMP.                             MA100211
+078200    02 FAST-DOT2      PIC S9(4) COMP.                             MA100211
+078300    02 FAST-FILLEN    PIC S9(4) COMP.                             MA100211
+078400    02 FAST-GRPSRT    PIC S9(4) COMP.                             MA100211
+078500    02 FAST-GRPLEN    PIC S9(4) COMP.                             MA100211
+078600    02 FAST-ACTSRT    PIC S9(4) COMP.                             MA100211
+078700    02 FAST-ACTLEN    PIC S9(4) COMP.                             MA100211
+078800    02 FAST-FILENAME  PIC X(8).                                   MA100211
+078900    02 FAST-GROUPNAME PIC X(8).                                   MA100211
+079000    02 FAST-ACCTNAME  PIC X(8).                                   MA100211
+079100    02 FAST-CREATOR   PIC X(18).                                  MA100211
+079200 01 FAST-TIMESTAMP PIC X(28).                                     MA100211
+081300 01 FILE-INFOBUF.                                                 MA100211
+081400    05 FILE-NUMBER-OF-ENTRIES      PIC S9(4) COMP.                MA100211
+081500    05 FILE-ENTRY-LENGTH           PIC S9(4) COMP.                MA100211
+081600    05 FILE-ENTRY-TABLE OCCURS 1 TIMES.                           MA100211
+081700       10 IN-FILE-VERSION          PIC S9(8) COMP.                MA100211
+081800       10 FILE-NUMBER-OF-FORMS     PIC S9(4) COMP.                MA100211
+081900       10 FILE-MAX-FIELDS          PIC S9(4) COMP.                MA100211
+082000       10 FILE-MAX-BUFSIZE         PIC S9(4) COMP.                MA100211
+082100       10 FILE-SAVE-FIELDS         PIC S9(4) COMP.                MA100211
+082200       10 FILE-HEAD-FORM           PIC X(15).                     MA100211
+082300       10 FILE-FILLER              PIC X.                         MA100211
+082400       10 FILE-ERROR-ENHANCE       PIC X(4).                      MA100211
+082500       10 FILE-WINDOW-ENHANCE      PIC X(4).                      MA100211
+082600       10 FILE-WINDOW-POSITION     PIC S9(4) COMP.                MA100211
+082700 01 FILE-INFOBUFLEN           PIC S9(4) COMP VALUE 21.            MA100211
+085100 01 ACTUAL-FORM-COUNT pic s9(4) comp value 0.                     MA100211
+086300 01 SPECIDX1              PIC S9(4) COMP VALUE 0.                 MA100211
+086400 01 SPECIDX2              PIC S9(4) COMP VALUE 0.                 MA100211
+086500 01 SPECIDX3              PIC S9(4) COMP VALUE 0.                 MA100211
+086600 01 FIELD-SPECBUFLEN      PIC S9(4) COMP VALUE 0.                 MA100211
+086700 01 FIELD-SPECBUF.                                                MA100211
+086800    05 SPECBUFF-ENTRIES OCCURS 512 TIMES.                         MA100211
+086900       10 SCRN-ODR-FLDNBR PIC S9(4) COMP.                         MA100211
+087000       10 CHGTYP          PIC S9(4) COMP.                         MA100211
+087100       10 FLD-SPEC        PIC XXXX.                               MA100211
+087200                                                                  MA100211
+087300 01 FIELD-INFOBUF.                                                MA100211
+087400    05 FIELD-NUMBER-OF-ENTRIES PIC S9(4) COMP.                    MA100211
+087500    05 FIELD-ENTRY-LENGTH      PIC S9(4) COMP.                    MA100211
+087600    05 FIELD-FORM-NAME         PIC X(15).                         MA100211
+087700    05 FIELD-FILLER            PIC X.                             MA100211
+087800    05 FIELD-ENTRY-TABLE OCCURS 128 TIMES.                        MA100211
+087900       10 FIELD-FIELD-NAME     PIC X(15).                         MA100211
+088000       10 FIELD-FILLER         PIC X.                             MA100211
+088100       10 FIELD-SCREEN-ORD-NUM PIC S9(4) COMP.                    MA100211
+088200       10 FIELD-NUM            PIC S9(4) COMP.                    MA100211
+088300       10 FIELD-LENGTH         PIC S9(4) COMP.                    MA100211
+088400       10 FIELD-POSITION       PIC S9(4) COMP.                    MA100211
+088500       10 FIELD-ENHANCE        PIC X(4).                          MA100211
+088600 01 FIELD-INFOBUFLEN           PIC S9(4) COMP VALUE 80.           MA100211
+088700 01  THIS-TIMESTAMP.                                              MA100211
+088800     05 TS-LAYOUT.                                                MA100211
+088900        10 VTIMESTAMP     PIC S9(9) COMP.                         MA100211
+089000        10 VTS-BYTES REDEFINES VTIMESTAMP.                        MA100211
+089100         12 VTS-WORD1 PIC S9(4) COMP.                             MA100211
+089200         12 VTS-WORD1-BIT REDEFINES VTS-WORD1 PIC XX.             MA100211
+089300         12 VTS-WORD2 PIC S9(4) COMP.                             MA100211
+089400         12 VTS-WORD2-BIT REDEFINES VTS-WORD2 PIC XX.             MA100211
+089500        10 CALENDAR-PARM.                                         MA100211
+089600            15 CAL-INT    PIC S9(4) COMP.                         MA100211
+089700        10 CLOCK-PARM.                                            MA100211
+089800            15 CLOCK-DINT PIC S9(9) COMP.                         MA100211
+089900        10 THIS-CLOCK REDEFINES  CLOCK-PARM.                      MA100211
+090000         12 CLK-WORD1 PIC S9(4) COMP.                             MA100211
+090100         12 CLK-WORD1-BIT REDEFINES CLK-WORD1 PIC XX.             MA100211
+090200         12 CLK-WORD2 PIC S9(4) COMP.                             MA100211
+090300         12 CLK-WORD1-BIT REDEFINES CLK-WORD2 PIC XX.             MA100211
+090700 01  TDAY                PIC X(8)  VALUE SPACES.                  MA100211
+090800 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                  MA100211
+090900 01  TDOW                PIC S9(4) COMP VALUE 0.                  MA100211
+095700 COPY NXUNIQ  OF J3KLIB.                                          MA100211
+095800 COPY DBSTAT  OF J3KLIB.                                          MA100211
+095900 COPY FFFLDS  OF J3KLIB.                                          MA100211
+096000 COPY FFMSTR  OF J3KLIB.                                          MA100211
+096100 COPY FMMSTR  OF J3KLIB.                                          MA100211
+096200 COPY prspec  OF J3KLIB.                                          MA100211
+096300 COPY SRVMST  OF J3KLIB.                                          MA100211
+096400 COPY AMSCOMM OF J3KLIB.                                          MA100211
+096500                                                                  MA100202
+096600*=================================================================MA100202
+096700$PAGE  "Main logical flow"                                        MA100202
+096800*=================================================================MA100202
+096900 PROCEDURE DIVISION.                                              MA100202
+097000 BEGIN-0000.                                                      MA100202
+097100     CALL   INTRINSIC "WHO"                                       MA100202
+097200     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN           MA100202
+097300            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.       MA100202
+097400     MOVE WHO-MODE TO USER-MODE.                                  MA100202
+097500     IF WHO-ACCTN(1:3) <> "SYS" OR                                MA100202
+097600        WHO-USERN(1:7) <> "MANAGER" OR                            MA100202
+097700        WHO-GROUPN(1:3) <> "J3K"                                  MA100202
+097800       DISPLAY "PLEASE LOGON AS MANAGER.SYS,J3K"                  MA100202
+097900       DISPLAY "This program will not run as "                    MA100202
+098000               WHO-USERN "." WHO-ACCTN "," WHO-GROUPN             MA100202
+098100       STOP RUN.                                                  MA100202
+098200     MOVE "VPLUS Documentation Tool version C.7.3" TO M.          MA100202
+098300     PERFORM MSG-PROCESS                                          MA100202
+098400     MOVE "------------------------------------------------" TO M.MA100202
+098500     PERFORM MSG-PROCESS                                          MA100202
+098600     MOVE "***            MIG802.PUB.J3K                ***" TO M.MA100202
+098700     PERFORM MSG-PROCESS                                          MA100202
+098800     MOVE "***                                          ***" TO M.MA100202
+098900     PERFORM MSG-PROCESS                                          MA100202
+099000     MOVE "***    Adding VPLUS FASTFORMS filenames      ***" TO M.MA100202
+099100     PERFORM MSG-PROCESS                                          MA100202
+099200     MOVE "***                                          ***" TO M.MA100202
+099300     PERFORM MSG-PROCESS                                          MA100202
+099400     MOVE "------------------------------------------------" TO M.MA100202
+099500     PERFORM MSG-PROCESS                                          MA100202
+099600     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                   MA100202
+099700     PERFORM INITIALIZATION.                                      MA100202
+099800     PERFORM Process-File.                                        MA100202
+099900     PERFORM PROCESS-COMPLETION.                                  MA100202
+100000*---------------------------------------------------------------- MA100202
+100100 Process-Completion.                                              MA100202
+100200     DISPLAY "files:     " MY-NEW-FILCNT.                         MA100202
+100300     DISPLAY "forms:     " MY-NEW-frmCNT.                         MA100202
+100400     DISPLAY "fields:    " MY-NEW-fldCNT.                         MA100202
+100500     DISPLAY "Procspecs: " MY-NEW-spcCNT.                         MA100202
+103000     Go To 9999-RETURN.                                           MA100202
+103100*=================================================================MA100202
+103200$PAGE  "Major SubParagraphs"                                      MA100202
+103300*=================================================================MA100202
+103400 INITIALIZATION.                                                  MA100202
+103500D    DISPLAY "INITIALIZATION".                                    MA100202
+103600     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.             MA100202
+103700     OPEN OUTPUT DMG01A3-FILE.                                    MA100202
+103800     MOVE C-DATE TO RAW-DATE.                                     MA100202
+103900     MOVE CORR RAW-DATE TO EDITED-DATE.                           MA100202
+104000     CALL   INTRINSIC "WHO"                                       MA100202
+104100     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN           MA100202
+104200            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.       MA100202
+104300     INITIALIZE TOTAL-FORMS CSTR.                                 MA100211
+104400     Perform ShowTime.                                            MA100202
+104500     PERFORM GET-HPSUSAN.                                         MA100202
+104600     Initialize DATABASE-TABLE.                                   MA100211
+104800     MOVE 128 TO GINFO-LEN.                                       MA100202
+104900     INITIALIZE GINFO-STR GINFO-PARM.                             MA100202
+105000     MOVE 9 TO MIGDB.                                             MA100202
+105100     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                        MA100202
+105200     MOVE "J3K;" TO SEARCH-ITEM.                                  MA100202
+105300     CALL "DBOPEN" USING                                          MA100202
+105400      DATA-BASE-NAME(MIGDB) SEARCH-ITEM MODE-1 STATUS-AREA.       MA100202
+105500     IF IMAGE-ERRORS PERFORM 9000-IMAGE-ERROR.                    MA100202
+105600     MOVE STATUS-AREA TO MIGDB-STATUS.                            MA100202
+105700     INITIALIZE SrvMST-BUFFER.                                    MA100202
+105800     MOVE ";" TO NULL-ITEM.                                       MA100202
+105900     Move 1 to SEARCH-KEY-I2.                                     MA100202
+106000     Perform Get-SRVMST-Keyed.                                    MA100202
+106100     If No-Entry                                                  MA100202
+106200      Display "No server record found"                            MA100202
+106300      Call Intrinsic "QUIT" Using \1\.                            MA100202
+106400     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.             MA100202
+106500     MOVE C-DATE TO RAW-DATE.                                     MA100202
+106600     MOVE CORR RAW-DATE TO EDITED-DATE.                           MA100202
+106700     perform GET-HPSUSAN.                                         MA100202
+106800     IF SRVMST-SVR-SUSAN <> MYHPSUSAN                             MA100202
+106900      DISPLAY "****************************"                      MA100202
+107000      DISPLAY "* INSTALLATION PROBLEM     *"                      MA100202
+107100      DISPLAY "*                          *"                      MA100202
+107200      DISPLAY "* Invalid License          *"                      MA100202
+107300      DISPLAY "****************************"                      MA100202
+107400      Call Intrinsic "QUIT" Using \1\.                            MA100202
+107500      Display  "Server: " SRVMST-SVR-NAME.                        MA100202
+107600      Display  "HPSUSAN: " SRVMST-SVR-SUSAN.                      MA100202
+107700      Display  "MPE/iX version: " SRVMST-SVR-MPEVERSION.          MA100202
+107800     Initialize CSTR CERR CPARM CMSG.                             MA100211
+107900     MOVE 128 TO GINFO-LEN.                                       MA100202
+108100     INITIALIZE GINFO-STR GINFO-PARM.                             MA100202
+108200     CALL INTRINSIC "GETINFO" USING GINFO-STR GINFO-LEN           MA100202
+108300                                    GINFO-PARM.                   MA100202
+108400     IF GINFO-LEN > 0                                             MA100202
+108500D       DISPLAY "INFO LEN= [" GINFO-LEN  "]"                      MA100202
+108600        MOVE GINFO-STR(1:GINFO-LEN) TO SCREEN-FORMS-FILE          MA100202
+108700        PERFORM VGETINFO                                          MA100202
+108800        PERFORM Process-Completion                                MA100202
+108900        Go To 9999-RETURN.                                        MA100202
+109000                                                                  MA100202
+109200     Initialize Script-Str.                                       MA100202
+109300     Initialize CSTR CERR CPARM CMSG.                             MA100202
+109400     MOVE "Purge DMG01A1,Temp" to CMD.                            MA100202
+109500     Perform MPE-COMMAND.                                         MA100202
+109600                                                                  MA100202
+109700     MOVE "Purge DMG01A1" to CMD.                                 MA100202
+109800     Perform MPE-COMMAND.                                         MA100202
+109900                                                                  MA100202
+110000     MOVE "Purge DMG01A2" to CMD.                                 MA100202
+110100     Perform MPE-COMMAND.                                         MA100202
+110200                                                                  MA100202
+110300     MOVE "Purge DMG01A2,Temp" to CMD.                            MA100202
+110400     Perform MPE-COMMAND.                                         MA100202
+110500                                                                  MA100202
+110600     MOVE "File DMG01A1;rec=-62,1,f,ascii;disc=16384;save" to CMD.MA100202
+110700     Perform MPE-COMMAND.                                         MA100202
+110800     MOVE SPACES TO CMD.                                          MA100202
+110900     STRING "LISTFILE @.@.@;Seleq=[CODE=1036];"                   MA100304
+111000            "format=qualify >>*DMG01A1"                           MA100202
+111100      DELIMITED BY SIZE INto CMD.                                 MA100202
+111200     Perform MPE-COMMAND.                                         MA100202
+111300     MOVE "File DMG01A1=DMG01A1,OLD" TO CMD.                      MA100202
+111400     Perform MPE-COMMAND.                                         MA100202
+111500     Sort SortFile ASCENDING KEY SORT-KEY                         MA100202
+111600       Using ExtFile1 Giving ExtFile2.                            MA100202
+111700     Open Input ExtFile2.                                         MA100202
+111800                                                                  MA100202
+111900*-----------------------------------------------------------------MA100202
+112000 Process-File.                                                    MA100202
+112100D    DISPLAY "Process-File".                                      MA100202
+112200     MOVE 1 TO Db-Ptr.                                            MA100202
+112300     MOVE 0 TO DB-CNT.                                            MA100202
+112400     Perform varying DB-Idx From 1 By 1                           MA100202
+112500       Until ( EXTFILE-EOF ) Or ( DB-Idx > 9999 )                 MA100202
+112600      READ EXTFILE2                                               MA100202
+112700       AT END                                                     MA100202
+112800        MOVE "9" TO EXTFILE-STATUS                                MA100202
+112900       NOT AT END                                                 MA100202
+113000       ADD 1 TO DB-CNT                                            MA100202
+113100       INITIALIZE FFMSTR-BUFFER                                   MA100202
+113200       Move EXT-REC2 To SCREEN-FORMS-FILE                         MA100202
+113300        PERFORM VGETINFO                                          MA100202
+113400       If SCREEN-CSTATUS <> 0                                     MA100202
+113500        Display "*  Error occured " SCREEN-CSTATUS                MA100202
+113600        Display "* Skipping FORMSFILE"                            MA100202
+113700        MOVE 0 TO SCREEN-CSTATUS                                  MA100202
+113800       END-IF                                                     MA100202
+113900      End-Read                                                    MA100202
+114000     End-Perform.                                                 MA100202
+114100*    Perform Fix-File-Data.                                       MA100202
+114200*=================================================================MA100202
+114300$page "MISC SubParagraphs"                                        MA100202
+114400*=================================================================MA100202
+114500 GET-NUM.                                                         MA100202
+114600D    DISPLAY "GET-NUM".                                           MA100202
+114700     INITIALIZE NUM2 NUMDEC NUMERR.                               MA100202
+114800     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 MA100202
+114900     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            MA100202
+115000     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            MA100202
+115100*---------------------------------------------------------        MA100202
+115200 MPE-COMMAND.                                                     MA100202
+115300D    DISPLAY "MPE-COMMAND".                                       MA100202
+115400     INITIALIZE CSTR.                                             MA100202
+115500     STRING CMD DELIMITED BY "  " %15 DELIMITED BY SIZE INTO CSTR.MA100202
+115600     Move 2 To CMSG.                                              MA100202
+115700D    DISPLAY CMD(1:79).                                           MA100202
+115800     CALL INTRINSIC "HPCICOMMAND" USING                           MA100202
+115900          CSTR CERR CPARM CMSG.                                   MA100202
+116000*     IF CERR <> 0                                                MA100202
+116100*      DISPLAY CERR                                               MA100202
+116200*      DISPLAY CMSG.                                              MA100202
+116300     INITIALIZE CMD.                                              MA100202
+116400*---------------------------------------------------------        MA100202
+116500 SHOWTIME.                                                        MA100202
+116600     CALL INTRINSIC "HPCICOMMAND" USING                           MA100202
+116700          SHOWTIME-STR CERR CPARM CMSG.                           MA100202
+116800*--------------------------------------------------------         MA100202
+116900 GET-HPSUSAN.                                                     MA100202
+117000     MOVE "HPSUSAN~" TO HPVAR-NAME.                               MA100202
+117100     MOVE 1 TO HPVAR-ITEMNUM.                                     MA100202
+117200     INITIALIZE MYHPSUSAN HPVAR-ITEM HPVAR-STAT.                  MA100202
+117300     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 MA100202
+117400         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                      MA100202
+117500*     DISPLAY "HPSUSAN: " MYHPSUSAN.                              MA100202
+117600*------------------------------------------------------------     MA100202
+117700 MSG-PROCESS.                                                     MA100202
+117800*      DISPLAY "MSG-PROCESS".                                     MA100202
+117900     DISPLAY M.                                                   MA100202
+118000     INITIALIZE CSTR.                                             MA100202
+118100     STRING "TELLOP " M  %15 DELIMITED BY SIZE INTO CSTR.         MA100202
+118200     Move 2 To CMSG.                                              MA100202
+118300     IF BATCH-PROCESS OR NOT-INTERACTIVE                          MA100202
+118400      CALL INTRINSIC "HPCICOMMAND" USING                          MA100202
+118500           CSTR CERR CPARM CMSG.                                  MA100202
+118600     INITIALIZE M CMD.                                            MA100202
+127900*---------------------------------------------------------------  MA100202
+128000 9900-ABEND.                                                      MA100202
+128100     DISPLAY "----------------------------------------".          MA100202
+128200     DISPLAY "-MIG801- ABNORMAL END OF PROGRAM".                  MA100202
+128300     DISPLAY "----------------------------------------".          MA100202
+128400*---------------------------------------------------------------  MA100202
+128500 9999-RETURN.                                                     MA100202
+128600     Display " END OF PROGRAM "  WITH NO ADVANCING.               MA100202
+128700     MOVE "SHOWTIME" TO CMD.                                      MA100202
+128800     PERFORM MPE-COMMAND.                                         MA100202
+129100     GOBACK.                                                      MA100202
+129200*---------------------------------------------------------------- MA100202
+129300 VGETINFO.                                                        MA100202
+129400D    DISPLAY "VGETINFO".                                          MA100202
+129500D    STRING  ": FIND SOURCE FILE FOR: " SCREEN-FORMS-FILE         MA100202
+129600D     DELIMITED BY SIZE INTO M.                                   MA100202
+129700D    PERFORM MSG-PROCESS.                                         MA100202
+129800     INITIALIZE SCREEN-COMAREA.                                   MA100202
+129900     MOVE 60 TO SCREEN-COMAREALEN.                                MA100202
+130000     CALL "VOPENFORMF" USING SCREEN-COMAREA, SCREEN-FORMS-FILE.   MA100202
+130100     IF  SCREEN-CSTATUS <> 0 PERFORM 9000-VPLUS-ERROR.            MA100202
+130200     MOVE SPACES TO FILE-INFOBUF.                                 MA100202
+130300     MOVE 60 TO SCREEN-COMAREALEN.                                MA100202
+130400     MOVE 1 TO FILE-NUMBER-OF-ENTRIES.                            MA100202
+130500     MOVE 19 TO FILE-ENTRY-LENGTH.                                MA100202
+130600     INITIALIZE SCREEN-CSTATUS.                                   MA100202
+130700     CALL "VGETFILEINFO" USING SCREEN-COMAREA FILE-INFOBUF        MA100202
+130800                               FILE-INFOBUFLEN.                   MA100202
+130900     MOVE in-FILE-VERSION(1) TO VTIMESTAMP.                       MA100202
+131000     MOVE 0 TO CLOCK-DINT.                                        MA100202
+131100     MOVE VTS-WORD2 TO CLK-WORD1.                                 MA100202
+131200     CALL INTRINSIC "FMTDATE"   USING VTS-WORD1                   MA100202
+131300                                      CLOCK-DINT                  MA100202
+131400                                      MY-TIMESTAMP.               MA100202
+131500     MOVE MY-TIMESTAMP TO FAST-TIMESTAMP.                         MA100202
+131600     Perform Store-File-Data.                                     MA100202
+131700D    DISPLAY "LEAVING VGETINFO".                                  MA100202
+131800     ADD ACTUAL-FORM-COUNT TO TOTAL-FORMS.                        MA100202
+131900     CALL "VCLOSEFORMF" USING SCREEN-COMAREA.                     MA100202
+132000*---------------------------------------------------------        MA100202
+132100 9000-VPLUS-ERROR.                                                MA100202
+132200D    DISPLAY "9000-VPLUS-ERROR" SCREEN-CSTATUS.                   MA100202
+132300     INITIALIZE SCRIPT-STR CSTR CERR CPARM.                       MA100202
+132400     MOVE 80 TO CPARM.                                            MA100202
+132500     CALL "VERRMSG" USING SCREEN-COMAREA ERROR-MSG CPARM CERR.    MA100202
+132600     INITIALIZE SCREEN-CSTATUS.                                   MA100202
+132700     MOVE SCREEN-FORMS-FILE TO SCRIPT-STR.                        MA100202
+132800     MOVE ERROR-MSG(1:CERR) TO SCRIPT-STR(30:80).                 MA100202
+132900     MOVE CALLTYPE TO SCRIPT-STR(111:20).                         MA100202
+133000     WRITE Script-File.                                           MA100202
+133100     INITIALIZE CALLTYPE SCRIPT-STR CSTR CERR CPARM.              MA100202
+133200*-------------------------------------------------------------    MA100202
+133300 COPY FFMSTR0 OF J3KLIB.                                          MA100202
+133400 COPY FFMSTR1 OF J3KLIB.                                          MA100202
+133500 COPY FFMSTR2 OF J3KLIB.                                          MA100202
+133600 COPY FFMSTR3 OF J3KLIB.                                          MA100202
+133700 COPY FFMSTR4 OF J3KLIB.                                          MA100202
+133800 COPY FFMSTR5 OF J3KLIB.                                          MA100202
+133900 COPY FFMSTR6 OF J3KLIB.                                          MA100202
+134000 COPY FFMSTR7 OF J3KLIB.                                          MA100202
+134100 COPY FFMSTR8 OF J3KLIB.                                          MA100202
+134200 COPY FFMSTR9 OF J3KLIB.                                          MA100202
+134300 COPY SRVMST1 OF J3KLIB.                                          MA100202
+134400*---------------------------------------------------------        MA100202
+134500 9000-IMAGE-ERROR.                                                MA100202
+134600D    DISPLAY "9000-IMAGE-ERROR".                                  MA100202
+134700     CALL "DBEXPLAIN" USING STATUS-AREA.                          MA100202
+134800     GO TO 9900-ABEND.                                            MA100202
+134900*-------------------------------------------------------------    MA100202
+135000 Store-File-Data.                                                 MA100202
+135100D    Display "Store-File-Data".                                   MA100202
+135200D    DISPLAY "BASED ON COMPILE DATE: " MY-TIMESTAMP.              MA100202
+135300                                                                  MA100202
+135400     Initialize SOURCEFILE-DATA FASTFILE-DATA.                    MA100202
+135500     PERFORM REWIND-FFMSTR.                                       MA100202
+135600     INITIALIZE MY-PRODNAME MY-PRODPATH FFMSTR-BUFFER.            MA100202
+135700     MOVE LOW-VALUE TO SOURCE-TIMESTAMP.                          MA100202
+135800     PERFORM VARYING MYIDX FROM 1 BY 1                            MA100202
+135900       UNTIL END-OF-FILE                                          MA100202
+136000          OR SOURCE-TIMESTAMP = FAST-TIMESTAMP                    MA100202
+136100      INITIALIZE ffmstr-buffer                                    MA100202
+136200      Perform Get-FFmstr-Serial                                   MA100202
+136300      If NOT End-Of-File                                          MA100202
+136400       MOVE FFMSTR-VERSION TO VTIMESTAMP                          MA100202
+136500       MOVE 0 TO CLOCK-DINT                                       MA100202
+136600       MOVE VTS-WORD2 TO CLK-WORD1                                MA100202
+136700       CALL INTRINSIC "FMTDATE"   USING VTS-WORD1                 MA100202
+136800                                        CLOCK-DINT                MA100202
+136900                                        MY-TIMESTAMP              MA100202
+137000       MOVE MY-TIMESTAMP TO SOURCE-TIMESTAMP                      MA100202
+137100D      DISPLAY "SOURCE-TIMESTAMP [" SOURCE-TIMESTAMP "]"          MA100202
+137200D      DISPLAY "FAST-TIMESTAMP   [" FAST-TIMESTAMP "]"            MA100202
+137300      End-If                                                      MA100202
+137400     END-PERFORM.                                                 MA100202
+137500     IF (FAST-TIMESTAMP     = SOURCE-TIMESTAMP) and               MA100202
+137600        (FILE-HEAD-FORM(1)  = FFMSTR-HEAD-FRM)  AND               MA100202
+137700        (FAST-TIMESTAMP(1:18) <> "SUN, MON  D, 1900,")            MA100202
+137800D     DISPLAY "SOURCE FILE FOR: " SCREEN-FORMS-FILE               MA100202
+137900D     DISPLAY "             IS: " FFMSTR-VFIL-NAME                MA100202
+138000      PERFORM EXTRACT-FILENAME-F                                  MA100202
+138100      MOVE SCREEN-FORMS-FILE TO MY-PRODNAME                       MA100202
+138200      INITIALIZE MY-PRODPATH                                      MA100202
+138300      MOVE FAST-GROUPNAME    TO FFMSTR-VFIL-GROUP                 MA100202
+138400      MOVE FAST-ACCTNAME     TO FFMSTR-VFIL-ACCT                  MA100202
+138500      MOVE FAST-CREATOR      TO FFMSTR-VFIL-CREATOR               MA100202
+138600      move FFMSTR-VFIL-NAME to FFMSTR-PRODNAME1                   MA100202
+138700      IF FFMSTR-PRODNAME2 > SPACES                                MA100202
+138800       IF FFMSTR-PRODNAME3 > SPACES                               MA100202
+138900         CONTINUE                                                 MA100202
+139000       ELSE                                                       MA100202
+139100         MOVE MY-PRODNAME TO FFMSTR-PRODNAME3                     MA100202
+139200       END-IF                                                     MA100202
+139300      ELSE                                                        MA100202
+139400        MOVE MY-PRODNAME TO FFMSTR-PRODNAME2                      MA100202
+139500      END-IF                                                      MA100202
+139600      PERFORM LOCK-FFMSTR                                         MA100202
+139700      PERFORM UPDATE-FFMSTR                                       MA100202
+139800      PERFORM UNLOCK-FFMSTR                                       MA100202
+139900      ADD 1 TO MY-NEW-FILCNT.                                     MA100202
+140000*----------------------------                                     MA100202
+140100 EXTRACT-FILENAME-F.                                              MA100202
+140200     INITIALIZE FASTFILE-DATA.                                    MA100202
+140300     UNSTRING SCREEN-FORMS-FILE DELIMITED BY "."                  MA100202
+140400      INTO FAST-FILENAME FAST-GROUPNAME FAST-ACCTNAME.            MA100202
+140500     INITIALIZE FAST-CREATOR HPVAR-NAME.                          MA100202
+140600     STRING "SETVAR VSC FINFO('" DELIMITED BY SIZE                MA100202
+140700             SCREEN-FORMS-FILE DELIMITED BY SPACE                 MA100202
+140800            "','CREATOR')" DELIMITED BY SIZE INTO CMD.            MA100202
+140900     PERFORM MPE-COMMAND.                                         MA100202
+141000     MOVE "VSC~" TO HPVAR-NAME.                                   MA100202
+141100     MOVE 2 TO HPVAR-ITEMNUM.                                     MA100202
+141200     INITIALIZE HPVAR-ITEM HPVAR-STAT.                            MA100202
+141300     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 MA100202
+141400         HPVAR-STAT HPVAR-ITEMNUM FAST-CREATOR.                   MA100202
+141500*----------------------------                                     MA100202
+141600 EXTRACT-FILENAME-S.                                              MA100202
+141700     INITIALIZE SOURCEFILE-DATA.                                  MA100202
+141800     UNSTRING SCREEN-FORMS-FILE DELIMITED BY "."                  MA100202
+141900      INTO SOURCE-FILENAME SOURCE-GROUPNAME SOURCE-ACCTNAME.      MA100202
+142000     INITIALIZE SOURCE-CREATOR HPVAR-NAME.                        MA100202
+142100     STRING "SETVAR VSC FINFO('" DELIMITED BY SIZE                MA100202
+142200             FFMSTR-VFIL-NAME DELIMITED BY SPACE                  MA100202
+142300            "','CREATOR')" DELIMITED BY SIZE INTO CMD.            MA100202
+142400     PERFORM MPE-COMMAND.                                         MA100202
+142500     MOVE "VSC~" TO HPVAR-NAME.                                   MA100202
+142600     MOVE 2 TO HPVAR-ITEMNUM.                                     MA100202
+142700     INITIALIZE HPVAR-ITEM HPVAR-STAT.                            MA100202
+142800     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                 MA100202
+142900         HPVAR-STAT HPVAR-ITEMNUM SOURCE-CREATOR.                 MA100202
+145500                                                                  MA100202

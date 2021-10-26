@@ -1,0 +1,68 @@
+000100$TITLE "SUB4"                                                     090805ma
+000200$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                                
+000300 IDENTIFICATION DIVISION.                                                 
+000400 PROGRAM-ID. SUB4.                                                090805ma
+000500 ENVIRONMENT DIVISION.                                                    
+000600 DATA DIVISION.                                                           
+000700 WORKING-STORAGE SECTION.                                                 
+000800 PROCEDURE DIVISION.                                              090805ma
+000900 0-BEGIN.                                                         090805ma
+001000     DISPLAY "SUB4 FROM XLACT CALLING SUB10".                     090805ma
+001100     CALL "SUB10".                                                090805ma
+001200     GOBACK.                                                      090805ma
+001300 END PROGRAM SUB4.                                                090805ma
+001400***************************************************************** 090805ma
+001500$TITLE "SUB5"                                                     090805ma
+001600$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+001700 IDENTIFICATION DIVISION.                                         090805ma
+001800 PROGRAM-ID. SUB5.                                                090805ma
+001900 ENVIRONMENT DIVISION.                                            090805ma
+002000 DATA DIVISION.                                                   090805ma
+002100 WORKING-STORAGE SECTION.                                         090805ma
+002200 PROCEDURE DIVISION.                                              090805ma
+002300 0-BEGIN.                                                         090805ma
+002400     DISPLAY "SUB5 FROM XLACT CALLING SUB2".                      090805ma
+002500     CALL "SUB2".                                                 090805ma
+002600     GOBACK.                                                      090805ma
+002700 END PROGRAM SUB5.                                                090805ma
+002800***************************************************************** 090805ma
+002900$TITLE "SUB6"                                                     090805ma
+003000$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+003100 IDENTIFICATION DIVISION.                                         090805ma
+003200 PROGRAM-ID. SUB6.                                                090805ma
+003300 ENVIRONMENT DIVISION.                                            090805ma
+003400 DATA DIVISION.                                                   090805ma
+003500 WORKING-STORAGE SECTION.                                         090805ma
+003600 PROCEDURE DIVISION.                                              090805ma
+003700 0-BEGIN.                                                         090805ma
+003800     DISPLAY "SUB6 FROM XLACT".                                   090805ma
+003900     GOBACK.                                                      090805ma
+004000 END PROGRAM SUB6.                                                090805ma
+004100***************************************************************** 090805ma
+004200$TITLE "SUB7"                                                     090805ma
+004300$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+004400 IDENTIFICATION DIVISION.                                         090805ma
+004500 PROGRAM-ID. SUB7.                                                090805ma
+004600 ENVIRONMENT DIVISION.                                            090805ma
+004700 DATA DIVISION.                                                   090805ma
+004800 WORKING-STORAGE SECTION.                                         090805ma
+004900 PROCEDURE DIVISION.                                              090805ma
+005000 0-BEGIN.                                                         090805ma
+005100     DISPLAY "SUB7 FROM XLACT".                                   090805ma
+005200     GOBACK.                                                      090805ma
+005300 END PROGRAM SUB7.                                                090805ma
+005400***************************************************************** 090805ma
+005500***************************************************************** 090805ma
+005600$TITLE "SUB10"                                                    090805ma
+005700$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+005800 IDENTIFICATION DIVISION.                                         090805ma
+005900 PROGRAM-ID. SUB10.                                               090805ma
+006000 ENVIRONMENT DIVISION.                                            090805ma
+006100 DATA DIVISION.                                                   090805ma
+006200 WORKING-STORAGE SECTION.                                         090805ma
+006300 PROCEDURE DIVISION.                                              090805ma
+006400 0-BEGIN.                                                         090805ma
+006500     DISPLAY "SUB10 FROM XLACT".                                  090805ma
+006600     GOBACK.                                                      090805ma
+006700 END PROGRAM SUB10.                                               090805ma
+006800                                                                  090805ma

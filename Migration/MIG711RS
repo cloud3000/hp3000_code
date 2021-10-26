@@ -1,0 +1,800 @@
+053200$CONTROL LIST,BOUNDS,USLINIT,POST85                                       
+053300 IDENTIFICATION DIVISION.                                                 
+053400 PROGRAM-ID. MIG711R.                                                     
+053500 AUTHOR.     MICHAEL ANDERSON.                                            
+053600 DATE-COMPILED.                                                           
+053700*                    TIW Corporation                                      
+053800*              HP3000 Migration PREP System                               
+053900*                 V/Plus REPORT PROGRAM                                   
+054000*                                                                         
+054100 ENVIRONMENT DIVISION.                                                    
+054200 CONFIGURATION SECTION.                                                   
+054300 SOURCE-COMPUTER. HP3000.                                                 
+054400* WITH DEBUGGING MODE.                                                    
+054500 OBJECT-COMPUTER. HP3000.                                                 
+054600 SPECIAL-NAMES.                                                           
+054700     SW15 OFF STATUS IS PRINTER-IS-ON                                     
+054800     CONDITION-CODE IS CC.                                                
+054900 INPUT-OUTPUT SECTION.                                                    
+055000 FILE-CONTROL.                                                            
+055100     SELECT WORK711  ASSIGN TO "WORK711R,,,DISC,50000"                    
+055200            FILE STATUS IS WORK711-STATUS.                                
+055300     SELECT SORTFILE ASSIGN TO "SORTFILE,,,DISC,50000".                   
+055400     SELECT PRT  ASSIGN TO "PRINTER,,,LP(CCTL)"                           
+055500            FILE STATUS IS PRINTER-STATUS.                                
+055600$PAGE "File record Layouts"                                               
+055700 DATA DIVISION.                                                           
+055800 FILE SECTION.                                                            
+055900 FD  PRT  RECORD CONTAINS 80  CHARACTERS                                  
+056000              DATA RECORD IS LP-REC.                                      
+056100 01  LP-REC                PIC X(80).                                     
+056200 FD  WORK711  RECORD CONTAINS 136 CHARACTERS                              
+056300              BLOCK  CONTAINS 224 RECORDS                                 
+056400              DATA RECORD IS WORK-REC.                                    
+056500 01  WORK-REC.                                                            
+056600     02 WORK-SEQNO         PIC X(6).                                      
+056700     02 WORK-SVR-NAME   PIC X(8).                                         
+056800     02 WORK-EQUIPDESCR    PIC X(120).                                    
+056900     02 WORK-CATCODE       PIC XX.                                        
+057000                                                                          
+057100 SD  SORTFILE DATA RECORD IS SORT-FILE.                                   
+057200 01  SORT-FILE.                                                           
+057300     05  KEY-DATA          PIC X(6).                                      
+057400     05  DETAIL-DATA       PIC X(130).                                    
+057500                                                                          
+057600                                                                          
+057700$PAGE "File control storage area"                                         
+057800*****************************************************************         
+057900 WORKING-STORAGE SECTION.                                                 
+058000*****************************************************************         
+058100 01  TDAY                PIC X(8)  VALUE SPACES.                          
+058200 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                          
+058300 01  TDOW                PIC S9(4) COMP VALUE 0.                          
+058400 01  DDAY                PIC X(8)  VALUE SPACES.                          
+058500 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                          
+058600 01  DDOW                PIC S9(4) COMP VALUE 0.                          
+058700 01  DCNT                PIC S9(4) COMP VALUE 0.                          
+058800 01  DbCNT               PIC S9(4) COMP VALUE 0.                          
+058900     COPY APPCOM    OF J3KLIB.                                            
+059000     COPY FLOWEX    OF J3KLIB.                                            
+059100     COPY AMSCOMM   OF J3KLIB.                                            
+059200     02 SC1-BUFFER REDEFINES SCREEN-BUFFER.                               
+059300      03 SC1-HEADER.                                                      
+059400        05 SC1-SVR-NAME       PIC X(024).                                 
+059500        05 SC1-SVR-IPADDR     PIC X(016).                                 
+059600        05 SC1-SRV-DBCNT      PIC ZZ,ZZ9.                                 
+059700        05 SC1-SVR-SUSAN      PIC Z(16).                                  
+059800        05 SC1-SVR-MPEVERSION PIC X(008).                                 
+059900        05 SC1-PAGE1          PIC ZZ9.                                    
+060000        05 SC1-PAGE2          PIC ZZ9.                                    
+060100        05 SC1-SVR-DSCNT      PIC ZZZ,ZZZ,ZZZ,ZZ9.                        
+060200        05 SC1-SVR-FLDCNT     PIC ZZZ,ZZZ,ZZZ,ZZ9.                        
+060300        05 SC1-SVR-RECCNT     PIC ZZZ,ZZZ,ZZZ,ZZ9.                        
+060400      03 SC1-DETAIL.                                                      
+060500           10 SC1-FORMSFILE   PIC X(32).                                  
+060600           10 Sc1-WINPOS     PIC ZZZ,ZZZ,ZZ9.                             
+060700           10 SC1-FLDCNT     PIC ZZZ,ZZZ,ZZ9.                             
+060800           10 SC1-FORMCNT       PIC ZZZ,ZZZ,ZZ9.                          
+060900           10 SC1-SFLDCNT    PIC ZZZ,ZZZ,ZZZ,ZZ9.                         
+061000      03 FILLER             PIC X(1699).                                  
+061100 01 WHO-INTRINSIC-PARMS.                                                  
+061200    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                            
+061300    15  WHO-MODE               PIC S9999 COMP.                            
+061400    15  WHO-CAPABILITY         PIC S9(6) COMP.                            
+061500    15  WHO-LATTR              PIC S9(6) COMP.                            
+061600    15  WHO-USERN.                                                        
+061700        20 BYTE1-6             PIC X(6).                                  
+061800        20 SCHOOL-NUMBER       PIC XX.                                    
+061900    15  WHO-GROUPN             PIC X(8).                                  
+062000    15  WHO-ACCTN              PIC X(8).                                  
+062100    15  WHO-HOMEN              PIC X(8).                                  
+062200                                                                          
+062300*****************************************************************         
+062400 01  FILE-ERROR-DATA.                                                     
+062500     05 ERROR-NUMBER       PIC XX    VALUE SPACES.                        
+062600     05 FNAME              PIC X(8)  VALUE SPACES.                        
+062700     05 FILE-ERROR-RECORD  PIC X(79).                                     
+062800*----------------- PRINTER.                                               
+062900 01  PRINTER-STATUS       PIC XX     VALUE SPACES.                        
+063000 01  PRINTER-COUNT         PIC S9(4) COMP VALUE 0.                        
+063100 01  PRINTER-FLAG          PIC XX    VALUE SPACES.                        
+063200     88 PRINTER-CLOSED     VALUE SPACES.                                  
+063300     88 PRINTER-OPENED     VALUE "01".                                    
+063400     88 PRINTER-EOF        VALUE "99".                                    
+063500 01  LAST-PRINTER          PIC S9(4) COMP VALUE 1.                        
+063600*----------------- WORK114R.                                              
+063700 01  WORK711-STATUS        PIC XX     VALUE SPACES.                       
+063800 01  WORK711-COUNT         PIC S9(9) COMP VALUE 0.                        
+063900 01  WORK711-FLAG          PIC XX    VALUE SPACES.                        
+064000     88 WORK711-CLOSED     VALUE SPACES.                                  
+064100     88 WORK711-OPENED-INPUT  VALUE "01".                                 
+064200     88 WORK711-OPENED-OUTPUT VALUE "02".                                 
+064300     88 WORK711-EOF        VALUE "99".                                    
+064400 01  LAST-WORK711          PIC S9(4) COMP VALUE 1.                        
+064500                                                                          
+064600 01 NUMERIC-EDITS.                                                        
+064700    02 Split-Word        Pic S9(4) Comp.                                  
+064800    02 Splating-a-word Redefines Split-Word.                              
+064900       05 Split-Word-1 Pic x.                                             
+065000       05 Split-Word-2 Pic x.                                             
+065100    02 CHR3              PIC XXX.                                         
+065200    02 Y1                PIC 9.                                           
+065300    02 Y2                PIC 99.                                          
+065400    02 Y3                PIC 999.                                         
+065500    02 Y4                PIC 9999.                                        
+065600    02 Y5                PIC 99999.                                       
+065700    02 CHR6              PIC XXXXXX.                                      
+065800    02 Z1                PIC 9.                                           
+065900    02 Z2                PIC 99.                                          
+066000    02 Z3                PIC 999.                                         
+066100    02 Z4                PIC 9999.                                        
+066200    02 Z5                PIC 99999.                                       
+066300 01  PAGE-COUNT            PIC S9(9) COMP VALUE 0.                        
+066400 01  LINES-PRINTED         PIC S9(4) COMP VALUE 0.                        
+066500 01  INPUT-DEV             PIC X(4)  VALUE SPACES.                        
+066600 01  I                     PIC S9(4) COMP VALUE 0.                        
+066700 01  N                     PIC S9(4) COMP VALUE 0.                        
+066800 01  Y                     PIC S9(4) COMP VALUE 0.                        
+066900 01  EQB                   PIC S9(4) COMP VALUE 0.                        
+067000 01  ADDITIONAL-LINES      PIC S9(4) COMP VALUE 0.                        
+067100 01  DISP-N                PIC ZZZ9 VALUE ZERO.                           
+067200 01  DISP-N4               PIC 9999               VALUE ZERO.             
+067300 01  DISP-Z5               PIC Z,ZZ9              VALUE ZERO.             
+067400 01  DISP-N6               PIC ZZZ,ZZ9            VALUE ZERO.             
+067500 01  X2                    PIC S9(4) COMP VALUE 0.                        
+067600 01  X                     PIC S9(4) COMP VALUE 0.                        
+067700 01  ASCII-CHARACTER       REDEFINES X.                                   
+067800     02 ASCII-BYTE1        PIC X.                                         
+067900     02 ASCII-BYTE2        PIC X.                                         
+068000 01  DECIMAL-VALUE         PIC S9(4) COMP VALUE 0.                        
+068100 01  BINARY-VALUE.                                                        
+068200     05 BIT-ZERO           PIC 9.                                         
+068300     05 BIT OCCURS 15 TIMES PIC 9.                                        
+068400 01  e1                    PIC S9(4) COMP Value 0.                        
+068500 01  e2                    PIC S9(4) COMP Value 0.                        
+068600 01  e3                    PIC S9(4) COMP Value 0.                        
+068700 01  e4                    PIC S9(4) COMP Value 0.                        
+068800                                                                          
+068900 01  TOTAL-SAVEFLD         PIC S9(9) COMP Value 0.                        
+069000 01  TOTAL-FORMS           PIC S9(9) COMP Value 0.                        
+069100 01  TOTAL-FIELDS          PIC S9(9) COMP Value 0.                        
+069200                                                                          
+069300 01  COMMAND-LINE          PIC X(72).                                     
+069400 01  VSCMD                 PIC X(72).                                     
+069500 01  CR                    PIC X VALUE %15.                               
+069600 01  Total-Bytes Pic s9(18) comp value 0.                                 
+069700 01  Sc1-tbytes  Pic zzz,zzz,zzz,zz9.                                     
+069800                                                                          
+069900 01 NUMDEC                 PIC S9(4) COMP.                                
+070000 01 NUMERR                 PIC S9(4) COMP.                                
+070100 01 NUM1                   PIC X(14).                                     
+070200 01 NUM2                   PIC 9(14).                                     
+070300 01 EDIT-MESSAGE           PIC X(120).                                    
+070400 01 SHOWTIME.                                                             
+070500    02 PIC X(8) VALUE "SHOWTIME".                                         
+070600    02 PIC X    VALUE %15.                                                
+070700 01 DBN-TABLE.                                                            
+070800    02 DBNTBL-DBNNUMBER    PIC X(6) OCCURS 31.                            
+070900 02 LAST-SVR-NAME       PIC X(8).                                         
+071000$PAGE " Calendar storage area"                                            
+071100 01 CALDATE.                                                              
+071200    02 THIS-YEAR           PIC 9(4).                                      
+071300    02 CAL-YEAR REDEFINES THIS-YEAR.                                      
+071400       03 CAL-CN           PIC 99.                                        
+071500       03 CAL-YR           PIC 99.                                        
+071600    02 CAL-MO              PIC 99.                                        
+071700    02 CAL-DA              PIC 99.                                        
+071800 01 CURDATE.                                                              
+071900    02 CURR-YEAR           PIC 9(4).                                      
+072000    02 CUR-YEAR REDEFINES CURR-YEAR.                                      
+072100       03 CUR-CN           PIC 99.                                        
+072200       03 CUR-YR           PIC 99.                                        
+072300    02 CUR-MO              PIC 99.                                        
+072400    02 CUR-DA              PIC 99.                                        
+072500 01 TODAYS-DATE            REDEFINES CURDATE.                             
+072600    02 FILLER              PIC 99.                                        
+072700    02 TODAY               PIC 999999.                                    
+072800 01 CUR-NUMDATE            PIC S9(9) COMP.                                
+072900 01 NUMDATE                PIC S9(9) COMP.                                
+073000 01 DAYNUM                 PIC S9(4) COMP.                                
+073100 01  CURRENT-TIME.                                                        
+073200     02 CURRENT-HOUR       PIC 99.                                        
+073300     02 CURRENT-MINUTE     PIC 99.                                        
+073400     02 CURRENT-SEC        PIC 99.                                        
+073500     02 CURRENT-SEC-10TH   PIC 99.                                        
+073600 01  AM-PM                 PIC XX VALUE SPACES.                           
+073700$PAGE "PRINTER I-O STORAGE."                                              
+073800 01  HEADING-LINES         PIC S9(4) COMP VALUE 0.                        
+073900 01  DETAIL-LINES          PIC S9(4) COMP VALUE 0.                        
+074000 01  REQUIRED-LINES        PIC S9(4) COMP.                                
+074100 01  MAXIMUM-LINES         PIC S9(4) COMP.                                
+074200                                                                          
+074300     COPY FFMSTR   OF J3KLIB.                                             
+074400     COPY FMMSTR   OF J3KLIB.                                             
+074500     COPY FFFLDS   OF J3KLIB.                                             
+074600     COPY SRVMST   OF J3KLIB.                                             
+074700 01  GETINFO-DATA.                                                        
+074800    05  GINFO-LEN                PIC S9(4) COMP.                          
+074900    05  GINFO-STR                PIC X(128).                              
+075000    05  GINFO-PARM               PIC S9(4) COMP.                          
+075100                                                                          
+075200$PAGE "Main entry point"                                                  
+075300 PROCEDURE DIVISION.                                                      
+075400*****************************************************************         
+075500 0000-ENTRY SECTION 17.                                                   
+075600*****************************************************************         
+075700 0000-MAIN-ENTRY.                                                         
+075800     Initialize File-Error-Record                                         
+075900                Page-Count                                                
+076000                Condition-Word                                            
+076100                User-Area Data-Base-Common                                
+076200                Mode-N Search-Item Search-Key.                            
+076300     Move 1 To Re-Read Mode-1.                                            
+076400     Move 2 To Serial.                                                    
+076500     Move 3 To Backward Mode-3.                                           
+076600     Move 4 To Direct Mode-4.                                             
+076700     Move 5 To Chained Mode-5.                                            
+076800     Move 6 To Back-Chained.                                              
+076900     Move 7 To Keyed.                                                     
+077000     Move "; " To Null-Item.                                              
+077100     Move "@;" To All-Items.                                              
+077200     Perform 7801-Stdlist-Io Thru 7801-Exit.                              
+077300     MOVE 128 TO GINFO-LEN.                                               
+077400     INITIALIZE GINFO-STR GINFO-PARM.                                     
+077500     CALL INTRINSIC "GETINFO" USING GINFO-STR GINFO-LEN                   
+077600                                    GINFO-PARM.                           
+077700                                                                          
+077800*------>> Collect Data.                                                   
+077900     Display "Reading Records,    "                                       
+078000             With No Advancing.                                           
+078100     Call Intrinsic "Command" Using Showtime I X.                         
+078200     Move 1 To Search-Key-I2.                                             
+078300     Perform Get-Srvmst-Keyed.                                            
+078400     If No-Entry                                                          
+078500      Display "There Is No Record For This Server"                        
+078600      Stop Run                                                            
+078700     Else                                                                 
+078800      Move Srvmst-Svr-Name       To Sc1-Svr-Name                          
+078900      Move Srvmst-Svr-Ipaddr     To Sc1-Svr-Ipaddr                        
+079000      Move Srvmst-Svr-Susan      To Sc1-Svr-Susan                         
+079100      Move Srvmst-Svr-Mpeversion To Sc1-Svr-Mpeversion                    
+079200      Move Srvmst-Svr-Name       To  Sc1-Svr-Name                         
+079300      Move Srvmst-Svr-Ipaddr     To  Sc1-Svr-Ipaddr                       
+079400      Move Srvmst-Svr-Dbcnt      To  Sc1-Srv-Dbcnt                        
+079500      Move Srvmst-Svr-Dscnt      To  Sc1-Svr-Dscnt                        
+079600      Move Srvmst-Svr-Fldcnt     To  Sc1-Svr-Fldcnt                       
+079700      Move Srvmst-Svr-Reccnt     To  Sc1-Svr-Reccnt                       
+079800      Move Srvmst-Svr-Susan      To  Sc1-Svr-Susan                        
+079900      Move Srvmst-Svr-Mpeversion To  Sc1-Svr-Mpeversion.                  
+080000     Move 0 To Sc1-Page1 Sc1-Page2.                                       
+080100     Move 1 To Search-Key-I2.                                             
+080200     Move "SVR-UNIQUE;" To Search-Item.                                   
+080300     Perform Find-FFMSTR.                                                 
+080400     If No-Entry                                                          
+080500      Move "There Are No FORMSFILES On This Server"                       
+080600        To Screen-Message                                                 
+080700      Stop Run.                                                           
+080800*------>> Print Data.                                                     
+080900     Display "Printing  Records,      "                                   
+081000             With No Advancing.                                           
+081100     Call Intrinsic "Command" Using Showtime I X.                         
+081200     Perform 6900-Print.                                                  
+081300 0999-Exit.                                                               
+081400     Go To 9900-Return.                                                   
+081500$PAGE " PRINT SECTION"                                                    
+081600****************************************************************          
+081700 6900-PRINT SECTION 19.                                                   
+081800****************************************************************          
+081900*----------------- SETUP PRINT ENVIRONMENT / & OPEN PRINTER               
+082000 6900-BEGIN.                                                              
+082100     INITIALIZE FFMSTR-BUFFER.                                            
+082200     PERFORM 7802-OPEN-PRINTER.                                           
+082300     PERFORM 6920-DETAIL.                                                 
+082400     GO TO 6930-CLOSE.                                                    
+082500/                                                                         
+082600*----------------- PRINT HEADING OF PAGE.                                 
+082700 6910-HEADING.                                                            
+082800     ADD 1 TO PAGE-COUNT.                                                 
+082900     MOVE PAGE-COUNT  TO DISP-Z5.                                         
+083000     DISPLAY DISP-Z5 " pages printed." %33 "A".                           
+083100     MOVE PAGE-COUNT TO DISP-Z5.                                          
+083200     ACCEPT TODAY FROM DATE.                                              
+083300     IF CUR-YR < 80 MOVE 20 TO CUR-CN ELSE MOVE 19 TO CUR-CN.             
+083400     ACCEPT CURRENT-TIME FROM TIME.                                       
+083500     IF CURRENT-HOUR < 12                                                 
+083600        MOVE "AM" TO AM-PM                                                
+083700     ELSE                                                                 
+083800        MOVE "PM" TO AM-PM.                                               
+083900     IF CURRENT-HOUR = 0 MOVE 24 TO CURRENT-HOUR.                         
+084000     IF CURRENT-HOUR > 12 SUBTRACT 12 FROM CURRENT-HOUR.                  
+084100*----------------- HEADING LINE 1.                                        
+084200     MOVE SPACES TO LP-REC.                                               
+084300     MOVE "PROGRAM ID: MIG711R"      TO LP-REC.                           
+084400     MOVE "TIW Corporation" TO LP-REC(1:).                                
+084500     MOVE "PAGE: "                   TO LP-REC(66:6).                     
+084600     MOVE DISP-Z5                    TO LP-REC(73:5).                     
+084700     MOVE LP-REC TO PRINT-DATA.                                           
+084800     MOVE %61 TO PRINT-CTL.                                               
+084900     IF PAGE-COUNT = 1 MOVE %53 TO PRINT-CTL.                             
+085000     PERFORM 7822-WRITE-TO-PRINTER.                                       
+085100*----------------- HEADING LINE 2.                                        
+085200     MOVE "DATE:" TO LP-REC.                                              
+085300     MOVE CUR-MO                     TO LP-REC(7:2).                      
+085400     MOVE "/"                        TO LP-REC(9:1).                      
+085500     MOVE CUR-DA                     TO LP-REC(10:2).                     
+085600     MOVE "/"                        TO LP-REC(12:1).                     
+085700     MOVE CUR-YR                     TO LP-REC(13:2).                     
+085800     MOVE "   FORMSPEC MIGRATION "                                        
+085900                                     TO LP-REC(26:).                      
+086000     MOVE "TIME: "                   TO LP-REC(66:6).                     
+086100     MOVE CURRENT-HOUR               TO LP-REC(72:2).                     
+086200     MOVE ":"                        TO LP-REC(74:1).                     
+086300     MOVE CURRENT-MINUTE             TO LP-REC(75:2).                     
+086400     MOVE AM-PM                      TO LP-REC(78:2).                     
+086500     MOVE LP-REC TO PRINT-DATA.                                           
+086600     MOVE %201 TO PRINT-CTL.                                              
+086700     PERFORM 7822-WRITE-TO-PRINTER.                                       
+086800     MOVE SPACES TO LP-REC.                                               
+086900*----------------- HEADING LINE 4.                                        
+087000*    { Display category code & description }                              
+087100     MOVE "3" TO FONT-STROKE.                                             
+087200     MOVE SPACES TO LP-REC.                                               
+087300     STRING "Server: " SC1-SVR-NAME DELIMITED BY "  "                     
+087400      "@" SC1-SVR-IPADDR DELIMITED BY SIZE INTO LP-REC.                   
+087500     MOVE LP-REC TO PRINT-DATA.                                           
+087600     MOVE %202 TO PRINT-CTL.                                              
+087700     PERFORM 7822-WRITE-TO-PRINTER.                                       
+087800     MOVE LP-REC TO PRINT-DATA.                                           
+087900     MOVE %200 TO PRINT-CTL.                                              
+088000     PERFORM 7822-WRITE-TO-PRINTER.                                       
+088100     MOVE SPACES TO LP-REC.                                               
+088200     ADD 1 TO EQB.                                                        
+088300     MOVE "0" TO FONT-STROKE.                                             
+088400*----------------- HEADING LINE 5.                                        
+088500*    { Setup detail heading line#1.}                                      
+088600     MOVE SPACES TO LP-REC.                                               
+088700     MOVE "V / Plus"              TO LP-REC(1:).                          
+088800     MOVE LP-REC TO PRINT-DATA.                                           
+088900     MOVE %202 TO PRINT-CTL.                                              
+089000     PERFORM 7822-WRITE-TO-PRINTER.                                       
+089100     MOVE SPACES TO LP-REC.                                               
+089200*----------------- HEADING LINE 6.                                        
+089300*   { Setup detail heading line#2.}                                       
+089400     MOVE SPACES TO LP-REC.                                               
+089500     MOVE "Forms File Name"      TO LP-REC(1:).                           
+089600     MOVE " Forms"              TO LP-REC(28:).                           
+089700     MOVE "Fields"             TO LP-REC(38:).                            
+089800     MOVE "    Save Fields "    TO LP-REC(45:).                           
+089900     MOVE "MSG Window Postion"    TO LP-REC(62:).                         
+090000                                                                          
+090100     MOVE LP-REC TO PRINT-DATA.                                           
+090200     MOVE %201 TO PRINT-CTL.                                              
+090300     PERFORM 7822-WRITE-TO-PRINTER.                                       
+090400     MOVE SPACES TO LP-REC.                                               
+090500*----------------- HEADING LINE 7.                                        
+090600*   { Underline each detail heading. }                                    
+090700     MOVE SPACES TO LP-REC.                                               
+090800      MOVE ALL "_" TO LP-REC(1:26)                                        
+090900                      LP-REC(28:5)                                        
+091000                      LP-REC(39:5)                                        
+091100                      LP-REC(45:15)                                       
+091200                      LP-REC(62:15).                                      
+091300     MOVE LP-REC TO PRINT-DATA.                                           
+091400     MOVE %200 TO PRINT-CTL.                                              
+091500     PERFORM 7822-WRITE-TO-PRINTER.                                       
+091600     MOVE WORK-SVR-NAME TO LAST-SVR-NAME.                                 
+091700     MOVE HEADING-LINES TO LINES-PRINTED.                                 
+091800/                                                                         
+091900*----------------- Print Detail Lines.                                    
+092000 6920-Detail.                                                             
+092100     Initialize FFMSTR-Buffer.                                            
+092200     Perform Varying X From 1 By 1                                        
+092300       Until ( End-Of-Chain )                                             
+092400      If (Lines-Printed > Maximum-Lines )                                 
+092500       Perform 6910-Heading                                               
+092600      End-If                                                              
+092700      Initialize FFMSTR-Buffer                                            
+092800      Perform Get-FFMSTR-Chained                                          
+092900      If Not End-Of-Chain                                                 
+093000        Perform 6920-Printline                                            
+093100      End-If                                                              
+093200     End-Perform.                                                         
+093300                                                                          
+093400*----------------- Detail Line 1.                                         
+093500 6920-Printline.                                                          
+093600     Initialize SC1-DETAIL Lp-Rec.                                        
+093700     Move FFMSTR-VFIL-UNIQUE to Search-Key-I2.                            
+093800     Move "VFIL-UNIQUE;" To Search-Item.                                  
+093900     Perform FIND-FFFLDS.                                                 
+094000     If No-Entry                                                          
+094100      Move 0 to SC1-FLDCNT                                                
+094200     Else                                                                 
+094300      Move ENTRIES-IN-CHAIN To SC1-FLDCNT                                 
+094400      ADD ENTRIES-IN-CHAIN TO TOTAL-FIELDS.                               
+094500                                                                          
+094600     MOVE FFMSTR-VFIL-NAME TO SC1-FORMSFILE.                              
+094700                                                                          
+094800     Move FFMSTR-NBR-OF-FORMS To SC1-FORMCNT.                             
+094900     ADD FFMSTR-NBR-OF-FORMS TO TOTAL-FORMS.                              
+095000                                                                          
+095100     MOVE FFMSTR-SAVE-FLDS TO SC1-SFLDCNT.                                
+095200     ADD FFMSTR-SAVE-FLDS TO TOTAL-SAVEFLD.                               
+095300                                                                          
+095400     MOVE FFMSTR-WIN-POS TO Sc1-WINPOS.                                   
+095500     Move SC1-FORMSFILE     To Lp-Rec(1:).                                
+095600     Move Sc1-WINPOS       To Lp-Rec(66:11).                              
+095700     Move SC1-SFLDCNT      To Lp-Rec(45:15).                              
+095800     Move SC1-FLDCNT       To Lp-Rec(33:11).                              
+095900     Move SC1-FORMCNT      To Lp-Rec(22:11).                              
+096000*    INITIALIZE X Y.                                                      
+096100*    DIVIDE LINES-PRINTED BY 2 GIVING X REMAINDER Y.                      
+096200*    MOVE "0" TO FONT-STROKE.                                             
+096300*    IF Y = 0                                                             
+096400*     MOVE "3" TO FONT-STROKE.                                            
+096500     Move Lp-Rec To Print-Data.                                           
+096600     Move %201   To Print-Ctl.                                            
+096700*     IF (GINFO-LEN > 0 AND GINFO-LEN < 28) AND                           
+096800*        (GINFO-STR(1:GINFO-LEN) = FFMSTR-Db-Name(1:GINFO-LEN))           
+096900*      Perform 7822-Write-To-Printer                                      
+097000*     Move Spaces To Lp-Rec                                               
+097100*     ADD 1 TO LINES-PRINTED                                              
+097200*     ADD 1 TO DbCnt.                                                     
+097300*                                                                         
+097400     IF GINFO-LEN = 0                                                     
+097500      Perform 7822-Write-To-Printer                                       
+097600      Move Spaces To Lp-Rec                                               
+097700      ADD 1 TO LINES-PRINTED                                              
+097800      ADD 1 TO DbCnt.                                                     
+097900*----->>    { Setup Detail Printline.}                                    
+098000/                                                                         
+098100*----------------- RESET & CLOSE PRINTER.                                 
+098200 6930-CLOSE.                                                              
+098300     MOVE SPACES TO LP-REC.                                               
+098400     MOVE "3" TO FONT-STROKE.                                             
+098500     MOVE ALL "_" TO LP-REC(1:26)                                         
+098600                     LP-REC(28:5)                                         
+098700                     LP-REC(39:5)                                         
+098800                     LP-REC(45:15).                                       
+099000     MOVE LP-REC TO PRINT-DATA.                                           
+099100     MOVE %200 TO PRINT-CTL.                                              
+099200     PERFORM 7822-WRITE-TO-PRINTER.                                       
+099300     Move Space To SC1-FORMSFILE.                                         
+099400     Move DbCnt To Sc1-Srv-Dbcnt.                                         
+099500     String Sc1-Srv-Dbcnt " Forms files:"                                 
+099600      Delimited by size Into SC1-FORMSFILE.                               
+099700     Move Total-Bytes       To Sc1-tbytes.                                
+099800     Move TOTAL-FORMS       To SC1-FORMCNT.                               
+099900     Move TOTAL-SAVEFLD     To SC1-SFLDCNT.                               
+100000     Move TOTAL-FIELDS      To SC1-FLDCNT.                                
+100100     Move SC1-FORMSFILE     To Lp-Rec(1:).                                
+100200                                                                          
+100300     Move SC1-SFLDCNT      To Lp-Rec(45:15).                              
+100400     Move SC1-FLDCNT       To Lp-Rec(33:11).                              
+100500     Move SC1-FORMCNT      To Lp-Rec(22:11).                              
+101000     Move Lp-Rec To Print-Data.                                           
+101100     Move %201   To Print-Ctl.                                            
+101200     Perform 7822-Write-To-Printer.                                       
+101300     Move Spaces To Lp-Rec.                                               
+101400     ADD 1 TO LINES-PRINTED.                                              
+101500*----------------- RESET & CLOSE, MOVED TO END-OF-PROGRAM.                
+101600 6999-EXIT.                                                               
+101700     EXIT.                                                                
+101800$PAGE "MISC. SUBROUTINES"                                                 
+101900*****************************************************************         
+102000 7800-MISC-SUBROUTINES SECTION 21.                                        
+102100*****************************************************************         
+102200 7801-STDLIST-IO.                                                         
+102300     Display "HP3000 Documentation Tool version C.7.3".                   
+102400     DISPLAY "-------------------------------------------------".         
+102500     DISPLAY "***            MIG711R.PUB.J3K                ***".         
+102600     DISPLAY "***                                           ***".         
+102700     DISPLAY "***             V/Plus Report                 ***".         
+102800     DISPLAY "***                                           ***".         
+102900     DISPLAY "-------------------------------------------------".         
+103000     CALL INTRINSIC "COMMAND" USING SHOWTIME I X.                         
+103100     DISPLAY " ".                                                         
+103200     CALL   INTRINSIC "WHO"                                               
+103300     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN                   
+103400            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.               
+103500*    IF WHO-ACCTN(1:3) <> "J3K" OR                                        
+103600*       WHO-USERN(1:7) <> "MANAGER" OR                                    
+103700*       WHO-GROUPN(1:3) <> "PUB"                                          
+103800*      DISPLAY "PLEASE LOGON AS MANAGER.J3K,PUB"                          
+103900*      DISPLAY "This program will not run as "                            
+104000*              WHO-USERN "." WHO-ACCTN "," WHO-GROUPN                     
+104100*      CALL INTRINSIC "QUIT" USING \1\.                                   
+104200     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                           
+104300     INITIALIZE DDAY DNUMDAY DDOW.                                        
+104400     MOVE 1 TO MIGDB.                                                     
+104500     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                                
+104600     MOVE "J3K" TO DATA-BASE-PASS(MIGDB).                                 
+104700     CALL "DBOPEN" USING                                                  
+104800            DATA-BASE-NAME(MIGDB) DATA-BASE-PASS(MIGDB)                   
+104900            MODE-1 STATUS-AREA.                                           
+105000     IF IMAGE-ERRORS                                                      
+105100      CALL "DBEXPLAIN" USING STATUS-AREA                                  
+105200      STOP RUN.                                                           
+105300                                                                          
+105400 7801-STDIN-PUT.                                                          
+105500     MOVE SPACES TO INPUT-DEV.                                            
+105600     DISPLAY "Enter PRINTER device number? " WITH NO ADVANCING.           
+105700     ACCEPT      INPUT-DEV.                                               
+105800     INITIALIZE PRINTER-AREA PRSUB-ERR PRINT-LINE.                        
+105900     MOVE INPUT-DEV TO NUM1.                                              
+106000     MOVE ZERO TO NUM2 NUMDEC NUMERR.                                     
+106100     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                         
+106200     IF NUMERR <> 0                                                       
+106300        DISPLAY "PRINTER DEVICE IS NOT NUMERIC"                           
+106400        MOVE "1" TO ERRORS-SW                                             
+106500        GO TO 7801-STDIN-PUT.                                             
+106600     IF NUMERR <> 0                                                       
+106700        DISPLAY SCREEN-MESSAGE                                            
+106800        GO TO 7801-STDIN-PUT.                                             
+106900 7801-EXIT.   EXIT.                                                       
+107000/                                                                         
+107100*---------------------------------------------------------------          
+107200 7802-OPEN-PRINTER.                                                       
+107300D    DISPLAY "7802-OPEN-PRINTER".                                         
+107400                                                                          
+107500*------>> Assign the print file to an HP3000 periferal device,            
+107600*         using the "PRASSIGN" sub-routine.                               
+107700     MOVE "PRINTER"              TO PRINTER-NAME.                         
+107800     MOVE INPUT-DEV              TO PRINTER-DEV.                          
+107900     MOVE "MIG711R"              TO SPOOLFILE-NAME.                       
+108000     MOVE 8                      TO PRINTER-PRI.                          
+108100      COPY AMSCALL OF J3KLIB                                              
+108200     REPLACING ==VALUE OF PROCEDURE== BY =="PRASSIGN"==.                  
+108300     .                                                                    
+108400*------>> Open the printer file and get the FD file number from           
+108500*         the operating system, using the "GETFDF" sub-routine.           
+108600     OPEN OUTPUT PRT.                                                     
+108700     IF PRINTER-STATUS NOT = "00" PERFORM 9001-FILE-ERROR.                
+108800     MOVE "01"     TO  PRINTER-FLAG.                                      
+108900     CALL "LCGETFD" USING e4 BY CONTENT PRT.                              
+109000     MOVE e4     TO PRINTER-FNUM.                                         
+109100                                                                          
+109200                                                                          
+109300*------>> Setup the initial print file environment, such as:              
+109400*         compressed print, Laser font, or Load a laser from,             
+109500*         using the "PRSETUP" sub-routine.                                
+109600     INITIALIZE FONT.                                                     
+109700     MOVE "LJ" TO PRINTER-TYPE.                                           
+109800     MOVE 0                          TO PAGE-NO.                          
+109900     MOVE 6                          TO LINES-PER-INCH.                   
+110000     MOVE 8                          TO HEADING-LINES.                    
+110100     MOVE 1                          TO DETAIL-LINES.                     
+110200     MOVE 66                         TO LINES-PER-PAGE                    
+110300     MOVE 55                         TO MAXIMUM-LINES.                    
+110400     MOVE "A"                        TO PAGE-WIDTH.                       
+110500     MOVE "P"                        TO ORIENTATION.                      
+110600*     IF LASER-PRINTER                                                    
+110700*        MOVE 66                      TO LINES-PER-PAGE                   
+110800*        MOVE 55                      TO MAXIMUM-LINES                    
+110900*        MOVE "P"                     TO ORIENTATION                      
+111000*        MOVE SPACES                  TO FORM-NUMBER                      
+111100*        MOVE "1"                     TO PAPER-TRAY.                      
+111200      COPY AMSCALL OF J3KLIB                                              
+111300     REPLACING ==VALUE OF PROCEDURE== BY =="PRSETUP"==.                   
+111400     .                                                                    
+111500     IF PRSUB-ERR NOT = 0                                                 
+111600        MOVE SCREEN-MESSAGE TO FILE-ERROR-RECORD                          
+111700        GO TO 9900-ABEND.                                                 
+111800     INITIALIZE LP-REC.                                                   
+111900                                                                          
+112000*------>> The following computation will force an initial formfeed        
+112100     COMPUTE LINES-PRINTED = MAXIMUM-LINES + 1.                           
+112200                                                                          
+112300*---------------------------------------------------------------          
+112400 7802-OPEN-WORK711-INPUT.                                                 
+112500     MOVE "WORK711R" TO FNAME.                                            
+112600     OPEN INPUT WORK711.                                                  
+112700     IF WORK711-STATUS <> "00"                                            
+112800        PERFORM 9001-FILE-ERROR.                                          
+112900     MOVE ZERO TO WORK711-COUNT.                                          
+113000     MOVE "01" TO  WORK711-FLAG.                                          
+113100*---------------------------------------------------------------          
+113200 7802-OPEN-WORK711-OUTPUT.                                                
+113300     MOVE "WORK711R" TO FNAME.                                            
+113400     OPEN OUTPUT WORK711.                                                 
+113500     IF WORK711-STATUS <> "00"                                            
+113600        PERFORM 9001-FILE-ERROR.                                          
+113700     MOVE ZERO TO WORK711-COUNT.                                          
+113800     MOVE "02" TO  WORK711-FLAG.                                          
+113900*---------------------------------------------------------------          
+114000 7805-LOG-EDIT-MESSAGE.                                                   
+114100     MOVE SPACES TO FILE-ERROR-RECORD.                                    
+114200     STRING WORK-REC   EDIT-MESSAGE                                       
+114300        DELIMITED BY SIZE INTO FILE-ERROR-RECORD.                         
+114400     MOVE %202 TO PRINT-CTL.                                              
+114500     MOVE EDIT-MESSAGE TO PRINT-DATA.                                     
+114600     PERFORM 7822-WRITE-TO-PRINTER.                                       
+114700     PERFORM VARYING I FROM 1 BY 1 UNTIL I > 80                           
+114800      IF EDIT-MESSAGE(I:1) NOT = "*"                                      
+114900         MOVE SPACE TO EDIT-MESSAGE(I:1)                                  
+115000      END-IF                                                              
+115100     END-PERFORM.                                                         
+115200     MOVE %200 TO PRINT-CTL.                                              
+115300     MOVE EDIT-MESSAGE TO PRINT-DATA.                                     
+115400     MOVE "3" TO FONT-STROKE.                                             
+115500     PERFORM 7822-WRITE-TO-PRINTER.                                       
+115600     MOVE "0" TO FONT-STROKE.                                             
+115700     MOVE %201 TO PRINT-CTL.                                              
+115800     MOVE SPACES TO PRINT-DATA.                                           
+115900     PERFORM 7822-WRITE-TO-PRINTER.                                       
+116000     MOVE SPACES TO EDIT-MESSAGE.                                         
+116100     MOVE ZERO TO X.                                                      
+116200     ADD 4 TO LINES-PRINTED.                                              
+116300     MOVE "0" TO ERRORS-SW.                                               
+116400*---------------------------------------------------------------          
+116500 7811-CLOSE-PRINTER.                                                      
+116600     CLOSE PRT.                                                           
+116700     MOVE SPACES TO PRINTER-FLAG.                                         
+116800*---------------------------------------------------------------          
+116900 7811-CLOSE-WORK711.                                                      
+117000     CLOSE WORK711.                                                       
+117100     MOVE SPACES TO WORK711-FLAG.                                         
+117200*---------------------------------------------------------------          
+117300 7822-WRITE-TO-PRINTER.                                                   
+117400D    DISPLAY "7822-WRITE-TO-PRINTER".                                     
+117500     IF PRINTER-IS-ON                                                     
+117600      COPY AMSCALL OF J3KLIB                                              
+117700     REPLACING ==VALUE OF PROCEDURE== BY =="PRWRITE"==.                   
+117800     .                                                                    
+117900$PAGE "IMAGE ROUTINES"                                                    
+118000*---------------------------------------------------------------          
+118100 8000-IMAGE-ROUTINES.                                                     
+118200     COPY FFMSTR1 OF J3KLIB.                                              
+118300     COPY FFFLDS1 OF J3KLIB.                                              
+118400     COPY FFMSTR2 OF J3KLIB.                                              
+118500     COPY FFMSTR3 OF J3KLIB.                                              
+118600     COPY FFMSTR4 OF J3KLIB.                                              
+118700     COPY SRVMST1 OF J3KLIB.                                              
+118800     COPY SRVMST2 OF J3KLIB.                                              
+118900     COPY SRVMST3 OF J3KLIB.                                              
+119000     COPY SRVMST4 OF J3KLIB.                                              
+119100$PAGE "MISC. ERROR CONDITION SUBROUTINES"                                 
+119200 9001-FILE-ERROR.                                                         
+119300D    DISPLAY "9001-FILE-ERROR".                                           
+119400     MOVE SPACES TO FILE-ERROR-RECORD.                                    
+119500     MOVE "00" TO ERROR-NUMBER.                                           
+119600     IF FNAME = "PRINTER" MOVE PRINTER-STATUS TO ERROR-NUMBER.            
+119700     IF FNAME = "WORK711R" MOVE WORK711-STATUS TO ERROR-NUMBER.           
+119800     EVALUATE ERROR-NUMBER                                                
+119900     WHEN "00" MOVE "0" TO ERRORS-SW                                      
+120000     WHEN "04" MOVE "1" TO ERRORS-SW                                      
+120100               STRING "Read length of record  doesn't match "             
+120200                      FNAME " length."                                    
+120300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+120400     WHEN "05" MOVE "0" TO ERRORS-SW                                      
+120500               STRING "OPEN " FNAME " not present,  created."             
+120600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+120700     WHEN "07" MOVE "1" TO ERRORS-SW                                      
+120800               STRING FNAME " is not a tape as the OPEN/CLOSE "           
+120900                      "phrase implies."                                   
+121000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+121100     WHEN "30" MOVE "1" TO ERRORS-SW                                      
+121200               STRING FNAME " error.  problem unknown! "                  
+121300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+121400     WHEN "34" MOVE "1" TO ERRORS-SW                                      
+121500               STRING FNAME " boundary violation."                        
+121600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+121700     WHEN "35" MOVE "1" TO ERRORS-SW                                      
+121800               STRING FNAME " not found."                                 
+121900                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+122000     WHEN "37" MOVE "1" TO ERRORS-SW                                      
+122100               STRING FNAME " error.  Inconsistent operation "            
+122200                      "during file I/O !"                                 
+122300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+122400     WHEN "39" MOVE "1" TO ERRORS-SW                                      
+122500               STRING "OPEN " FNAME " failed due to fixed file"           
+122600                      " attribute conflict."                              
+122700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+122800     WHEN "41" MOVE "0" TO ERRORS-SW                                      
+122900               STRING FNAME " was already opened."                        
+123000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+123100     WHEN "42" MOVE "0" TO ERRORS-SW                                      
+123200               STRING "CLOSE " FNAME " without openning first."           
+123300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+123400     WHEN "44" MOVE "1" TO ERRORS-SW                                      
+123500               STRING FNAME " error.   boundary violation, "              
+123600                      " Record too big or record too small."              
+123700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+123800     WHEN "46" MOVE "1" TO ERRORS-SW                                      
+123900               STRING "READ " FNAME " after AT END  or   after"           
+124000                      " unsuccessful READ."                               
+124100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+124200     WHEN "47" MOVE "1" TO ERRORS-SW                                      
+124300               STRING "READ on " FNAME " not open for INPUT."             
+124400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+124500     WHEN "48" MOVE "1" TO ERRORS-SW                                      
+124600               STRING "WRITE on " FNAME " not open for OUTPUT."           
+124700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+124800     WHEN "49" MOVE "1" TO ERRORS-SW                                      
+124900               STRING "REWRITE on " FNAME                                 
+125000                      " not open for I-O."                                
+125100                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+125200     WHEN OTHER MOVE "1" TO ERRORS-SW                                     
+125300                MOVE ERROR-NUMBER TO DECIMAL-VALUE                        
+125400                STRING FNAME " ERROR #" ERROR-NUMBER                      
+125500                             " MESSAGE UNDEFINED ."                       
+125600                DELIMITED BY SIZE INTO FILE-ERROR-RECORD.                 
+125700     MOVE ERROR-NUMBER TO ASCII-CHARACTER.                                
+125800     IF ASCII-BYTE1 = "9"                                                 
+125900        MOVE ASCII-BYTE2 TO X                                             
+126000        MOVE X TO DISP-N                                                  
+126100        DISPLAY "MPE FILE ERROR #" DISP-N                                 
+126200        MOVE "1" TO ERRORS-SW                                             
+126300        MOVE SPACES TO FILE-ERROR-RECORD                                  
+126400        CALL INTRINSIC "FERRMSG" USING X FILE-ERROR-RECORD I.             
+126500     IF NOT ERRORS DISPLAY FILE-ERROR-RECORD                              
+126600     ELSE GO TO 9900-ABEND.                                               
+126700     MOVE FILE-ERROR-RECORD TO EDIT-MESSAGE.                              
+126800     PERFORM 7805-LOG-EDIT-MESSAGE.                                       
+126900*---------------------------------------------------------------          
+127000 9000-IMAGE-ERROR.                                                        
+127100     INITIALIZE FILE-ERROR-RECORD X.                                      
+127200     CALL "DBCALL"    USING STATUS-AREA FILE-ERROR-RECORD X.              
+127300     MOVE FILE-ERROR-RECORD(1:X) TO EDIT-MESSAGE.                         
+127400     INITIALIZE FILE-ERROR-RECORD Y.                                      
+127500     ADD 2 TO X.                                                          
+127600     CALL "DBERROR"   USING STATUS-AREA FILE-ERROR-RECORD Y.              
+127700     MOVE FILE-ERROR-RECORD(1:Y) TO EDIT-MESSAGE(X:Y).                    
+127800     PERFORM  7805-LOG-EDIT-MESSAGE.                                      
+127900$PAGE "END OF PROGRAM"                                                    
+128000*****************************************************************         
+128100 9900-END-PROGRAM SECTION 23.                                             
+128200*****************************************************************         
+128300 9900-ABEND.                                                              
+128400     DISPLAY "----------------------------------------".                  
+128500     DISPLAY "-MIG711R- ABNORMAL END OF PROGRAM".                         
+128600     DISPLAY "----------------------------------------".                  
+128700*---------------------------------------------------------------          
+128800 9900-RETURN.                                                             
+128900     IF FILE-ERROR-RECORD NOT = SPACES DISPLAY FILE-ERROR-RECORD.         
+129000     MOVE SPACES  TO PRINT-DATA.                                          
+129100     MOVE %61  TO PRINT-CTL.                                              
+129200     MOVE SPACES TO PRINT-DATA.                                           
+129300     MOVE ALL "_" TO PRINT-DATA(20:41).                                   
+129400     MOVE %225 TO PRINT-CTL.                                              
+129500     MOVE SPACES TO LP-REC.                                               
+129600     MOVE " DBN report "           TO LP-REC(23:).                        
+129700     MOVE LP-REC TO PRINT-DATA.                                           
+129800     DISPLAY LP-REC(20:50).                                               
+129900     MOVE %202 TO PRINT-CTL.                                              
+130000     MOVE SPACES TO LP-REC.                                               
+130100     MOVE LP-REC TO PRINT-DATA.                                           
+130200     DISPLAY LP-REC(20:50).                                               
+130300     MOVE SPACES TO LP-REC.                                               
+130400     MOVE "        Pages Printed          " TO LP-REC(15:).               
+130500     MOVE PAGE-COUNT  TO DISP-N6.                                         
+130600     MOVE DISP-N6                           TO LP-REC(50:7).              
+130700     MOVE LP-REC TO PRINT-DATA.                                           
+130800     DISPLAY LP-REC(20:50).                                               
+130900     MOVE %201 TO PRINT-CTL.                                              
+131000     MOVE SPACES TO PRINT-DATA.                                           
+131100     MOVE ALL "_" TO PRINT-DATA(20:41).                                   
+131200     MOVE %202 TO PRINT-CTL.                                              
+131300     IF NOT WORK711-CLOSED PERFORM 7811-CLOSE-WORK711.                    
+131400      COPY AMSCALL OF J3KLIB                                              
+131500     REPLACING ==VALUE OF PROCEDURE== BY =="PRRESET"==.                   
+131600     .                                                                    
+131700     CLOSE PRT.                                                           
+131800     GOBACK.                                                              
+131900 END PROGRAM MIG711R.                                                     
+132000$CONTROL LIST,DYNAMIC,BOUNDS,POST85                                       
+132100 IDENTIFICATION DIVISION.                                                 
+132200 PROGRAM-ID. LCGETFD.                                                     
+132300 AUTHOR.     MICHAEL ANDERSON.                                            
+132400*  - AMS SYSTEMS ROUTINE -    RETURNS 'FD' FILE NUMBER       *            
+132500 DATA DIVISION.                                                           
+132600 WORKING-STORAGE SECTION.                                                 
+132700 01  X                               PIC S9(9) COMP VALUE 0.              
+132800 LINKAGE SECTION.                                                         
+132900 01  FILENUM                         PIC S9(4) COMP.                      
+133000 01  FDNAME                          PIC S9(4) COMP.                      
+133100 PROCEDURE DIVISION USING FILENUM FDNAME.                                 
+133200 0000-BEGIN.                                                              
+133300     MOVE FDNAME TO FILENUM.                                              
+133400     GOBACK.                                                              
+133500 END PROGRAM LCGETFD.                                                     
+133600                                                                          

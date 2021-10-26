@@ -1,0 +1,721 @@
+000100$CONTROL LIST,DYNAMIC,BOUNDS, POST85                                      
+000200 IDENTIFICATION DIVISION.                                                 
+000300 PROGRAM-ID. MIG500.                                                      
+000400 AUTHOR.     MICHAEL ANDERSON.                                            
+000500 DATE-COMPILED.                                                           
+000600*                     COPYRIGHT 2007                                      
+000700*            J3K Solutions All rights reserved.                           
+000800*            Turbo Image Migration PREP System                            
+000900*                                                                         
+001000*               REDEFINE DATA FIELD SCREEN                                
+001100*                                                                         
+001200 ENVIRONMENT DIVISION.                                                    
+001300 CONFIGURATION SECTION.                                                   
+001400* SOURCE-COMPUTER. HP3000.                                                
+001500  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                           
+001600 OBJECT-COMPUTER. HP3000.                                                 
+001700 SPECIAL-NAMES.                                                           
+001800     CONDITION-CODE IS CC.                                                
+001900$PAGE "WORKING STORAGE SECTION"                                           
+002000 DATA DIVISION.                                                           
+002100*****************************************************************         
+002200 WORKING-STORAGE SECTION.                                                 
+002300*****************************************************************         
+002400 01 COMMAND-INTRINSIC.                                                    
+002500    02 CMD                PIC X(256) VALUE SPACES.                        
+002600    02 CMDSTR             PIC X(256) VALUE SPACES.                        
+002700    02 CMDERR             PIC S9(4) COMP VALUE 0.                         
+002800    02 CMDPTR             PIC S9(4) COMP VALUE 0.                         
+002900    02 CMDPARM            PIC S9(4) COMP VALUE 0.                         
+003000    02 CMDMSG             PIC S9(4) COMP VALUE 0.                         
+003100                                                                          
+003200 01 ORG-TABLE.                                                            
+003300    02 ORGIDX             PIC S9(4) COMP VALUE 0.                         
+003400    02 ORGPTR             PIC S9(4) COMP VALUE 0.                         
+003500    02 ORGCNT             PIC S9(4) COMP VALUE 0.                         
+003600    02 ORGMAX             PIC S9(4) COMP VALUE 0.                         
+003700    02 TOTAL-LEN          PIC S9(9) COMP.                                 
+003800    02 ORG-IMNAME         PIC X(16) VALUE SPACES.                         
+003900    02 ORG-IMTYPE         PIC XXXX VALUE SPACES.                          
+004000    02 ORG-BUFFLEN        PIC S9(9) COMP.                                 
+004100    02 ORG-BUFFSTRT       PIC S9(9) COMP.                                 
+004200    02 ORG-BUFFEND        PIC S9(9) COMP.                                 
+004300    02 ORG-DETAIL.                                                        
+004400       05 ORG-LINE OCCURS 17 TIMES.                                       
+004500          10 ORG-IFLD-UNIQUE  PIC S9(9) COMP.                     080710ma
+004600          10 ORG-FLDNAME     PIC X(22).                                   
+004700          10 ORG-IFLD-TYPE    PIC XXXX.                           080710ma
+004800          10 ORG-IFLD-LEN     PIC S9(9) COMP.                     080710ma
+004900          10 ORG-IFLD-STRT    PIC S9(9) COMP.                     080710ma
+005000          10 ORG-IFLD-END     PIC S9(9) COMP.                     080710ma
+005100          10 ORG-SQL-TYPE    PIC X(18).                                   
+005200          10 ORG-METHOD      PIC X(16).                                   
+005300                                                                          
+005400                                                                          
+005500 01 WK1-TABLE.                                                            
+005600    02 COLUMN-BYTES       PIC S9(4) COMP.                                 
+005700    02 WK1IDX             PIC S9(4) COMP VALUE 0.                         
+005800    02 WK1PTR             PIC S9(4) COMP VALUE 0.                         
+005900    02 WK1CNT             PIC S9(4) COMP VALUE 0.                         
+006000    02 WK1MAX             PIC S9(4) COMP VALUE 0.                         
+006100    02 WK1-ORG-UNIQUE     PIC S9(9) COMP.                                 
+006200    02 WK1-IMNAME         PIC X(16) VALUE SPACES.                         
+006300    02 WK1-IMTYPE         PIC XXXX VALUE SPACES.                          
+006400    02 WK1-BUFFLEN        PIC Z(4) VALUE ZERO.                            
+006500    02 WK1-BUFFSTRT       PIC Z(4) VALUE ZERO.                            
+006600    02 WK1-BUFFEND        PIC Z(4) VALUE ZERO.                            
+006700    02 WK1-DETAIL.                                                        
+006800       05 WK1-LINE OCCURS 17 TIMES.                                       
+006900          10 WK1-IFLD-UNIQUE  PIC S9(9) COMP.                     080710ma
+007000          10 WK1-FLDNAME     PIC X(22).                                   
+007100          10 WK1-IFLD-TYPE    PIC XXXX.                           080710ma
+007200          10 WK1-IFLD-LEN     PIC ZZZ9.                           080710ma
+007300          10 WK1-IFLD-STRT    PIC ZZZ9.                           080710ma
+007400          10 WK1-IFLD-END     PIC ZZZ9.                           080710ma
+007500          10 WK1-SQL-TYPE    PIC X(18).                                   
+007600          10 WK1-METHOD      PIC X(16).                                   
+007700    02 WK2-DETAIL.                                                        
+007800       05 WK2-LINE OCCURS 17 TIMES.                                       
+007900          10 WK2-IFLD-UNIQUE  PIC S9(9) COMP.                     080710ma
+008000          10 WK2-FLDNAME     PIC X(22).                                   
+008100          10 WK2-IFLD-TYPE    PIC XXXX.                           080710ma
+008200          10 WK2-IFLD-LEN     PIC S9(9) COMP.                     080710ma
+008300          10 WK2-IFLD-STRT    PIC S9(9) COMP.                     080710ma
+008400          10 WK2-IFLD-END     PIC S9(9) COMP.                     080710ma
+008500          10 WK2-SQL-TYPE    PIC X(18).                                   
+008600          10 WK2-METHOD      PIC X(16).                                   
+008700 01 Z1                PIC 9.                                              
+008800 01 Z2                PIC 99.                                             
+008900 01 Z3                PIC 999.                                            
+009000 01  IMGTYPE               PIC X.                                         
+009100 01  IMGLEN                PIC S9(4) COMP.                                
+009200 01  LINK-MONTH            PIC X(2).                                      
+009300 01  LINK-YEAR             PIC X(2).                                      
+009400 01  I                     PIC S9(4) COMP.                                
+009500 01  SC1-POINTER           PIC S9(4) COMP.                                
+009600 01  FLD-END               PIC S9(09) COMP VALUE 0.                       
+009700 01  FLDLEN               PIC S9(09) COMP VALUE 0.                        
+009800 01  REMAINLEN               PIC S9(09) COMP VALUE 0.                     
+009900 01  N                     PIC S9(4) COMP.                                
+010000 01  NUM1                  PIC X(14).                                     
+010100 01  NUM2                  PIC S9(14).                                    
+010200 01  NDEC                  PIC S9(4) COMP.                                
+010300 01  NERR                  PIC S9(4) COMP.                                
+010400 01  DISP-N                PIC ---9.                                      
+010500 01  DISP-Z15              PIC ZZZ,ZZZ,ZZZ,ZZZ.                           
+010600 01  DISP-DEV              PIC 999.                                       
+010700 01  WHO-LDEV              PIC S9(4) COMP.                                
+010800 01  PGTOTAL               PIC S9(4) COMP.                                
+010900 01  PGNBR                 PIC S9(4) COMP.                                
+011000 01  FLD-TYPE              PIC S9(4) COMP.                                
+011100 01  FLD1                  PIC S9(4) COMP.                                
+011200 01  FLD2                  PIC S9(4) COMP.                                
+011300 01  FLD3                  PIC S9(4) COMP.                                
+011400 01  FLD4                  PIC S9(4) COMP.                                
+011500 01  FLD5                  PIC S9(4) COMP.                                
+011600 01  FLD6                  PIC S9(4) COMP.                                
+011700 01  FLD7                  PIC S9(4) COMP.                                
+011800 01  FLD8                  PIC S9(4) COMP.                                
+011900 01  FLD9                  PIC S9(4) COMP.                                
+012000 01  FLD10                 PIC S9(4) COMP.                                
+012100 01  FLD11                 PIC S9(4) COMP.                                
+012200 01  FLD12                 PIC S9(4) COMP.                                
+012300 01  FLD13                 PIC S9(4) COMP.                                
+012400 01  LINEPTR                  PIC S9(4) COMP.                             
+012500 01  LINEIDX                  PIC S9(4) COMP.                             
+012600 01  LINECNT                  PIC S9(4) COMP.                             
+012700 01  LINEMAX                  PIC S9(4) COMP VALUE 10.                    
+012800 01  DEFAULT-FUNC-KEYS.                                                   
+012900     02 DEFAULT-FUNC-KEY      PIC X(16) OCCURS 8 TIMES.                   
+013000 01  DEFAULT-FIELD-SPECS.                                                 
+013100     03  DEFAULT-FIELD-SPEC OCCURS 128.                                   
+013200         04  DEFAULT-FIELD-ENH     PIC X(4).                              
+013300         04  DEFAULT-FIELD-TYPE    PIC XX.                                
+013400         04  DEFAULT-DATA-TYPE     PIC X(4).                              
+013500 01  SCREEN-TYPES.                                                        
+013600     05 SCREEN-TYPE        PIC X VALUE "R".                               
+013700        88 REVIEW-SCREEN VALUE "R".                                       
+013800        88 CHANGE-SCREEN VALUE "C".                                       
+013900     COPY DBFLDS   OF J3KLIB.                                             
+014000     COPY DBMSTR   OF J3KLIB.                                             
+014100     COPY DSMSTR   OF J3KLIB.                                             
+014200     COPY SRVMST   OF J3KLIB.                                             
+014300     COPY IMAGEEX  OF J3KLIB.                                             
+014400     COPY SWITCHES OF J3KLIB.                                             
+014500     COPY FLOWEX   OF J3KLIB.                                             
+014600     COPY APPCOM   OF J3KLIB.                                             
+014700     COPY AMSLINK  OF J3KLIB.                                             
+014800     02 SC1-BUFFER REDEFINES SCREEN-BUFFER.                               
+014900      03 SC1-HEADER.                                                      
+015000        05 SC1-SVR-NAME       PIC X(024).                                 
+015100        05 SC1-SVR-IPADDR     PIC X(016).                                 
+015200        05 SC1-SRV-DBCNT      PIC ZZ,ZZZ.                                 
+015300        05 SC1-SVR-SUSAN      PIC Z(16).                                  
+015400        05 SC1-SVR-MPEVERSION PIC X(008).                                 
+015500        05 SC1-PAGE1          PIC ZZZ.                                    
+015600        05 SC1-PAGE2          PIC ZZZ.                                    
+015700        05 SC1-BASENAME       PIC X(32).                                  
+015800        05 SC1-BASERECORDS    PIC X(15).                                  
+015900        05 SC1-SETNAME        PIC X(16).                                  
+016000        05 SC1-SETRECORDS     PIC X(15).                                  
+016100        05 SC1-IMNAME         PIC X(16).                                  
+016200        05 SC1-IMTYPE         PIC XXXX.                                   
+016300        05 SC1-BUFFLEN        PIC X(4).                                   
+016400        05 SC1-BUFFSTRT       PIC X(4).                                   
+016500        05 SC1-BUFFEND        PIC X(4).                                   
+016700      03 SC1-DETAIL.                                                      
+016800        05 SC1-LINES OCCURS 17 TIMES.                                     
+016900           10 SC1-FLDNAME        PIC X(22).                               
+017000           10 SC1-IFLD-TYPE       PIC X(4).                       080710ma
+017100           10 SC1-IFLD-LEN        PIC X(4).                       080710ma
+017200           10 SC1-IFLD-STRT       PIC X(4).                       080710ma
+017300           10 SC1-IFLD-END        PIC X(4).                       080710ma
+017400           10 SC1-SQLTYPE        PIC X(18).                               
+017500           10 SC1-METHOD         PIC X(16).                               
+017700      03 FILLER             PIC X(490).                                   
+018000*****************************************************************         
+018100 COPY AMSPROC OF J3KLIB.                                                  
+018200           .                                                              
+018300 0000-BEGIN.                                                              
+018400D    DISPLAY "0000-BEGIN".                                                
+018500                                                                          
+018600     IF THIS-SCREEN = "FLDMAINT"                                          
+018700        PERFORM 2000-BEGIN    THRU 2999-EXIT                              
+018800        GO TO 0999-EXIT.                                                  
+018900                                                                          
+019000     MOVE "WRONGPROG        " TO NEXT-SCREEN.                             
+019100 0999-EXIT.                                                               
+019200     GO TO 9900-RETURN.                                                   
+019300******************************************************************        
+019400 2000-BEGIN.                                                              
+019500D    DISPLAY "2000-BEGIN".                                                
+019600     MOVE "FLDMAINT" TO NEXT-SCREEN SCREEN-NAME.                          
+019700     PERFORM 7802-MENUSCRN.                                               
+019800     PERFORM LOAD-SCREEN-HEADING.                                         
+019900     MOVE "0" TO DATA-CHANGED-SW.                                         
+020000      COPY AMSCALL OF J3KLIB                                              
+020100     REPLACING ==VALUE OF PROCEDURE== BY =="UIWRITE"==.           080710ma
+020200     END-CALL.                                                            
+020300 2010-LOOP.                                                               
+020400D    DISPLAY "2010-LOOP".                                                 
+020500     IF NEXT-SCREEN <> "FLDMAINT"                                         
+020600        GO TO 2999-EXIT.                                                  
+020700     PERFORM WK1-TO-SC1.                                                  
+020800 2010-READ.                                                               
+020900D    DISPLAY "2010-READ".                                                 
+021000     IF ERRORS                                                            
+021100         COPY AMSCALL OF J3KLIB                                           
+021200         REPLACING ==VALUE OF PROCEDURE== BY =="UISHOWERR"==.     080710ma
+021300         END-CALL                                                         
+021400     ELSE                                                                 
+021500         PERFORM SETUP-SCREEN.                                            
+021600     PERFORM 7800-READ-SCREEN.                                            
+021700     IF SCREEN-KEY-PRESSED =  1 GO TO 2999-EXIT.                          
+021800     IF TIMEOUT GO TO 2999-EXIT.                                          
+021900     IF SCREEN-KEY-PRESSED = 8                                            
+022000        MOVE "FLDDATA" TO NEXT-SCREEN                                     
+022100        GO TO 2999-EXIT.                                                  
+022200                                                                          
+022300                                                                          
+022400     IF EDIT-ERRORS AND SCREEN-KEY-PRESSED = 0                            
+022500         COPY AMSCALL OF J3KLIB                                           
+022600         REPLACING ==VALUE OF PROCEDURE== BY =="UISHOWERR"==.     080710ma
+022700         END-CALL                                                         
+022800         GO TO 2010-LOOP.                                                 
+022900     IF SCREEN-KEY-PRESSED = 0                                            
+023000        PERFORM PROCESS-SCREEN                                            
+023100         GO TO 2010-LOOP.                                                 
+023200      IF SCREEN-FUNC-KEY(SCREEN-KEY-PRESSED) = "  SAVE    DATA  "         
+023300        PERFORM SAVE-DEF                                                  
+023400        MOVE "FLDDATA" TO NEXT-SCREEN                                     
+023500        GO TO 2999-EXIT.                                                  
+023600                                                                          
+023700     IF BAD-KEY    OR SCREEN-KEY-PRESSED <> 0                             
+023800        PERFORM 7801-BAD-FUNCTION-KEY                                     
+023900        GO TO 2010-LOOP.                                                  
+024000 2999-EXIT.                                                               
+024100     EXIT.                                                                
+024200$PAGE "MISC. SUBROUTINES"                                                 
+024300     COPY READSCR  OF J3KLIB.                                             
+024400*---------------------------------------------------------------          
+024500 7802-MENUSCRN.                                                           
+024600D    DISPLAY "7802-MENUSCRN".                                             
+024700     INITIALIZE SCREEN-TITLE.                                             
+024800     COPY AMSCALL OF J3KLIB                                               
+024900      REPLACING ==VALUE OF PROCEDURE== BY =="UIINIT"==.           080710ma
+025000      END-CALL.                                                           
+025100     MOVE SCREEN-FUNC-KEYS TO DEFAULT-FUNC-KEYS.                          
+025200     MOVE SCREEN-FIELD-SPECS TO DEFAULT-FIELD-SPECS.                      
+025300     MOVE SPACES TO SCREEN-BUFFER.                                        
+025400*---------------------------------------------------------------          
+025500$PAGE "END OF PROGRAM"                                                    
+025600*------------------------------*                                          
+025700 9000-IMAGE-ERROR.                                                        
+025800     CALL "UICLOSE" USING SCREEN-COMMON.                          080710ma
+025900     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+026000     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+026100     GO TO 9900-RETURN.                                                   
+026200 9900-RETURN.                                                             
+026300     GOBACK.                                                              
+026400*----------------------------------------------------------               
+026500 MPECMD.                                                                  
+026600     INITIALIZE CMDSTR.                                                   
+026700     PERFORM VARYING CMDPTR FROM 255 BY -1                                
+026800       UNTIL ( CMD(CMDPTR:1) <> " " )                                     
+026900          OR ( CMDPTR < 2 )                                               
+027000      CONTINUE                                                            
+027100     END-PERFORM.                                                         
+027200     MOVE CMD(1:CMDPTR) TO CMDSTR.                                        
+027300     ADD 1 TO CMDPTR.                                                     
+027400     MOVE %15 TO CMDSTR(CMDPTR:1).                                        
+027500     INITIALIZE CMDERR CMDPARM CMDMSG.                                    
+027600     CALL INTRINSIC "HPCICOMMAND"                                         
+027700          USING CMDSTR CMDERR CMDPARM CMDMSG.                             
+027800     INITIALIZE CMD.                                                      
+027900*----------------------------------------------------------               
+028000     COPY DBFLDS0   OF J3KLIB.                                            
+028100     COPY DBFLDS1   OF J3KLIB.                                            
+028200     COPY DBFLDS2   OF J3KLIB.                                            
+028300     COPY DBFLDS3   OF J3KLIB.                                            
+028400     COPY DBFLDS4   OF J3KLIB.                                            
+028500     COPY DBFLDS5   OF J3KLIB.                                            
+028600     COPY DBFLDS6   OF J3KLIB.                                            
+028700     COPY DBFLDS7   OF J3KLIB.                                            
+028800     COPY DBFLDS8   OF J3KLIB.                                            
+028900     COPY DBFLDS9   OF J3KLIB.                                            
+029000     COPY SRVMST0   OF J3KLIB.                                            
+029100     COPY SRVMST1   OF J3KLIB.                                            
+029200     COPY SRVMST2   OF J3KLIB.                                            
+029300     COPY SRVMST3   OF J3KLIB.                                            
+029400     COPY SRVMST4   OF J3KLIB.                                            
+029500     COPY SRVMST5   OF J3KLIB.                                            
+029600     COPY SRVMST6   OF J3KLIB.                                            
+029700     COPY SRVMST7   OF J3KLIB.                                            
+029800     COPY SRVMST8   OF J3KLIB.                                            
+029900     COPY DSMSTR0   OF J3KLIB.                                            
+030000     COPY DBMSTR1   OF J3KLIB.                                            
+030100     COPY DBMSTR2   OF J3KLIB.                                            
+030200     COPY DBMSTR3   OF J3KLIB.                                            
+030300     COPY DSMSTR1   OF J3KLIB.                                            
+030400     COPY DSMSTR2   OF J3KLIB.                                            
+030500     COPY DSMSTR3   OF J3KLIB.                                            
+030600     COPY DSMSTR4   OF J3KLIB.                                            
+030700     COPY DSMSTR5   OF J3KLIB.                                            
+030800     COPY DSMSTR6   OF J3KLIB.                                            
+030900     COPY DSMSTR7   OF J3KLIB.                                            
+031000     COPY DSMSTR8   OF J3KLIB.                                            
+031100     COPY DSMSTR9   OF J3KLIB.                                            
+031200*---------------------------------------------------                      
+031300 LOAD-SCREEN-HEADING.                                                     
+031400D    DISPLAY "LOAD-SCREEN-HEADING".                                       
+031500     MOVE 1 TO SEARCH-KEY-I2.                                             
+031600     PERFORM GET-SRVMST-KEYED.                                            
+031700     IF NO-ENTRY                                                          
+031800      MOVE "THERE IS NO RECORD FOR THIS SERVER"                           
+031900        TO SCREEN-MESSAGE                                                 
+032000     ELSE                                                                 
+032100      MOVE SRVMST-SVR-NAME       TO SC1-SVR-NAME                          
+032200      MOVE SRVMST-SVR-IPADDR     TO SC1-SVR-IPADDR                        
+032300      MOVE SRVMST-SVR-DBCNT      TO SC1-SRV-DBCNT                         
+032400      MOVE SRVMST-SVR-SUSAN      TO SC1-SVR-SUSAN                         
+032500      MOVE SRVMST-SVR-MPEVERSION TO SC1-SVR-MPEVERSION.                   
+032600     DISPLAY "LOAD-DATABASE DATA MIGDB=" MIGDB.                           
+032700     MOVE LINK-DB-UNIQUE TO SEARCH-KEY-I2.                                
+032800     MOVE "DB-UNIQUE;" TO SEARCH-ITEM.                                    
+032900     PERFORM FIND-DBMSTR.                                                 
+033000     IF NO-ENTRY                                                          
+033100      MOVE "THERE IS NO RECORD FOR THIS DBMSTR"                           
+033200        TO SCREEN-MESSAGE                                                 
+033300     ELSE                                                                 
+033400        PERFORM GET-DBMSTR-CHAINED                                        
+033500        MOVE DBMSTR-DB-NAME TO SC1-BASENAME                               
+033600        MOVE DBMSTR-DB-RECCNT TO DISP-Z15                                 
+033700        MOVE DISP-Z15 TO SC1-BASERECORDS.                                 
+033800     DISPLAY "LOAD-DATASET DATA MIGDB=" MIGDB.                            
+033900     MOVE LINK-DS-UNIQUE TO SEARCH-KEY-I2.                                
+034000     MOVE "DS-UNIQUE;" TO SEARCH-ITEM.                                    
+034100     PERFORM FIND-DSMSTR.                                                 
+034200     IF NO-ENTRY                                                          
+034300      MOVE "THERE IS NO RECORD FOR THIS DSMSTR"                           
+034400        TO SCREEN-MESSAGE                                                 
+034500     ELSE                                                                 
+034600        PERFORM GET-DSMSTR-CHAINED                                        
+034700        MOVE DSMSTR-DS-NAME TO SC1-SETNAME                                
+034800        MOVE DSMSTR-DS-RECCNT TO DISP-Z15                                 
+034900        MOVE DISP-Z15 TO SC1-SETRECORDS.                                  
+035000D    DISPLAY "LOAD-COLUMN".                                               
+035100     MOVE LINK-IFLD-UNIQUE TO SEARCH-KEY-I2.                      080710ma
+035200     MOVE "FLD-UNIQUE;" TO SEARCH-ITEM.                                   
+035300     MOVE 1 TO PGNBR.                                                     
+035400     PERFORM FIND-DBFLDS.                                                 
+035500     IF NO-ENTRY                                                          
+035600      MOVE "THERE ARE NO DATA FIELDS IN THIS DATASET"                     
+035700        TO SCREEN-MESSAGE                                                 
+035800     ELSE                                                                 
+035900      INITIALIZE WK1-TABLE                                                
+036000      MOVE 10 TO WK1MAX                                                   
+036100      PERFORM GET-DBFLDS-CHAINED                                          
+036200      IF NOT END-OF-CHAIN                                                 
+036300       ADD 1 TO WK1CNT                                                    
+036400       MOVE DBFLDS-IFLD-UNIQUE    TO WK1-ORG-UNIQUE               080710ma
+036500       MOVE DBFLDS-IFLD-NAME      TO WK1-IMNAME                   080710ma
+036600       MOVE DBFLDS-IFLD-TYPE      TO WK1-IMTYPE                   080710ma
+036700       Move DBFLDS-IFLD-LEN To Z1 Z2 Z3                           080710ma
+036800       Move Z1 To WK1-IMTYPE(2:)                                          
+036900       If DBFLDS-IFLD-LEN >  9 Move Z2 To WK1-IMTYPE(2:) End-If   080710ma
+037000       If DBFLDS-IFLD-LEN > 99 Move Z3 To WK1-IMTYPE(2:) End-If   080710ma
+037100       MOVE DBFLDS-IFLD-Y         TO WK1-BUFFLEN                  080710ma
+037200       MOVE DBFLDS-IFLD-X         TO WK1-BUFFSTRT                 080710ma
+037300       COMPUTE FLD-END =                                                  
+037400          ( DBFLDS-IFLD-X + DBFLDS-IFLD-Y ) - 1                   080710ma
+037500       END-COMPUTE                                                        
+037600       MOVE FLD-END               TO WK1-BUFFEND                          
+037700       INITIALIZE COLUMN-BYTES.                                           
+037800       IF DBFLDS-IFLD-TYPE = "I" OR "J" OR "K" OR "R" OR "E"      080710ma
+037900        COMPUTE COLUMN-BYTES = ( DBFLDS-IFLD-LEN * 2 )            080710ma
+038000        END-COMPUTE                                                       
+038100       ELSE                                                               
+038200        MOVE DBFLDS-IFLD-LEN TO COLUMN-BYTES                      080710ma
+038300       END-IF                                                             
+038400       IF DBFLDS-IFLD-TYPE = "P"                                  080710ma
+038500        COMPUTE COLUMN-BYTES = DBFLDS-IFLD-LEN / 2.               080710ma
+038600      DISPLAY " COLUMN-BYTES      [" COLUMN-BYTES "]"                     
+038700      DISPLAY " DBFLDS-IFLD-LEN    [" DBFLDS-IFLD-LEN "]"         080710ma
+038800      DISPLAY " DBFLDS-IFLD-TYPE   [" DBFLDS-IFLD-TYPE "]"        080710ma
+038900      DISPLAY " DBFLDS-IFLD-SUBLEN [" DBFLDS-IFLD-SUBLEN "]"      080710ma
+039000      MOVE WK1-IMTYPE            TO SC1-IMTYPE ORG-IMTYPE.                
+039100      MOVE WK1-IMNAME            TO SC1-IMNAME ORG-IMNAME.                
+039200      MOVE WK1-BUFFLEN           TO SC1-BUFFLEN ORG-BUFFLEN.              
+039300      MOVE WK1-BUFFSTRT          TO SC1-BUFFSTRT ORG-BUFFSTRT.            
+039400      MOVE WK1-BUFFEND           TO SC1-BUFFEND ORG-BUFFEND.              
+039500      MOVE DBFLDS-SQL-NAME       TO WK1-FLDNAME(WK1CNT).                  
+039600      MOVE WK1-IMTYPE            TO WK1-IFLD-TYPE(WK1CNT)         080710ma
+039700      MOVE WK1-BUFFLEN           TO WK1-IFLD-LEN(WK1CNT).         080710ma
+039800      MOVE WK1-BUFFSTRT          TO WK1-IFLD-STRT(WK1CNT).        080710ma
+039900      MOVE WK1-BUFFEND           TO WK1-IFLD-END(WK1CNT).         080710ma
+040000      MOVE DBFLDS-SQL-TYPE       TO WK1-SQL-TYPE(WK1CNT)                  
+040100      MOVE DBFLDS-IFLD-CVT-METHD TO WK1-METHOD(WK1CNT).           080710ma
+040200*---------------------------------------------------------                
+040300 WK1-TO-SC1.                                                              
+040400D    DISPLAY "WK1-TO-SC1".                                                
+040500     INITIALIZE WK1IDX SC1-DETAIL.                                        
+040600                                                                          
+040700     PERFORM VARYING WK1IDX FROM 1 BY 1                                   
+040800       UNTIL (WK1IDX > WK1CNT )                                           
+040900      MOVE WK1-FLDNAME(WK1IDX)         TO SC1-FLDNAME(WK1IDX)             
+041000      MOVE WK1-IFLD-TYPE(WK1IDX)        TO SC1-IFLD-TYPE(WK1IDX)  080710ma
+041100      MOVE WK1-IFLD-LEN(WK1IDX)   TO SC1-IFLD-LEN(WK1IDX)         080710ma
+041200      MOVE WK1-IFLD-STRT(WK1IDX)  TO SC1-IFLD-STRT(WK1IDX)        080710ma
+041300      MOVE WK1-IFLD-END(WK1IDX)   TO SC1-IFLD-END(WK1IDX)         080710ma
+041400      MOVE WK1-SQL-TYPE(WK1IDX)        TO SC1-SQLTYPE(WK1IDX)             
+041500      MOVE WK1-METHOD(WK1IDX)          TO SC1-METHOD(WK1IDX)              
+041600     END-PERFORM.                                                         
+041700     MOVE 0 TO SC1-PAGE2.                                                 
+041800     MOVE 0   TO SC1-PAGE1.                                               
+041900*---------------------------------------------------------                
+042000 SETUP-SCREEN.                                                            
+042100D    DISPLAY "SETUP-SCREEN".                                              
+042200     INITIALIZE SCREEN-TITLE.                                             
+042300     MOVE "0" TO DATA-CHANGED-SW.                                         
+042400     MOVE DEFAULT-FIELD-SPECS TO SCREEN-FIELD-SPECS.                      
+042500     MOVE DEFAULT-FUNC-KEYS TO SCREEN-FUNC-KEYS.                          
+042600     STRING THIS-SCREEN DELIMITED BY SPACE                                
+042700      ": Column Redefinition " DELIMITED BY SIZE                          
+042800     INTO SCREEN-TITLE.                                                   
+042900     INITIALIZE WK1IDX                                                    
+043000     PERFORM VARYING WK1IDX FROM 1 BY 1 UNTIL ( WK1IDX > WK1CNT )         
+043100      COMPUTE FLD1  = WK1IDX * 7 + 10 END-COMPUTE                         
+043200      COMPUTE FLD2  = WK1IDX * 7 + 11 END-COMPUTE                         
+043300      COMPUTE FLD3  = WK1IDX * 7 + 12 END-COMPUTE                         
+043400      COMPUTE FLD4  = WK1IDX * 7 + 13 END-COMPUTE                         
+043500      COMPUTE FLD5  = WK1IDX * 7 + 14 END-COMPUTE                         
+043600      COMPUTE FLD6  = WK1IDX * 7 + 15 END-COMPUTE                         
+043700      COMPUTE FLD7  = WK1IDX * 7 + 16 END-COMPUTE                         
+043800      IF WK1IDX = WK1CNT and                                              
+043900        ( ERRORS-SW = "1" OR REMAINLEN > 0 or WK1CNT < 2 )                
+044000       MOVE "HI  O CHAR" TO SCREEN-FIELD-SPEC(FLD1)                       
+044100       MOVE "HI  O CHAR" TO SCREEN-FIELD-SPEC(FLD2)                       
+044200       MOVE "HI  O CHAR" TO SCREEN-FIELD-SPEC(FLD6)                       
+044300       MOVE "HI  O CHAR" TO SCREEN-FIELD-SPEC(FLD7)                       
+044400      ELSE                                                                
+044500       MOVE "1" TO DATA-CHANGED-SW                                        
+044600       MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(FLD1)                       
+044700       MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(FLD2)                       
+044800       MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(FLD6)                       
+044900       MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(FLD7)                       
+045000      END-IF                                                              
+045100     END-PERFORM.                                                         
+045200     IF DATA-CHANGED                                                      
+045300      MOVE "  SAVE    DATA  " TO SCREEN-FUNC-KEY(5).                      
+045400*-----------------------------------------------------------------        
+045500 SET-IFLD-UNIQUE.                                                 080710ma
+045600D    DISPLAY "SET-IFLD-UNIQUE".                                   080710ma
+045700     INITIALIZE LINK-IFLD-UNIQUE.                                 080710ma
+045800     MOVE "0" TO ERRORS-SW.                                               
+045900     PERFORM VARYING WK1IDX FROM 1 BY 1                                   
+046000       UNTIL (WK1IDX > WK1CNT ) OR (LINK-IFLD-UNIQUE > 0)         080710ma
+046100*      IF SC1-PTR(WK1IDX) > SPACES                                        
+046200*       MOVE SPACES TO SC1-PTR(WK1IDX)                                    
+046300       MOVE WK1-IFLD-UNIQUE(WK1IDX) TO LINK-IFLD-UNIQUE           080710ma
+046400       MOVE WK1IDX TO SC1-POINTER                                         
+046500*      END-IF                                                             
+046600     END-PERFORM.                                                         
+046700     IF LINK-IFLD-UNIQUE = 0                                      080710ma
+046800      MOVE "1" TO ERRORS-SW                                               
+046900      MOVE "R" TO SCREEN-TYPE                                             
+047000      MOVE "TO SHOW FIELDS; PUT AN 'X' NEXT TO DATASET"                   
+047100        TO SCREEN-MESSAGE.                                                
+047200*---------------------------------------------------------                
+047300 PROCESS-SCREEN.                                                          
+047400D    DISPLAY "PROCESS-SCREEN".                                            
+047500     INITIALIZE WK1IDX.                                                   
+047600     MOVE "0" TO ERRORS-SW.                                               
+047700     PERFORM VARYING WK1IDX FROM 1 BY 1 UNTIL (WK1IDX > WK1CNT )          
+047800      PERFORM 7001-FLDNAME  THRU 7001-EXIT                                
+047900      PERFORM 7002-IFLD-TYPE THRU 7002-EXIT                       080710ma
+048000      PERFORM 7003-SQLTYPE  THRU 7003-EXIT                                
+048100      PERFORM 7004-METHOD   THRU 7004-EXIT                                
+048200     END-PERFORM.                                                         
+048300     MOVE ORG-BUFFSTRT TO WK2-IFLD-STRT(1).                       080710ma
+048400     COMPUTE WK2-IFLD-END(1) =                                    080710ma
+048500      (( WK2-IFLD-LEN(1) + WK2-IFLD-STRT(1)) - 1).                080710ma
+048600     IF REMAINLEN > 0                                                     
+048700      ADD 1 TO WK1CNT                                                     
+048800      MOVE  SPACES                     TO WK2-FLDNAME(WK1CNT)             
+048900      MOVE  SPACES                     TO WK2-IFLD-TYPE(WK1CNT)   080710ma
+049000      MOVE  REMAINLEN                  TO WK2-IFLD-LEN(WK1CNT)    080710ma
+049100      MOVE SPACES                      TO WK2-SQL-TYPE(WK1CNT)            
+049200      MOVE SPACES                      TO WK2-METHOD(WK1CNT)              
+049300     END-IF                                                               
+049400     INITIALIZE TOTAL-LEN.                                                
+049500     PERFORM VARYING WK1IDX FROM 1 BY 1 UNTIL (WK1IDX > WK1CNT )          
+049600      MOVE WK2-FLDNAME(WK1IDX)         TO WK1-FLDNAME(WK1IDX)             
+049700      MOVE WK2-IFLD-TYPE(WK1IDX)        TO WK1-IFLD-TYPE(WK1IDX)  080710ma
+049800      IF WK1IDX = 1                                                       
+049900       MOVE ORG-BUFFSTRT TO WK2-IFLD-STRT(WK1IDX)                 080710ma
+050000       COMPUTE WK2-IFLD-END(WK1IDX) =                             080710ma
+050100        (( WK2-IFLD-LEN(WK1IDX) + WK2-IFLD-STRT(WK1IDX)) - 1)     080710ma
+050200       END-COMPUTE                                                        
+050300      ELSE                                                                
+050400       COMPUTE WK2-IFLD-STRT(WK1IDX) =                            080710ma
+050500        ORG-BUFFSTRT +  + TOTAL-LEN                                       
+050600       END-COMPUTE                                                        
+050700       COMPUTE WK2-IFLD-END(WK1IDX) =                             080710ma
+050800         (( WK2-IFLD-LEN(WK1IDX) + WK2-IFLD-STRT(WK1IDX)) - 1)    080710ma
+050900       END-COMPUTE                                                        
+051000      END-IF                                                              
+051100      ADD WK2-IFLD-LEN(WK1IDX) TO TOTAL-LEN                       080710ma
+051200      MOVE WK2-IFLD-LEN(WK1IDX)         TO WK1-IFLD-LEN(WK1IDX)   080710ma
+051300      MOVE WK2-IFLD-STRT(WK1IDX)        TO WK1-IFLD-STRT(WK1IDX)  080710ma
+051400      MOVE WK2-IFLD-END(WK1IDX)         TO WK1-IFLD-END(WK1IDX)   080710ma
+051500      MOVE WK2-SQL-TYPE(WK1IDX)        TO WK1-SQL-TYPE(WK1IDX)            
+051600      MOVE WK2-METHOD(WK1IDX)          TO WK1-METHOD(WK1IDX)              
+051700     END-PERFORM.                                                         
+051800*---------------------------------------------------------                
+051900 7001-FLDNAME.                                                            
+052000     IF SC1-FLDNAME(WK1IDX) = SPACES                                      
+052100      MOVE "New Column name is required"                                  
+052200        TO SCREEN-MESSAGE                                                 
+052300      GO TO 7001-ERROR.                                                   
+052400     MOVE  SC1-FLDNAME(WK1IDX)   TO WK2-FLDNAME(WK1IDX).                  
+052500     GO TO 7001-EXIT.                                                     
+052600 7001-ERROR.                                                              
+052700     MOVE "1" TO ERRORS-SW.                                               
+052800     COMPUTE SCREEN-FIELD = WK1IDX * 7 + 10.                              
+052900     COPY AMSCALL OF J3KLIB                                               
+053000         REPLACING ==VALUE OF PROCEDURE== BY =="UIFLAG"==.        080710ma
+053100     END-CALL                                                             
+053200      .                                                                   
+053300 7001-EXIT. EXIT.                                                         
+053400*---------------------------------------------------------                
+053500 7002-IFLD-TYPE.                                                  080710ma
+053600*/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\               
+053700*                                                                         
+053800*  Here are the data types that are                                       
+053900*  supported in Turbo Image:                                              
+054000*                                                                         
+054100*  Xn: Character, n bytes,                                                
+054200*  define as Character in FORTRAN, X(n) in COBOL.                         
+054300*                                                                         
+054400*  Un: Uppercase Character, n bytes,                                      
+054500*  define as Character in Fortran, A(n) in COBOL.                         
+054600*                                                                         
+054700*  E2: Floating-Point, 4 bytes,                                           
+054800*  define as Real in Fortran, not supported in HP COBOL.                  
+054900*                                                                         
+055000*  E4 Floating-point, 8 bytes,                                            
+055100*  define as Double Precision in Fortran,                                 
+055200*  not supported in HP COBOL.                                             
+055300*                                                                         
+055400*  I1/J1 Integer, 2 bytes,                                                
+055500*  define as Integer*2 in Fortran, S9 to S9(4) Comp in COBOL.             
+055600*                                                                         
+055700*  I2/J2 Integer, 4 bytes,                                                
+055800*  define as Integer*4 in Fortran, S9(5) to s9(9) Comp in COBOL.          
+055900*                                                                         
+056000*  I4/J4 Integer, 8 bytes,                                                
+056100*  define as S9(10) to S9(18) Comp in COBOL,                              
+056200*  not supported in Fortran.                                              
+056300*                                                                         
+056400*  K1 Logical, 2 bytes,                                                   
+056500*  define as Logical in Fortran, not supported in COBOL                   
+056600*                                                                         
+056700*  Zn Zoned-Decimal, n bytes,                                             
+056800*  s(n) Display in COBOL, overpunched                                     
+056900*                                                                         
+057000*  P4 Packed-Decimal, 2 bytes,                                            
+057100*  s9(3) Comp-3 in COBOL, not supported in Fortran.                       
+057200*                                                                         
+057300*  P8 Packed-Decimal, 4 bytes,                                            
+057400*  s9(7) Comp-3 in COBOL, not supported in Fortran.                       
+057500*                                                                         
+057600*  Pn Packed-Decimal, n/2 bytes,                                          
+057700*  s9(n-1) Comp-3 in COBOL, not supported in Fortran.                     
+057800*  Maximum N in HP COBOL is 19 (18 digits plus a sign).                   
+057900*                                                                         
+058000*  Zn Numeric Display, n bytes,                                           
+058100*  s9(n) Display in COBOL, with sign "overpunched" in the units           
+058200*  position (unless you specify SIGN IS SEPARATE, then there are          
+058300*  only n-1 digits in the value).                                         
+058400*\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/               
+058500                                                                          
+058600     IF SC1-IFLD-TYPE(WK1IDX) = SPACES                            080710ma
+058700      MOVE "IMAGE TYPE is required"                                       
+058800        TO SCREEN-MESSAGE                                                 
+058900      GO TO 7002-ERROR.                                                   
+059000      INITIALIZE COLUMN-BYTES NUM1 NUM2 NDEC NERR.                        
+059100      MOVE SC1-IFLD-TYPE(WK1IDX)(2:) TO NUM1.                     080710ma
+059200      CALL "NUMGET" USING NUM1 NUM2 NDEC NERR.                            
+059300      IF NUM2 < 1 OR NERR <> 0                                            
+059400       MOVE "IMAGE TYPE requires a numeric component"                     
+059500         TO SCREEN-MESSAGE                                                
+059600        GO TO 7002-ERROR.                                                 
+059700      MOVE num2 to IMGLEN.                                                
+059800      MOVE FUNCTION UPPER-CASE (SC1-IFLD-TYPE(WK1IDX)(1:1))       080710ma
+059900        TO IMGTYPE.                                                       
+060000      If (ImgType = "E" or  "I" or  "J" or "R")                           
+060100       And ImgLen > 4                                                     
+060200        MOVE "Image Length can't be > 4 for types E, I, J, and R"         
+060300          TO SCREEN-MESSAGE                                               
+060400        GO TO 7002-ERROR.                                                 
+060500      If (ImgType = "K") And ImgLen > 1                                   
+060600        MOVE "Image Length can't be > 1 for type K"                       
+060700          TO SCREEN-MESSAGE                                               
+060800        GO TO 7002-ERROR.                                                 
+060900      If (ImgType = "P") And ImgLen > 18                                  
+061000        MOVE "Image Length can't be > 18 for type P"                      
+061100          TO SCREEN-MESSAGE                                               
+061200        GO TO 7002-ERROR.                                                 
+061300                                                                          
+061400      If (ImgType = "X" or  "Z" or  "U")                                  
+061500       And ImgLen > 255                                                   
+061600        MOVE "Image Length can't be > 255 for types X, U, and Z"          
+061700          TO SCREEN-MESSAGE                                               
+061800        GO TO 7002-ERROR.                                                 
+061900                                                                          
+062000      Evaluate ImgType                                                    
+062100      When "I"                                                            
+062200       COMPUTE COLUMN-BYTES = ( ImgLen * 2 ) END-COMPUTE                  
+062300      When "J"                                                            
+062400       COMPUTE COLUMN-BYTES = ( ImgLen * 2 ) END-COMPUTE                  
+062500      When "K"                                                            
+062600       COMPUTE COLUMN-BYTES = ( ImgLen * 2 ) END-COMPUTE                  
+062700      When "R"                                                            
+062800       COMPUTE COLUMN-BYTES = ( ImgLen * 2 ) END-COMPUTE                  
+062900      When "E"                                                            
+063000       COMPUTE COLUMN-BYTES = ( ImgLen * 2 ) END-COMPUTE                  
+063100      When "P"                                                            
+063200       COMPUTE COLUMN-BYTES = ( ImgLen / 2 ) END-COMPUTE                  
+063300      When "X" MOVE ImgLen TO COLUMN-BYTES                                
+063400      When "Z" MOVE ImgLen TO COLUMN-BYTES                                
+063500      When "U" MOVE ImgLen TO COLUMN-BYTES                                
+063600      When "P" MOVE ImgLen TO COLUMN-BYTES                                
+063700      When Other                                                          
+063800      MOVE "IMAGE TYPEs are E, I, J, K, P, R, U, X, and Z."               
+063900        TO SCREEN-MESSAGE                                                 
+064000      GO TO 7002-ERROR.                                                   
+064100      MOVE  SC1-IFLD-TYPE(WK1IDX)  TO WK2-IFLD-TYPE(WK1IDX).      080710ma
+064200      MOVE  COLUMN-BYTES          TO WK2-IFLD-LEN(WK1IDX).        080710ma
+064300      move  WK1-IFLD-LEN(WK1IDX)   TO FLDLEN.                     080710ma
+064400      COMPUTE REMAINLEN = FLDLEN - WK2-IFLD-LEN(WK1IDX).          080710ma
+064500     GO TO 7002-EXIT.                                                     
+064600 7002-ERROR.                                                              
+064700     MOVE "1" TO ERRORS-SW.                                               
+064800     COMPUTE SCREEN-FIELD = WK1IDX * 7 + 11.                              
+064900     COPY AMSCALL OF J3KLIB                                               
+065000         REPLACING ==VALUE OF PROCEDURE== BY =="UIFLAG"==.        080710ma
+065100     END-CALL                                                             
+065200      .                                                                   
+065300 7002-EXIT. EXIT.                                                         
+065400*---------------------------------------------------------                
+065500 7003-SQLTYPE.                                                            
+065600     IF SC1-SQLTYPE(WK1IDX) = SPACES                                      
+065700      MOVE "New Data Type is required"                                    
+065800        TO SCREEN-MESSAGE                                                 
+065900      GO TO 7003-ERROR.                                                   
+066000      MOVE  SC1-SQLTYPE(WK1IDX)   TO WK2-SQL-TYPE(WK1IDX).                
+066100     GO TO 7003-EXIT.                                                     
+066200 7003-ERROR.                                                              
+066300     MOVE "1" TO ERRORS-SW.                                               
+066400     COMPUTE SCREEN-FIELD = WK1IDX * 7 + 15.                              
+066500     COPY AMSCALL OF J3KLIB                                               
+066600         REPLACING ==VALUE OF PROCEDURE== BY =="UIFLAG"==.        080710ma
+066700     END-CALL                                                             
+066800      .                                                                   
+066900 7003-EXIT. EXIT.                                                         
+067000*---------------------------------------------------------                
+067100 7004-METHOD.                                                             
+067200     IF SC1-METHOD(WK1IDX) = SPACES                                       
+067300      MOVE "New Data Type is required"                                    
+067400        TO SCREEN-MESSAGE                                                 
+067500      GO TO 7004-ERROR.                                                   
+067600      MOVE  SC1-METHOD(WK1IDX)    TO WK2-METHOD(WK1IDX).                  
+067700     GO TO 7004-EXIT.                                                     
+067800 7004-ERROR.                                                              
+067900     MOVE "1" TO ERRORS-SW.                                               
+068000     COMPUTE SCREEN-FIELD = WK1IDX * 7 + 16.                              
+068100     COPY AMSCALL OF J3KLIB                                               
+068200         REPLACING ==VALUE OF PROCEDURE== BY =="UIFLAG"==.        080710ma
+068300     END-CALL                                                             
+068400      .                                                                   
+068500 7004-EXIT. EXIT.                                                         
+068600*---------------------------------------------------------                
+068700 SAVE-DEF.                                                                
+068800     PERFORM LOCK-DBFLDS.                                                 
+068900     MOVE LINK-IFLD-UNIQUE TO SEARCH-KEY-I2.                      080710ma
+069000     MOVE "FLD-UNIQUE;" TO SEARCH-ITEM.                                   
+069100     PERFORM FIND-DBFLDS.                                                 
+069200     IF NO-ENTRY                                                          
+069300      MOVE "THERE ARE NO DATA FIELDS IN THIS DATASET"                     
+069400        TO SCREEN-MESSAGE                                                 
+069500     ELSE                                                                 
+069600      PERFORM GET-DBFLDS-CHAINED                                          
+069700      IF NOT END-OF-CHAIN                                                 
+069800       MOVE 0           TO DBFLDS-IFLD-X                          080710ma
+069900       MOVE 0           TO DBFLDS-IFLD-Y                          080710ma
+070000       MOVE WK1CNT      TO DBFLDS-IFLD-SUBLEN                     080710ma
+070100       MOVE SPACES      TO DBFLDS-SQL-NAME                                
+070200       MOVE SPACES      TO DBFLDS-SQL-TYPE                                
+070300       MOVE "REDEFINED" TO DBFLDS-IFLD-CVT-METHD                  080710ma
+070400       PERFORM UPDATE-DBFLDS.                                             
+070500     PERFORM VARYING WK1IDX FROM 1 BY 1 UNTIL WK1IDX > WK1CNT             
+070600      PERFORM ADD-NEW-COLUMN                                              
+070700     END-PERFORM.                                                         
+070800     PERFORM UNLOCK-DBFLDS.                                               
+070900*---------------------------------------------------------                
+071000 ADD-NEW-COLUMN.                                                          
+071100     ADD 1                          TO DBFLDS-IFLD-UNIQUE.        080710ma
+071200     MOVE WK1-IFLD-TYPE(WK1IDX)(2:) TO NUM1.                      080710ma
+071300     CALL "NUMGET" USING NUM1 NUM2 NDEC NERR.                             
+071400     MOVE NUM2 TO IMGLEN.                                                 
+071500     MOVE IMGLEN                    TO DBFLDS-IFLD-LEN            080710ma
+071600     MOVE WK1-IFLD-STRT(WK1IDX)     TO DBFLDS-IFLD-X              080710ma
+071700     MOVE WK1-IFLD-LEN(WK1IDX)      TO DBFLDS-IFLD-Y              080710ma
+071800     MOVE 1                         TO DBFLDS-IFLD-SUBLEN         080710ma
+071900     MOVE WK1-FLDNAME(WK1IDX)       TO DBFLDS-SQL-NAME                    
+072000     MOVE WK1-IFLD-TYPE(WK1IDX)(1:1) TO DBFLDS-IFLD-TYPE          080710ma
+072100     MOVE WK1-SQL-TYPE(WK1IDX)      TO DBFLDS-SQL-TYPE                    
+072200     MOVE WK1-METHOD(WK1IDX)        TO DBFLDS-IFLD-CVT-METHD      080710ma
+072300     MOVE SPACES                    TO DBFLDS-IFLD-MAX-VAL        080710ma
+072400     MOVE SPACES                    TO DBFLDS-IFLD-MIN-VAL        080710ma
+072500     PERFORM PUT-DBFLDS.                                                  

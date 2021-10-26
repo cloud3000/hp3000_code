@@ -1,0 +1,297 @@
+000100$CONTROL POST85, BOUNDS, LINES=59, LIST, MAP, CROSSREF            090903ma
+000200******************************************************************090903ma
+000300*   COPYRIGHT 2007 - 2009 J3K Solutions All rights reserved.      090903ma
+000400*                                                                 090903ma
+000500*                ****************************                     090903ma
+000600*                  FORMSPEC export utilityZ                       090904ma
+000700*                ****************************                     090903ma
+000800*                                                                 090903ma
+000900*                                                                 090903ma
+001000*   http://www.j3ksolutions.com                                   090903ma
+001100*   mailto:support@j3ksolutions.com                               090903ma
+001200******************************************************************090903ma
+001300 IDENTIFICATION DIVISION.                                         090903ma
+001400 PROGRAM-ID.     MIGVIEW.                                         090903ma
+001500 AUTHOR.     MICHAEL ANDERSON.                                    090903ma
+001600 ENVIRONMENT DIVISION.                                            090903ma
+001700 CONFIGURATION SECTION.                                           090903ma
+001800 SOURCE-COMPUTER. HP-3000.                                        090903ma
+001900*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  090903ma
+002000 OBJECT-COMPUTER. HP-3000.                                        090903ma
+002100*                                                                 090903ma
+002200 INPUT-OUTPUT SECTION.                                            090903ma
+002300 FILE-CONTROL.                                                    090903ma
+002400*                                                                 090903ma
+002500     SELECT FORMA-FILE      ASSIGN TO "FORM,,,DISC"               090903ma
+002600            FILE STATUS IS FORMFILE-STATUS.                       090903ma
+002700*                                                                 090903ma
+002800 DATA DIVISION.                                                   090903ma
+002900 FILE SECTION.                                                    090903ma
+003000                                                                  090903ma
+003100                                                                  090903ma
+003200 FD  FORMA-FILE                                                   090903ma
+003300     RECORD CONTAINS 256 CHARACTERS                               090903ma
+003400     DATA RECORD IS Form-File.                                    090903ma
+003500 01  Form-File.                                                   090903ma
+003600     05  Form-Rec                     PIC X(256).                 090903ma
+003700*                                                                 090903ma
+003800$PAGE "WORKING STORAGE"                                           090903ma
+003900 WORKING-STORAGE SECTION.                                         090903ma
+004000***************************************************************** 090903ma
+004100 01  FILE-ERROR-DATA.                                             090903ma
+004200     05 ERROR-NUMBER             PIC XX    VALUE SPACES.          090903ma
+004300     05 FNAME                    PIC X(8)  VALUE SPACES.          090903ma
+004400     05 FILE-ERROR-RECORD        PIC X(79) VALUE SPACES.          090903ma
+004500 01 CSTR                         PIC X(255)      VALUE SPACES.    090903ma
+004600 01 CERR                         PIC S9(4) COMP  VALUE 0.         090903ma
+004700 01 CPARM                        PIC S9(4) COMP  VALUE 0.         090903ma
+004800 01 CMSG                         PIC S9(4) COMP  VALUE 2.         090903ma
+004900 01 CMD                          PIC X(255)      VALUE SPACES.    090903ma
+005000 01 SUMM-TABLE.                                                   090903ma
+005100    02 SUMIDX PIC S9(9) COMP VALUE 0.                             090903ma
+005200    02 SUMCNT PIC S9(9) COMP VALUE 0.                             090903ma
+005300    02 SUMPTR PIC S9(9) COMP VALUE 0.                             090903ma
+005400    02 SUMMAX PIC S9(9) COMP VALUE 0.                             090903ma
+005500    02 SUMM-ENTRIES OCCURS 26 TIMES.                              090903ma
+005600       10 SUMM-TYPE   PIC XX.                                     090903ma
+005700       10 SUMM-MIN    PIC S9(9) COMP.                             090903ma
+005800       10 SUMM-AVR    PIC S9(9) COMP.                             090903ma
+005900       10 SUMM-MAX    PIC S9(9) COMP.                             090903ma
+006000       10 SUMM-TOTAL  PIC S9(9) COMP.                             090903ma
+006100       10 SUMM-FIRST  PIC S9(9) COMP.                             090903ma
+006200       10 SUMM-COUNT  PIC S9(9) COMP.                             090903ma
+006300 01 forms-data.                                                   090903ma
+006400    05 frdidx                    pic s9(9) comp value 0.          090903ma
+006500    05 frdptr                    pic s9(9) comp value 0.          090903ma
+006600    05 PRCptr                    pic s9(9) comp value 0.          090903ma
+006700    05 frdcnt                    pic s9(9) comp value 0.          090903ma
+006800    05 PRCcnt                    pic s9(9) comp value 0.          090903ma
+006900    05 frd-table.                                                 090903ma
+007000       10 frd-entries OCCURS 32767  times.                        090903ma
+007100          20 frdstr              pic x(256).                      090903ma
+007200 01  DATA-LEN                    PIC S9(4) COMP.                  090903ma
+007300 01 FORMSFILE-SW                 PIC X VALUE "0".                 090903ma
+007400    88 END-OF-FORMSFILE                VALUE "1".                 090903ma
+007500 01  EXTFILE-STATUS              PIC X   VALUE "0".               090903ma
+007600     88 EXTFILE-EOF                      VALUE "9".               090903ma
+007700 01 MISMATCH-SW                  PIC X VALUE "0".                 090903ma
+007800    88 MISMATCH-OCCURED VALUE "1".                                090903ma
+007900                                                                  090903ma
+008000 01  Ascii-Value                 PIC S9(4) COMP VALUE 0.          090903ma
+008100 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                 090903ma
+008200     02 ASCII-BYTE1              PIC X.                           090903ma
+008300     02 ASCII-BYTE2              PIC X.                           090903ma
+008400 01 S1                           PIC S9(9) COMP VALUE 0.          090903ma
+008500 01 FORMFILES-REC-TYPE-SW        PIC X VALUE "~".                 090903ma
+008600    88 Type-is-Valid VALUES ARE                                   090903ma
+008700        "A" "B" "D" "E" "F" "G" "H" "J" "K" "L" "M"               090903ma
+008800        "N" "O" "P" "Q" "R" "S" "T" "V" "W" "X" "Y".              090903ma
+008900 01  FORMFILE-STATUS             PIC XX    VALUE SPACES.          090903ma
+009000 01  FORMFILE-COUNT              PIC S9(9) COMP VALUE 0.          090903ma
+009100 01  FORMFILE-FLAG               PIC XX    VALUE SPACES.          090903ma
+009200     88 FORMFILE-CLOSED        VALUE SPACES.                      090903ma
+009300     88 FORMFILE-OPENED-INPUT  VALUE "01".                        090903ma
+009400     88 FORMFILE-OPENED-OUTPUT VALUE "02".                        090903ma
+009500     88 FORMFILE-EOF           VALUE "99".                        090903ma
+009600 01 NUMDEC                       PIC S9(4) COMP.                  090903ma
+009700 01 NUMERR                       PIC S9(4) COMP.                  090903ma
+009800 01 NUM1                         PIC X(14).                       090903ma
+009900 01 NUM2                         PIC S9(14).                      090903ma
+010000 01 formname                       PIC X(36) VALUE SPACES.        090903ma
+010100 01  I                             PIC S9(4) COMP VALUE 0.        090903ma
+010200 01  Y                 PIC S9(4) COMP VALUE 0.                    090903ma
+010300 01  ENTRY-COUNT       PIC S9(4) COMP VALUE 0.                    090903ma
+010400                                                                  090903ma
+010500 01  GETINFO-DATA.                                                090903ma
+010600    05  GINFO-LEN                PIC S9(4) COMP.                  090903ma
+010700    05  GINFO-STR                PIC X(128).                      090903ma
+010800    05  GINFO-PARM               PIC S9(4) COMP.                  090903ma
+010900                                                                  090903ma
+011000 01 FILE-POINTERS.                                                090903ma
+011100    05 FDPIDX PIC S9(4) COMP VALUE 0.                             090903ma
+011200    05 FDPCNT PIC S9(4) COMP VALUE 0.                             090903ma
+011300    05 FDP-ARRAY.                                                 090903ma
+011400       10 FDP-LEN  PIC S9(9) COMP.                                090903ma
+011500       10 FDP-STRT PIC S9(9) COMP.                                090903ma
+011600       10 FDP-END  PIC S9(9) COMP.                                090903ma
+011700 01  DATA-REC              PIC X(4096).                           090908ma
+011800 01  LINK-LEN              PIC S9(4) COMP.                        090908ma
+011900*================================================================*090908ma
+012000 PROCEDURE DIVISION.                                              090903ma
+012100 BEGIN-0000.                                                      090903ma
+012200     INITIALIZE GINFO-STR GINFO-PARM.                             090903ma
+012300     Initialize CSTR CERR CPARM CMSG.                             090903ma
+012400     MOVE 128 TO GINFO-LEN.                                       090903ma
+012500     CALL INTRINSIC "GETINFO" USING GINFO-STR GINFO-LEN           090903ma
+012600                                    GINFO-PARM.                   090903ma
+012700     IF GINFO-LEN > 0                                             090903ma
+012800D       DISPLAY "INFO LEN= [" GINFO-LEN  "]"                      090903ma
+012900        MOVE GINFO-STR(1:GINFO-LEN) TO formname                   090903ma
+013000        PERFORM LOAD-FORM-SOURCE                                  090903ma
+013100        PERFORM SUMMARIZE-DATA                                    090903ma
+013200        PERFORM DISPLAY-SUMMS                                     090903ma
+013300        Go To 9999-RETURN                                         090903ma
+013400     Else                                                         090903ma
+013500        Display "Forms file is required in the info string".      090903ma
+013600 9999-RETURN.                                                     090903ma
+013700     Stop Run.                                                    090903ma
+013800                                                                  090903ma
+013900*----------------------------                                     090903ma
+014000 Load-Form-Source.                                                090903ma
+014100     Display " Load-Form-Source.".                                090903ma
+014200     INITIALIZE CMD forms-data.                                   090903ma
+014300     Perform Fopen-Formsfile.                                     090903ma
+014400     MOVE 256 TO DATA-LEN.                                        090903ma
+014500     Perform varying i From 1 By 1                                090903ma
+014600       Until ( END-OF-FORMSFILE  ) Or ( i > 32800 )               090903ma
+014700      Read Forma-File                                             090903ma
+014800          At End     Move '1' To Formsfile-Sw                     090903ma
+014900          Not At End                                              090903ma
+015000       Move '0' To Formsfile-Sw                                   090903ma
+015100       Add 1 to frdcnt                                            090903ma
+015200       Move Form-Rec to frdstr(frdcnt)                            090903ma
+015300      End-Read                                                    090903ma
+015400     End-Perform.                                                 090903ma
+015500     CLOSE FORMA-FILE.                                            090903ma
+015600     Display formname "Records : " frdcnt.                        090903ma
+015700*--------------------------------                                 090903ma
+015800 Fopen-Formsfile.                                                 090903ma
+015900D    DISPLAY "Fopen-Formsfile".                                   090903ma
+016000     MOVE 1 TO S1.                                                090903ma
+016100     INSPECT formname                                             090903ma
+016200      TALLYING S1 FOR CHARACTERS BEFORE ' '.                      090903ma
+016300     IF S1 > 28 MOVE 28 TO S1.                                    090903ma
+016400     MOVE 'FILE FORM='           TO CMD.                          090903ma
+016500     MOVE formname(1:S1) TO CMD(11:).                             090903ma
+016600     Perform MPE-COMMAND.                                         090903ma
+016700     MOVE "FORMFILE" TO FNAME.                                    090903ma
+016800     OPEN INPUT FORMA-FILE.                                       090903ma
+016900     IF FORMFILE-STATUS <> "00"                                   090903ma
+017000        display formname " Open FAILED!".                         090903ma
+017100     MOVE ZERO TO FORMFILE-COUNT.                                 090903ma
+017200     MOVE "01" TO  FORMFILE-FLAG.                                 090903ma
+017300*=================================================================090903ma
+017400 GET-NUM.                                                         090903ma
+017500D    DISPLAY "GET-NUM".                                           090903ma
+017600     INITIALIZE NUM2 NUMDEC NUMERR.                               090903ma
+017700     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                 090903ma
+017800     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                            090903ma
+017900     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                            090903ma
+018000*---------------------------------------------------------        090903ma
+018100 MPE-COMMAND.                                                     090903ma
+018200D    DISPLAY "MPE-COMMAND".                                       090903ma
+018300     INITIALIZE CSTR.                                             090903ma
+018400     STRING CMD DELIMITED BY "  " %15                             090903ma
+018500      DELIMITED BY SIZE INTO CSTR.                                090903ma
+018600     Move 2 To CMSG.                                              090903ma
+018700D    DISPLAY CMD(1:79).                                           090903ma
+018800     CALL INTRINSIC "HPCICOMMAND" USING                           090903ma
+018900          CSTR CERR CPARM CMSG.                                   090903ma
+019000     IF CERR <> 0                                                 090903ma
+019100      DISPLAY CERR                                                090903ma
+019200      DISPLAY CMD                                                 090903ma
+019300      DISPLAY CMSG.                                               090903ma
+019400     INITIALIZE CMD.                                              090903ma
+019500*---------------------------------------------------------        090903ma
+019600 SUMMARIZE-DATA.                                                  090903ma
+019700     INITIALIZE SUMM-TABLE.                                       090903ma
+019800     MOVE 1 TO FDP-STRT.                                          090903ma
+019900     MOVE 256 TO FDP-LEN.                                         090903ma
+020000     COMPUTE FDP-END = ( FDP-STRT + (FDP-LEN - 1)).               090903ma
+020100     Perform Varying Frdidx From 1 By 1                           090903ma
+020200       Until ( Frdidx > Frdcnt )                                  090903ma
+020300      Compute FDP-STRT =                                          090903ma
+020400        ((Frdidx * 256) - 255 )                                   090903ma
+020500      End-compute                                                 090903ma
+020600      Move frd-table(FDP-STRT:2) To Ascii-Character               090903ma
+020700      MOVE frd-table(FDP-STRT + 2:1) TO FORMFILES-REC-TYPE-SW     090903ma
+020800      If Type-is-Valid                                            090908ma
+020810       AND Ascii-Value > 0                                        090908ma
+020820        AND Ascii-Value < 5000                                    090908ma
+020900       PERFORM ADD-TO-TABLE                                       090903ma
+021000*                                                                 090904ma
+021100       Compute FDP-END =                                          090903ma
+021200          FDP-STRT + (Ascii-Value - 1)                            090903ma
+021300       End-Compute                                                090903ma
+021400       Move Ascii-Value To FDP-LEN                                090903ma
+021500*                                                                 090904ma
+021600       COMPUTE ENTRY-COUNT =                                      090903ma
+021700        (( FDP-LEN / 256) + 1 )                                   090903ma
+021800       END-COMPUTE                                                090903ma
+021900*                                                                 090904ma
+022000       COMPUTE FRDIDX =                                           090904ma
+022100        FRDIDX + ( ENTRY-COUNT - 1 )                              090903ma
+022200       END-COMPUTE                                                090903ma
+022300                                                                  090904ma
+022400      ELSE                                                        090903ma
+022500       Compute FDP-END =                                          090903ma
+022600          FDP-STRT + (Ascii-Value - 1)                            090903ma
+022700       End-Compute                                                090903ma
+022800      END-IF                                                      090903ma
+022900     END-Perform.                                                 090903ma
+023000*-----------------------------------------------------------      090903ma
+023100 ADD-TO-TABLE.                                                    090903ma
+023200     PERFORM VARYING SUMIDX FROM 1 BY 1                           090903ma
+023300       UNTIL SUMIDX > 25                                          090903ma
+023400          OR SUMM-TYPE(SUMIDX) = FORMFILES-REC-TYPE-SW            090903ma
+023500      CONTINUE                                                    090903ma
+023600     END-PERFORM.                                                 090903ma
+023700     MOVE SUMIDX TO SUMPTR.                                       090903ma
+023800     IF SUMIDX > 25                                               090903ma
+023900      ADD 1 TO SUMCNT                                             090903ma
+024000      PERFORM SHOWDATATYPE                                        090908ma
+024100      MOVE FORMFILES-REC-TYPE-SW TO SUMM-TYPE(SUMCNT)             090903ma
+024200      MOVE ASCII-VALUE TO SUMM-MIN(SUMCNT)                        090903ma
+024300      MOVE 0           TO SUMM-AVR(SUMCNT)                        090903ma
+024400      MOVE ASCII-VALUE TO SUMM-MAX(SUMCNT)                        090903ma
+024500      MOVE ASCII-VALUE TO SUMM-TOTAL(SUMCNT)                      090903ma
+024600      MOVE Frdidx      TO SUMM-FIRST(SUMCNT)                      090903ma
+024700      MOVE 1           TO SUMM-COUNT(SUMCNT)                      090903ma
+024800     ELSE                                                         090903ma
+024810      PERFORM SHOWDATATYPE                                        090908ma
+024910      ADD  ASCII-VALUE TO SUMM-TOTAL(SUMPTR)                      090903ma
+025000      ADD  1           TO SUMM-COUNT(SUMPTR)                      090903ma
+025100      IF ASCII-VALUE < SUMM-MIN(SUMPTR)                           090903ma
+025200       MOVE ASCII-VALUE TO SUMM-MIN(SUMPTR)                       090903ma
+025300      END-IF                                                      090903ma
+025400      IF ASCII-VALUE > SUMM-MAX(SUMPTR)                           090903ma
+025500       MOVE ASCII-VALUE TO SUMM-MAX(SUMPTR)                       090903ma
+025600      END-IF                                                      090903ma
+025700      COMPUTE SUMM-AVR(SUMPTR) =                                  090903ma
+025800       SUMM-TOTAL(SUMPTR) / SUMM-COUNT(SUMPTR).                   090903ma
+025900*-----------------------------------------------------------      090903ma
+026000 DISPLAY-SUMMS.                                                   090903ma
+026100     DISPLAY "SUMM-TYPE "                                         090903ma
+026200             "SUMM-MIN "                                          090903ma
+026300             "SUMM-AVR "                                          090903ma
+026400             "SUMM-MAX "                                          090903ma
+026500             "SUMM-TOTAL "                                        090903ma
+026600             "SUMM-FIRST "                                        090903ma
+026700             "SUMM-COUNT ".                                       090903ma
+026800     PERFORM VARYING SUMIDX FROM 1 BY 1                           090903ma
+026900       UNTIL SUMIDX > SUMCNT                                      090903ma
+027000      DISPLAY SUMM-TYPE(SUMIDX)  " "                              090903ma
+027100              SUMM-MIN(SUMIDX)   " "                              090903ma
+027200              SUMM-AVR(SUMIDX)   " "                              090903ma
+027300              SUMM-MAX(SUMIDX)   " "                              090903ma
+027400              SUMM-TOTAL(SUMIDX) " "                              090903ma
+027500              SUMM-FIRST(SUMIDX) " "                              090903ma
+027600              SUMM-COUNT(SUMIDX)                                  090903ma
+027700                                                                  090903ma
+027800     END-PERFORM.                                                 090903ma
+027900*-----------------------------------------------------------      090908ma
+028000 SHOWDATATYPE.                                                    090908ma
+028100     DISPLAY "###############################################".   090908ma
+028200     DISPLAY "###############################################".   090908ma
+028300     DISPLAY "###############################################".   090908ma
+028400     DISPLAY "###############################################".   090908ma
+028500     DISPLAY "# R E C O R D    T Y P E  #####################".   090908ma
+028600     DISPLAY "###############################################".   090908ma
+028700     DISPLAY "## " FORMFILES-REC-TYPE-SW WITH NO ADVANCING.       090908ma
+028800     DISPLAY "  #########################################".       090908ma
+028900     DISPLAY "###############################################".   090908ma
+029000     DISPLAY "###############################################".   090908ma
+029100     MOVE ASCII-VALUE TO LINK-LEN.                                090908ma
+029200     MOVE frd-table(FDP-STRT + 3:ASCII-VALUE) TO DATA-REC.        090908ma
+029300     CALL "SHOWDATA" USING DATA-REC LINK-LEN.                     090908ma
+029400                                                                  090908ma

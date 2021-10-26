@@ -1,0 +1,2118 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST                                   
+001100******************************************************************080702ma
+001200*   COPYRIGHT 2007 - 2009 J3K Solutions All rights reserved.      080702ma
+001300*              VPLUS Migration PREP System                        080702ma
+001400                                                                  080702ma
+001500*   RETRIEVE MORE VPLUS DATA THAN VGETINFO INTRISICS ALLOW        080702ma
+001600*        By going directly to the source forms files.             080702ma
+001700*                                                                 080702ma
+001800*   http://www.j3ksolutions.com                                   080702ma
+001900*   mailto:support@j3ksolutions.com                               080702ma
+002000******************************************************************080702ma
+002100*                                                                         
+002200 IDENTIFICATION DIVISION.                                                 
+002300 PROGRAM-ID.     FRM802.                                          080806ma
+002400 AUTHOR.     MICHAEL ANDERSON.                                            
+002500 ENVIRONMENT DIVISION.                                                    
+002600 CONFIGURATION SECTION.                                                   
+002700 SOURCE-COMPUTER. HP-3000.                                        080715ma
+002800*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  080715ma
+002900 OBJECT-COMPUTER. HP-3000.                                                
+003000*                                                                         
+003100 INPUT-OUTPUT SECTION.                                                    
+003200 FILE-CONTROL.                                                            
+003300    SELECT WORK-FILE     ASSIGN TO "DBLIST,,,,5000".                      
+003400    SELECT FORMA-FILE    ASSIGN TO "FORM,,,DISC"                  080710ma
+003500            FILE STATUS IS FORMFILE-STATUS.                               
+003600    SELECT JOB-FILE      ASSIGN TO "DBJOB,,,DISC".                        
+003700                                                                  080710ma
+003800 DATA DIVISION.                                                           
+003900  FILE SECTION.                                                           
+004000                                                                          
+004100 FD  WORK-FILE.                                                           
+004200 01  WRK-REC.                                                             
+004300     05  WRK-FOUND-DB          PIC X(36).                                 
+004400     05  WRK-FILL-DB           PIC X(45).                                 
+004500 FD  FORMA-FILE                                                   080710ma
+004600     RECORD CONTAINS 256 CHARACTERS                               080710ma
+004700     DATA RECORD IS FTP-File.                                     080710ma
+004800 01  Form-File.                                                   080715ma
+004900     05  Form-Rec                     PIC X(256).                 080715ma
+005000 FD  JOB-FILE.                                                            
+005100 01  JOBREC                PIC X(80).                                     
+005200                                                                          
+005300$PAGE "WORKING STORAGE"                                                   
+005400 WORKING-STORAGE SECTION.                                                 
+005500 01  HPVAR-NAME        PIC X(20) VALUE "ITOSQLS_STATUS~  ".               
+005600 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                           
+005700 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                            
+005800 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                            
+005900 01  DS-IDX            PIC S9(9) COMP VALUE 0.                            
+006000 01  FMIDX             PIC S9(9) COMP VALUE 0.                            
+006100 01  FMPTR             PIC S9(9) COMP VALUE 0.                            
+006200 01  FLDPTR             PIC S9(9) COMP VALUE 0.                           
+006300 01  BUFIDX            PIC S9(9) COMP VALUE 0.                            
+006400 01  BUFIDX2            PIC S9(9) COMP VALUE 0.                           
+006500 01  DI-IDX            PIC S9(9) COMP VALUE 0.                            
+006600 01  DISP-99           PIC Z(9).                                          
+006700 01  DISP-N                PIC ZZZ9 VALUE ZERO.                           
+006800 01 EDIT-MESSAGE           PIC X(120).                                    
+006900 01 MYDBCAP PIC S9(9) COMP VALUE 0.                                       
+007000 01 MYDSCAP PIC S9(9) COMP VALUE 0.                                       
+007100 01 MYFLDCAP PIC S9(9) COMP VALUE 0.                                      
+007200 01 MY16CAP PIC S9(9) COMP VALUE 0.                                       
+007300 01 S1       PIC S9(9) COMP VALUE 0.                              080715ma
+007400 01 S2       PIC S9(9) COMP VALUE 0.                              080715ma
+007500 01 FORMSFILE-SW PIC X VALUE "0".                                         
+007600    88 END-OF-FORMSFILE VALUE "1".                                        
+007700 01 FORMFILES-REC-TYPE-SW PIC X VALUE "~".                        080715ma
+007800    88 Type-is-Valid VALUES ARE                                   080715ma
+007900    "V" "F".                                                      080715ma
+008000*    "K" "G" "E" "H" "V" "F" "N" "T" "W" "S" "A" "O".             080715ma
+008100 01 TIDX          PIC S9(4) COMP VALUE 0.                         080729ma
+008200 01 T-LEN         PIC S9(9) COMP VALUE 0.                         080729ma
+008300 01 T-STRT        PIC S9(9) COMP VALUE 0.                         080729ma
+008400 01 T-END         PIC S9(9) COMP VALUE 0.                         080729ma
+008500 01 T-RECORD.                                                     080729ma
+008600    02 T-HEADER PIC X(40).                                        080729ma
+008700    02 T-FLD-ENTRIES OCCURS 256 TIMES.                            080729ma
+008800       05 T-FIELD PIC X(62).                                      080729ma
+008900 01 T-HEADER-FORMAT.                                              080729ma
+009000    05 THF-LENGTH PIC S9(4) COMP.                                 080729ma
+009100    05 THF-TYPE   PIC X.                                          080729ma
+009200    05 THF-FORM   PIC X(15).                                      080729ma
+009300    05 THF-CNT1   PIC S9(4) COMP.                                 080729ma
+009400    05 THF-CNT2   PIC S9(4) COMP.                                 080729ma
+009500    05 FILLER     PIC X(18).                                      080729ma
+009600                                                                  080729ma
+009700 01 T-FIELD-FORMAT.                                               080729ma
+009800    05 TFF-FLD1 PIC X(15).                                        080729ma
+009900    05 TFF-FLD2 PIC X(15).                                        080729ma
+010000    05 TFF-ENH   PIC X(4).                                        080729ma
+010100    05 TFF-ESCVAL    PIC X.                                       080806ma
+010200    05 TFF-A     PIC X.                                           080729ma
+010300    05 TFF-FLDNUM  PIC S9(4) COMP.                                080729ma
+010400    05 TFF-SCRNODR  PIC S9(4) COMP.                               080729ma
+010500    05 FILLER  PIC S9(4) COMP.                                    080729ma
+010600    05 FILLER  PIC S9(4) COMP.                                    080729ma
+010700    05 TFF-LEN   PIC S9(4) COMP.                                  080729ma
+010800    05 TFF-ROW   PIC S9(4) COMP.                                  080729ma
+010900    05 TFF-COL   PIC S9(4) COMP.                                  080729ma
+011000                                                                  080729ma
+011100 01 DIDX          PIC S9(4) COMP VALUE 0.                         080729ma
+011200 01 D-LEN         PIC S9(9) COMP VALUE 0.                         080729ma
+011300 01 D-STRT        PIC S9(9) COMP VALUE 0.                         080729ma
+011400 01 D-END         PIC S9(9) COMP VALUE 0.                         080729ma
+011500 01 D-RECORD.                                                     080729ma
+011600    02 D-RECORD-ENTRIES OCCURS 256 TIMES.                         080729ma
+011700       05 D-HEADER PIC X(3).                                      080729ma
+011800       05 D-FIELD PIC X(99).                                      080729ma
+011900                                                                  080729ma
+012000 01 D-HEADER-FORMAT.                                              080729ma
+012100    05 DHF-LENGTH PIC S9(4) COMP.                                 080729ma
+012200    05 DHF-TYPE   PIC X.                                          080729ma
+012300                                                                  080729ma
+012400 01 D-FIELD-FORMAT.                                               080729ma
+012500    05 DFF-FLD1    PIC X(15).                                     080729ma
+012600    05 DFF-FLD2    PIC X(15).                                     080729ma
+012700    05 DFF-LEN     PIC XXX.                                       080729ma
+012800    05 DFF-DTYPE   PIC XXXX.                                      080729ma
+012900    05 DFF-INIT    PIC X(62).                                     080729ma
+013000                                                                  080806ma
+013100 01 GIDX          PIC S9(4) COMP VALUE 0.                         080806ma
+013200 01 GCNT          PIC S9(4) COMP VALUE 0.                         080806ma
+013300 01 G-LEN         PIC S9(9) COMP VALUE 0.                         080806ma
+013400 01 G-STRT        PIC S9(9) COMP VALUE 0.                         080806ma
+013500 01 G-END         PIC S9(9) COMP VALUE 0.                         080806ma
+013600                                                                  080806ma
+013700 01 G-RECORD.                                                     080806ma
+013800    02 G-RECORD-ENTRIES OCCURS 16834 TIMES.                       080806ma
+013900       05 G-HEADER PIC X(3).                                      080806ma
+014000       05 G-FIELD PIC X(1536).                                    080806ma
+014100                                                                  080806ma
+014200 01 G-HEADER-FORMAT.                                              080806ma
+014300    05 GHF-LENGTH    PIC S9(4) COMP.                              080806ma
+014400    05 GHF-TYPE      PIC X.                                       080806ma
+014500                                                                  080806ma
+014600 01 G-FIELD-FORMAT.                                               080806ma
+014700    05 GFF-FORM      PIC X(15).                                   080806ma
+014800    05 GFF-FIELD     PIC X(15).                                   080806ma
+014900    05 GFF-NUM       PIC X(4).                                    080806ma
+015000    05 GFF-LEN       PIC X(4).                                    080806ma
+015100    05 GFF-FIELD2    PIC X(15).                                   080806ma
+015200    05 GFF-ENH       PIC X(4).                                    080806ma
+015300    05 GFF-FTYPE     PIC X.                                       080806ma
+015400    05 GFF-DTYPE     PIC X(4).                                    080806ma
+015500    05 GFF-INIT      PIC X(65).                                   080806ma
+015600    05 GFF-PROCSPECS PIC X(1280).                                 080806ma
+015700                                                                  080806ma
+015800                                                                  080806ma
+015900                                                                  080729ma
+016000 01 FILE-DATA.                                                    080715ma
+016100    02 FILE-ERR-ENH PIC X(4) VALUE SPACES.                        080715ma
+016200    02 FILE-FLD-ENH PIC X(4) VALUE SPACES.                        080715ma
+016300    02 FILE-VERSION PIC X(8) VALUE SPACES.                        080715ma
+016400 01 HP-Enhancements.                                              080729ma
+016500    02 FILLER  PIC X value "@".                                   080729ma
+016600    02 FILLER  PIC X value "A".                                   080729ma
+016700    02 FILLER  PIC X value "B".                                   080729ma
+016800    02 FILLER  PIC X value "C".                                   080729ma
+016900    02 FILLER  PIC X value "D".                                   080729ma
+017000    02 FILLER  PIC X value "E".                                   080729ma
+017100    02 FILLER  PIC X value "F".                                   080729ma
+017200    02 FILLER  PIC X value "G".                                   080729ma
+017300    02 FILLER  PIC X value "H".                                   080729ma
+017400    02 FILLER  PIC X value "I".                                   080729ma
+017500    02 FILLER  PIC X value "J".                                   080729ma
+017600    02 FILLER  PIC X value "K".                                   080729ma
+017700    02 FILLER  PIC X value "L".                                   080729ma
+017800    02 FILLER  PIC X value "M".                                   080729ma
+017900    02 FILLER  PIC X value "N".                                   080729ma
+018000    02 FILLER  PIC X value "O".                                   080729ma
+018100    02 FILLER  PIC X value "S".                                   080729ma
+018200    02 FILLER  PIC X VALUE "Z".                                   080729ma
+018300 01 HPENH-TABLE REDEFINES HP-Enhancements.                        080729ma
+018400    02 HPENH-ENTRIES OCCURS 18 TIMEs.                             080729ma
+018500       05 HPENH PIC X.                                            080729ma
+018600                                                                  080729ma
+018700 01 ENHIDX PIC S9(4) COMP VALUE 0.                                080729ma
+018800                                                                  080729ma
+018900 01 VPLUS-Enhancements.                                           080729ma
+019000    02 FILLER PIC X(4) VALUE "NONE".                              080729ma
+019100    02 FILLER PIC X(4) VALUE "B   ".                              080729ma
+019200    02 FILLER PIC X(4) VALUE "I   ".                              080729ma
+019300    02 FILLER PIC X(4) VALUE "BI  ".                              080729ma
+019400    02 FILLER PIC X(4) VALUE "U   ".                              080729ma
+019500    02 FILLER PIC X(4) VALUE "BU  ".                              080729ma
+019600    02 FILLER PIC X(4) VALUE "IU  ".                              080729ma
+019700    02 FILLER PIC X(4) VALUE "BIU ".                              080729ma
+019800    02 FILLER PIC X(4) VALUE "H   ".                              080729ma
+019900    02 FILLER PIC X(4) VALUE "BH  ".                              080729ma
+020000    02 FILLER PIC X(4) VALUE "IH  ".                              080729ma
+020100    02 FILLER PIC X(4) VALUE "BIH ".                              080729ma
+020200    02 FILLER PIC X(4) VALUE "UH  ".                              080729ma
+020300    02 FILLER PIC X(4) VALUE "BUH ".                              080729ma
+020400    02 FILLER PIC X(4) VALUE "IUH ".                              080729ma
+020500    02 FILLER PIC X(4) VALUE "BIUH".                              080729ma
+020600    02 FILLER PIC X(4) VALUE "S   ".                              080729ma
+020700    02 FILLER PIC X(4) VALUE "ERR ".                              080729ma
+020800 01 VPLUSENH-TABLE REDEFINES VPLUS-Enhancements.                  080729ma
+020900    02 VPLUSENH-ENTRIES OCCURS 18 TIMEs.                          080729ma
+021000       05 VPLUSENH PIC X(4).                                      080729ma
+021100                                                                  080729ma
+021200 01 ALL-ROWS.                                                     080722ma
+021300    02 FORM-SCRNORD PIC S9(4) COMP.                               080722ma
+021400    02 ODFLEN       PIC S9(4) COMP.                               080722ma
+021500    02 ODF          PIC S9(4) COMP.                               080722ma
+021600    02 ROWIDX       PIC S9(4) COMP VALUE 0.                       080722ma
+021700    02 ROWCNT       PIC S9(4) COMP VALUE 0.                       080722ma
+021800    02 ROWMAX       PIC S9(4) COMP VALUE 26.                      080729ma
+021900    02 ROWSTART     PIC S9(4) COMP VALUE 1.                       080722ma
+022000    02 ROWEND       PIC S9(4) COMP VALUE 0.                       080722ma
+022100    02 ROWLEN       PIC S9(4) COMP VALUE 0.                       080722ma
+022200    02 ROW-COLUMN       PIC S9(4) COMP VALUE 0.                   080729ma
+022300    02 ROW-ENTRIES OCCURS 40 TIMES.                               080722ma
+022400       05 ROWSTR PIC X(256).                                      080722ma
+022500       05 OBJIDX PIC S9(4) COMP.                                  080722ma
+022600       05 OBJCNT PIC S9(4) COMP.                                  080722ma
+022700       05 ROW-OBJECTS OCCURS 80.                                  080722ma
+022800          10 OBJ-TYPE    PIC XX.                                  080722ma
+022900          10 OBJ-NAME    PIC X(16).                               080722ma
+023000          10 OBJ-SRNORD  PIC S9(4) COMP.                          080722ma
+023100          10 OBJ-STRTCOL     PIC S9(4) COMP.                      080729ma
+023200          10 OBJ-STRTROW     PIC S9(4) COMP.                      080729ma
+023300          10 OBJ-ENDCOL      PIC S9(4) COMP.                      080729ma
+023400          10 OBJ-ENDROW      PIC S9(4) COMP.                      080729ma
+023500          10 OBJ-VALUE   PIC X(80).                               080722ma
+023600          10 OBJ-FLDNUM  PIC S9(4) COMP.                          080722ma
+023700                                                                  080722ma
+023800                                                                  080722ma
+023900 01 NEW-TEXT-AREA.                                                080806ma
+024000    05 END-ROW-SW     PIC X VALUE "0".                            080806ma
+024100       88 END-OF-ROW  VALUE "1".                                  080806ma
+024200    05 TEXT-COLUMN       PIC S9(4) COMP VALUE 0.                  080806ma
+024300    05 TEXT-ROW          PIC S9(4) COMP VALUE 0.                  080806ma
+024400    05 TXIDX             PIC S9(4) COMP VALUE 0.                  080806ma
+024500    05 TEXT-CHAR         PIC S9(4) COMP VALUE 0.                  080806ma
+024600    05 TEXT-FIELDS.                                               080806ma
+024700       10 TXPTR-START          PIC S9(4) COMP VALUE 0.            080806ma
+024800       10 TXPTR                PIC S9(4) COMP VALUE 0.            080806ma
+024900       10 TEXT-ENH             PIC X  VALUE "@".                  080806ma
+025000       10 NON-TEXT-SW          PIC X  VALUE "0".                  080806ma
+025100          88 IN-TEXT-AREA   VALUE "0".                            080806ma
+025200          88 IN-NON-TEXT    VALUE "1".                            080806ma
+025300       10 NEW-TEXT-FOUND-SW    PIC X  VALUE "0".                  080806ma
+025400          88 NEW-TEXT-FOUND VALUE "1".                            080806ma
+025500       10 TEXT-FLDCNT          PIC S9(4) COMP VALUE 0.            080806ma
+025600       10 TEXT-FIELD-ENTRIES OCCURS 40 TIMES.                     080806ma
+025700          20 TEXT-FLDCOL    PIC S9(4) COMP.                       080806ma
+025800          20 TEXT-FLDROW    PIC S9(4) COMP.                       080806ma
+025900          20 TEXT-FLDENH    PIC X.                                080806ma
+026000          20 TEXT-FLDSTR    PIC X(80).                            080806ma
+026100          20 TEXT-FLDLEN    PIC S9(4) COMP.                       080806ma
+026200       10 TEXT-BTNCNT          PIC S9(4) COMP VALUE 0.            080806ma
+026300       10 TEXT-Button-ENTRIES OCCURS 8 TIMES.                     080806ma
+026400          20 TEXT-BTNCOL    PIC S9(4) COMP.                       080806ma
+026500          20 TEXT-BTNROW    PIC S9(4) COMP.                       080806ma
+026600          20 TEXT-BTNENH    PIC X.                                080806ma
+026700          20 TEXT-BTNSTR    PIC X(16).                            080806ma
+026800          20 TEXT-BTNLEN    PIC S9(4) COMP.                       080806ma
+026900       10 Text-Keys.                                              080806ma
+026910          15 Txkey1-1 Pic X(8) Value Spaces.                      080806ma
+026920          15 Txkey2-1 Pic X(8) Value Spaces.                      080806ma
+026930          15 Txkey3-1 Pic X(8) Value Spaces.                      080806ma
+026940          15 Txkey4-1 Pic X(8) Value Spaces.                      080806ma
+026950          15 Txkey5-1 Pic X(8) Value Spaces.                      080806ma
+026960          15 Txkey6-1 Pic X(8) Value Spaces.                      080806ma
+026970          15 Txkey7-1 Pic X(8) Value Spaces.                      080806ma
+026980          15 Txkey8-1 Pic X(8) Value Spaces.                      080806ma
+026991          15 Txkey1-2 Pic X(8) Value Spaces.                      080806ma
+026992          15 Txkey2-2 Pic X(8) Value Spaces.                      080806ma
+026993          15 Txkey3-2 Pic X(8) Value Spaces.                      080806ma
+026994          15 Txkey4-2 Pic X(8) Value Spaces.                      080806ma
+026995          15 Txkey5-2 Pic X(8) Value Spaces.                      080806ma
+026996          15 Txkey6-2 Pic X(8) Value Spaces.                      080806ma
+026997          15 Txkey7-2 Pic X(8) Value Spaces.                      080806ma
+026998          15 Txkey8-2 Pic X(8) Value Spaces.                      080806ma
+026999                                                                  080806ma
+027000 01 Design-Area.                                                  080715ma
+027100    02 Design-name        Pic X(16).                              080715ma
+027200    02 Deslen             Pic S9(9) Comp.                         080715ma
+027300    02 F-DESIGN-LEN       Pic S9(9) Comp.                         080715ma
+027400    02 F-Design           Pic X(16384).                           080715ma
+027500    02 F-DESIGN-POINTERS.                                         080729ma
+027600       05 FDPIDX PIC S9(4) COMP VALUE 0.                          080729ma
+027700       05 FDPCNT PIC S9(4) COMP VALUE 0.                          080729ma
+027800       05 FDP-ARRAY OCCURS 110 TIMES.                             080729ma
+027900          10 FDP-LEN  PIC S9(9) COMP.                             080729ma
+028000          10 FDP-STRT PIC S9(9) COMP.                             080729ma
+028100          10 FDP-END  PIC S9(9) COMP.                             080729ma
+028200    02 V-DESIGN-LEN       Pic S9(9) Comp.                         080715ma
+028300    02 V-Design           Pic X(16384).                           080715ma
+028400    02 V-DESIGN-POINTERS.                                         080729ma
+028500       05 VDPIDX PIC S9(4) COMP VALUE 0.                          080729ma
+028600       05 VDPCNT PIC S9(4) COMP VALUE 0.                          080729ma
+028700       05 VDP-ARRAY OCCURS 110 TIMES.                             080729ma
+028800          10 VDP-LEN  PIC S9(9) COMP.                             080729ma
+028900          10 VDP-STRT PIC S9(9) COMP.                             080729ma
+029000          10 VDP-END  PIC S9(9) COMP.                             080729ma
+029100    02 startx             Pic S9(9) Comp.                         080715ma
+029200    02 endx               Pic S9(9) Comp.                         080729ma
+029300    02 xidx               Pic S9(9) Comp.                         080729ma
+029400    02 V-xlen             Pic S9(4) Comp.                         080715ma
+029500    02 F-xlen             Pic S9(4) Comp.                         080715ma
+029600                                                                  080722ma
+029700 01 Field-x-y.                                                    080722ma
+029800    02 Field-Name    Pic x(16) Value Spaces.                      080722ma
+029900    02 Field-Column  Pic S9(4) Comp Value 0.                      080722ma
+030000    02 Field-Row     Pic S9(4) Comp Value 0.                      080722ma
+030100    02 F1            Pic S9(4) Comp Value 0.                      080722ma
+030200    02 Found-len     Pic S9(4) Comp Value 0.                      080722ma
+030300    02 F-idx         Pic S9(4) Comp Value 0.                      080722ma
+030400                                                                  080722ma
+030500 01 Form-Data.                                                    080703ma
+030600   02 FDATA-IDX            Pic s9(4) Comp Value 0.                080703ma
+030700   02 FDATA-PTR            Pic s9(4) Comp Value 0.                080703ma
+030800   02 FDATA-CNT            Pic s9(4) Comp Value 0.                080703ma
+030900   02 FDATA-adrs           Pic s9(9) Comp Value 0.                080703ma
+031000   02 FDATA-len            Pic s9(9) Comp Value 0.                080703ma
+031100   02 Form-Data-Record.                                           080703ma
+031200      05 FDATA-FORM          Pic X(16).                           080703ma
+031300      05 FDATA-FORM2         Pic X(16).                           080703ma
+031400      05 FDATA-REPEAT-OPTION Pic X(2).                            080703ma
+031500      05 FDATA-NFORM-OPTION  Pic X(2).                            080703ma
+031600      05 FDATA-NFORM         Pic X(16).                           080703ma
+031700      05 FDATA-FKEY-DEF      Pic X(2).                            080703ma
+031800      05 FDATA-REPRODUCED-FR Pic X(16).                           080703ma
+031900      05 FDATA-COMMENTS      Pic X(50).                           080703ma
+032000      05 FDATA-FUNCTION-KEYS.                                     080710ma
+032100         10 FKEY OCCURS 8 TIMES.                                  080710ma
+032200            15 FKEY-LINE1 PIC X(8).                               080710ma
+032300            15 FKEY-LINE2 PIC X(8).                               080710ma
+032400      05 FDATA-FIELDS.                                            080710ma
+032500         10 FDFCNT PIC S9(4) COMP.                                080710ma
+032600         10 FDFPTR PIC S9(4) COMP.                                080710ma
+032700         10 FDFIDX PIC S9(4) COMP.                                080710ma
+032800         10 FDF-ENTRY OCCURS 4096 TIMES.                          080710ma
+032900            15 FDF-OBJ         PIC XX.                            080729ma
+033000               88 COSMETIC-TEXT     VALUE "CT".                   080729ma
+033100               88 HEADING-LABEL     VALUE "HL".                   080729ma
+033200               88 MENU-ID           VALUE "ID".                   080729ma
+033300               88 FIELD-LABEL       VALUE "FL".                   080729ma
+033400               88 LINE-DRAW         VALUE "LD".                   080729ma
+033500               88 UNPROTECTED-FIELD VALUE "DA".                   080729ma
+033600               88 ENHANCEMENT       VALUE "EN".                   080729ma
+033700            15 FDF-NAME        PIC X(16).                         080710ma
+033800            15 FDF-NUM         PIC S9(4) COMP.                    080722ma
+033900            15 FDF-SRNODR      PIC S9(4) COMP.                    080722ma
+034000            15 FDF-LEN         PIC S9(4) COMP.                    080722ma
+034100            15 FDF-ENH         PIC X(4).                          080710ma
+034200            15 FDF-FTYPE       PIC X.                             080710ma
+034300            15 FDF-DTYPE       PIC X(4).                          080710ma
+034400            15 FDF-INITVAL     PIC X(76).                         080722ma
+034500            15 FDF-PROCSPECS   PIC X(1280).                       080729ma
+034600            15 FDF-STRTCOL     PIC S9(4) COMP.                    080729ma
+034700            15 FDF-STRTROW     PIC S9(4) COMP.                    080729ma
+034800            15 FDF-ENDCOL      PIC S9(4) COMP.                    080729ma
+034900            15 FDF-ENDROW      PIC S9(4) COMP.                    080729ma
+035000            15 FDF-BUFF-OFFSET PIC X(4).                          080710ma
+035100                                                                  080710ma
+035200 01  GETINFO-DATA.                                                        
+035300    05  GINFO-LEN                PIC S9(4) COMP.                          
+035400    05  GINFO-STR                PIC X(128).                              
+035500    05  GINFO-PARM               PIC S9(4) COMP.                          
+035600 01  PARSED-DATA.                                                         
+035700    05  ITEMS-PARSED             PIC S9(4) COMP.                          
+035800        88 PARSE-IS-COMPLETE VALUES ARE 3 THRU 99.                        
+035900    05  PARSED-STRING            PIC X(128).                              
+036000    05  NEXT-STRING              PIC X(128).                              
+036100    05  STRING-POINTER             PIC S9(4) COMP.                        
+036200    05  GX                       PIC S9(4) COMP.                          
+036300    05  GY                       PIC S9(4) COMP.                          
+036400    05  PX                       PIC S9(4) COMP.                          
+036500                                                                          
+036600     COPY SRVMST OF J3KLIB.                                               
+036700     COPY FFFLDS OF J3KLIB.                                               
+036800     COPY FMMSTR OF J3KLIB.                                               
+036900     COPY FFMSTR OF J3KLIB.                                               
+037000 01  FULL-CURRENT-DATE.                                                   
+037100         05  C-DATE.                                                      
+037200             10  C-YEAR       PIC 9(4).                                   
+037300             10  C-MONTH      PIC 99.                                     
+037400             10  C-DAY        PIC 99.                                     
+037500         05  C-TIME.                                                      
+037600             10  C-HOUR       PIC 99.                                     
+037700             10  C-MINUTES    PIC 99.                                     
+037800             10  C-SECONDS    PIC 99.                                     
+037900             10  C-SEC-HUND   PIC 99.                                     
+038000         05  C-TIME-DIFF.                                                 
+038100             10  O-GMT-DIR    PIC X.                                      
+038200             10  O-HOUR       PIC 99.                                     
+038300             10  O-MINUTES    PIC 99.                                     
+038400 01 ERROR-MSG                PIC X(80) VALUE SPACES.                      
+038500 01 y                     PIC S9(4) COMP.                         080715ma
+038600 01 NUMDEC                 PIC S9(4) COMP.                        080715ma
+038700 01 NUMERR                 PIC S9(4) COMP.                                
+038800 01 NUM1                   PIC X(14).                                     
+038900 01 NUM2                   PIC S9(14).                                    
+039000 01  DB-MISC.                                                             
+039100*    02  RE-READ           PIC S9(4) COMP VALUE 1.                        
+039200     02  MAX-DB            PIC S9(4) COMP VALUE 100.                      
+039300*    02  SERIAL            PIC S9(4) COMP VALUE 2.                        
+039400     02  BACKWARD          PIC S9(4) COMP VALUE 3.                        
+039500*    02  DIRECT            PIC S9(4) COMP VALUE 4.                        
+039600*    02  CHAINED           PIC S9(4) COMP VALUE 5.                        
+039700     02  BACK-CHAINED      PIC S9(4) COMP VALUE 6.                        
+039800*    02  KEYED             PIC S9(4) COMP VALUE 7.                        
+039900     02  MODE-N            PIC S9(4) COMP VALUE 0.                        
+040000*    02  IREAD-LEN         PIC S9(4) COMP VALUE 0.                        
+040100     02  IMAGE-ERRNUM      PIC S9(4) COMP VALUE 0.                        
+040200     02  CALL-STRING       PIC X(80) VALUE SPACES.                        
+040300     02  CSLEN             PIC S9(4) COMP VALUE 0.                        
+040400     02  ERROR-STRING      PIC X(80) VALUE SPACES.                        
+040500     02  ESLEN             PIC S9(4) COMP VALUE 0.                        
+040600     02  STATUS-AREA.                                                     
+040700         03  CONDITION-WORD    PIC S9(4) COMP VALUE  0.                   
+040800             88  NO-IMAGE-ERRORS         VALUE  0.                        
+040900             88  IMAGE-ERRORS                                             
+041000                 VALUES ARE -9999 THRU -1, 1 THRU  9999.                  
+041100             88  END-OF-FILE             VALUE 11.                        
+041200             88  BEG-OF-FILE             VALUE 12.                        
+041300             88  BEG-OF-CHAIN            VALUE 14.                        
+041400             88  END-OF-CHAIN            VALUE 15.                        
+041500             88  NO-ENTRY                VALUE 17.                        
+041600         03  RECORD-LENGTH     PIC S9(4) COMP VALUE  0.                   
+041700         03  RECORD-NUMBER     PIC S9(9) COMP VALUE  0.                   
+041800         03  ENTRIES-IN-CHAIN  PIC S9(9) COMP VALUE  0.                   
+041900         03  PREV-RECORD-NO    PIC S9(9) COMP VALUE  0.                   
+042000         03  NEXT-RECORD-NO    PIC S9(9) COMP VALUE  0.                   
+042100 01  MYDB     PIC S9(4) COMP VALUE  9.                                    
+042200 01  MIGDB-STATUS.                                                        
+042300     03  FILLER    PIC S9(4) COMP VALUE  0.                               
+042400     03  FILLER    PIC S9(4) COMP VALUE  0.                               
+042500     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+042600     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+042700     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+042800     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+042900 01  POINTER-LINK-SW         PIC X.                               080729ma
+043000     88  POINTERS-LINKED        VALUE "1".                        080729ma
+043100                                                                  080729ma
+043200 01  VALID-T-SW         PIC X.                                    080729ma
+043300     88  VALID-T        VALUE "1".                                080729ma
+043400                                                                  080806ma
+043500 01  VALID-D-SW         PIC X.                                    080806ma
+043600     88  VALID-D        VALUE "1".                                080806ma
+043700                                                                  080806ma
+043800 01  VALID-G-SW         PIC X.                                    080806ma
+043900     88  VALID-G        VALUE "1".                                080806ma
+044000                                                                  080806ma
+044100 01  FIRST-TIME-SW         PIC X.                                 080729ma
+044200     88  FIRST-TIME        VALUE "1".                             080729ma
+044300 01  infield-sw         PIC X.                                    080722ma
+044400     88  infield        VALUE "1".                                080722ma
+044500                                                                  080722ma
+044600*01  ERRORS-SW             PIC X.                                         
+044700*    88  ERRORS            VALUE "1".                                     
+044800                                                                          
+044900 01  NONBLANK-SW         PIC X.                                   080710ma
+045000     88  NONBLANK        VALUE "1".                               080710ma
+045100                                                                          
+045200 01  EDIT-ERRORS-SW        PIC X.                                 080806ma
+045300     88  EDIT-ERRORS       VALUE "1".                             080806ma
+045400                                                                  080806ma
+045500 01  MATCH-SW        PIC X.                                       080806ma
+045600     88  MATCH-FOUND       VALUE "1".                             080806ma
+045700                                                                  080806ma
+045800 01  BAD-KEY-SW            PIC X.                                         
+045900     88  BAD-KEY           VALUE "1".                                     
+046000                                                                          
+046100 01  Last-Column-SW       PIC X.                                          
+046200     88  Last-Column      VALUE "1".                                      
+046300                                                                          
+046400 01  X-FLOWTEST-JCW          PIC X(8) VALUE "FLOWTEST".                   
+046500 01  X-FLOWTEST-VALUE        PIC S9(4) COMP VALUE 0.                      
+046600     88  X-FLOWTEST          VALUE 1.                                     
+046700                                                                          
+046800 01 TARGET-FIELD                    PIC X(64) VALUE SPACES.               
+046900 01 DWNSHFT-SW                      PIC X.                                
+047000    88 OK-TO-DOWNSHIFT VALUE "1".                                         
+047100 01 OLD-FDFCNT PIC S9(4) COMP VALUE 0.                            080729ma
+047200 01 FKEY-TEST1 PIC X(100) VALUE SPACES.                           080729ma
+047300 01 FKEY-TEST2 PIC X(100) VALUE SPACES.                           080729ma
+047400                                                                  080729ma
+047500 01 escape-sw pic x(8) value spaces.                                      
+047600    88 Cursor-call    value "cursor".                             080703ma
+047700    88 beg-field      value "begfld".                             080703ma
+047800    88 end-of-field   value "endfld".                             080702ma
+047900                                                                  080702ma
+048000  01 MYIDX                           PIC S9(4) COMP VALUE 0.              
+048100 01 SOURCE-FIELD                    PIC X(64) VALUE SPACES.               
+048200 01 ASCII-CHARACTERS.                                                     
+048300    02 TWO-BYTES                    PIC XX VALUE SPACES.                  
+048400    02 SIXTEEN-BITS REDEFINES TWO-BYTES.                                  
+048500       05 ASCII-INT                 PIC S9(4) COMP.                       
+048600    02 TWO-CHARS    REDEFINES TWO-BYTES.                                  
+048700       05 FILLER                    PIC X.                                
+048800       05 ASCII-CHAR                PIC X.                                
+048900                                                                          
+049000                                                                          
+049100 01 ABORT-SWITCHES.                                                       
+049200    02 ON-IMAGE-ERRORS     PIC X VALUE "0".                               
+049300       88 ABORT-ON-IMAGE-ERRORS  VALUE "9".                               
+049400                                                                          
+049500*01  DATA-BASE-COMMON.                                                    
+049600*    02  DB-PTR                    PIC S9(4) COMP.                        
+049700*    02  DB-CNT                    PIC S9(4) COMP.                        
+049800*    02  DB-MAX                    PIC S9(4) COMP.                        
+049900*    02  DB-IDX                    PIC S9(4) COMP.                        
+050000*    02  DB-POINTER-STORAGE.                                              
+050100*        03 DB-POINTER-ENTRIES OCCURS 100 TIMES.                          
+050200*           04 DBPTR               PIC S9(4) COMP.                        
+050300                                                                          
+050400     02  SAVE-STATUS.                                                     
+050500         03  CONDITION-SAVED   PIC S9(4) COMP.                            
+050600         03  SAVED-LENGTH      PIC S9(4) COMP.                            
+050700         03  SAVED-NUMBER      PIC S9(9) COMP.                            
+050800         03  SAVED-IN-CHAIN    PIC S9(9) COMP.                            
+050900         03  PREV-SAVED-NO     PIC S9(9) COMP.                            
+051000         03  NEXT-SAVED-NO     PIC S9(9) COMP.                            
+051100                                                                          
+051200 01 A-TABLE-SW               PIC X VALUE "0".                             
+051300    88 ITS-A-TABLE    VALUE "1".                                          
+051400 01 DOW                      PIC S9(4) COMP  VALUE 0.                     
+051500 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.                     
+051600 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.                     
+051700                                                                          
+051800 01 WHO-INTRINSIC-PARMS.                                                  
+051900    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                            
+052000    15  WHO-MODE               PIC S9999 COMP.                            
+052100    15  WHO-CAPABILITY         PIC S9(6) COMP.                            
+052200    15  WHO-LATTR              PIC S9(6) COMP.                            
+052300    15  WHO-USERN.                                                        
+052400        20 BYTE1-6             PIC X(6).                                  
+052500        20 SCHOOL-NUMBER       PIC XX.                                    
+052600    15  WHO-GROUPN             PIC X(8).                                  
+052700    15  WHO-ACCTN              PIC X(8).                                  
+052800    15  WHO-HOMEN              PIC X(8).                                  
+052900                                                                          
+053000 01 DP-IDX                  PIC S9(9) COMP  VALUE 0.                      
+053100 01 MyHpSusan               PIC S9(9) COMP  VALUE 0.                      
+053200 01 MYHPVERSION             PIC X(24) VALUE SPACES.                       
+053300 01 MYHPCPUNAME             PIC X(24) VALUE SPACES.                       
+053400 01 MYHPLOCIPADDR           PIC X(24) VALUE SPACES.                       
+053500 01 MYMSG                   PIC X(79) VALUE SPACES.                       
+053600 01 SI-IDX                  PIC S9(9) COMP  VALUE 0.                      
+053700 01 CSTR                     PIC X(255)      VALUE SPACES.                
+053800 01 CMD                     PIC X(255)      VALUE SPACES.                 
+053900 01 CERR                     PIC S9(4) COMP  VALUE 0.                     
+054000 01 CPARM                    PIC S9(4) COMP  VALUE 0.                     
+054100 01 CMSG                     PIC S9(4) COMP  VALUE 2.                     
+054200 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.                     
+054300 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.                     
+054400 01  EXTFILE-STATUS            PIC X   VALUE "0".                         
+054500     88 EXTFILE-EOF                    VALUE "9".                         
+054600 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.                     
+054700 01 My-FILEName              Pic X(28) Value Spaces.                      
+054800 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.                     
+054900 01 NUM-X                    PIC S9(4) COMP  VALUE 0.                     
+055000 01 My-Bytes                 pic S9(4) Comp  Value 0.             080703ma
+055100 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.                     
+055200 01 VAR-LEN                  PIC S9(4) COMP  VALUE 0.                     
+055300 01 FCIDX                  PIC S9(4) COMP  VALUE 0.               080729ma
+055400 01 IROW                  PIC S9(4) COMP  VALUE 0.                080729ma
+055500 01 XCOL                  PIC S9(4) COMP  VALUE 0.                080729ma
+055600 01 SCIDX                  PIC S9(4) COMP  VALUE 0.                       
+055700 01 BCIDX                  PIC S9(4) COMP  VALUE 0.                       
+055800 01 NAMELEN  PIC S9(4) COMP VALUE 0.                                      
+055900 01 FORMLEN  PIC S9(4) COMP VALUE 0.                                      
+056000 01 FIELDLEN PIC S9(4) COMP VALUE 0.                                      
+056100 01 FORM-FOUND-SW PIC X VALUE "0".                                        
+056200    88 FORM-FOUND VALUE "1".                                              
+056300 01 FIELD-FOUND-SW PIC X VALUE "0".                                       
+056400    88 FIELD-FOUND VALUE "1".                                             
+056500                                                                          
+056600 01 SHOWTIME-STR.                                                         
+056700    02 FILLER PIC X(8) VALUE "SHOWTIME".                                  
+056800    02 FILLER PIC X    VALUE %15.                                         
+056900 01 DATE-EDITING.                                                         
+057000    05 RAW-DATE.                                                          
+057100       10 D1     PIC X   VALUE SPACES.                                    
+057200       10 D2     PIC X   VALUE SPACES.                                    
+057300       10 D3     PIC X   VALUE SPACES.                                    
+057400       10 D4     PIC X   VALUE SPACES.                                    
+057500       10 D5     PIC X   VALUE SPACES.                                    
+057600       10 D6     PIC X   VALUE SPACES.                                    
+057700       10 D7     PIC X   VALUE SPACES.                                    
+057800       10 D8     PIC X   VALUE SPACES.                                    
+057900    05 EDITED-DATE.                                                       
+058000       10 D5     PIC X   VALUE SPACES.                                    
+058100       10 D6     PIC X   VALUE SPACES.                                    
+058200       10 FILLER PIC X   VALUE "/".                                       
+058300       10 D7     PIC X   VALUE SPACES.                                    
+058400       10 D8     PIC X   VALUE SPACES.                                    
+058500       10 FILLER PIC X   VALUE "/".                                       
+058600       10 D1     PIC X   VALUE SPACES.                                    
+058700       10 D2     PIC X   VALUE SPACES.                                    
+058800       10 D3     PIC X   VALUE SPACES.                                    
+058900       10 D4     PIC X   VALUE SPACES.                                    
+059000                                                                          
+059100* 01 Db-Info-406-Word-17.                                         080703ma
+059200*    05  BIT1             PIC 9.                                  080703ma
+059300*    05  BIT2             PIC 9.                                  080703ma
+059400*    05  BIT3             PIC 9.                                  080703ma
+059500*    05  BIT4             PIC 9.                                  080703ma
+059600*    05  BIT5             PIC 9.                                  080703ma
+059700*    05  BIT6             PIC 9.                                  080703ma
+059800*    05  BIT7             PIC 9.                                  080703ma
+059900*    05  BIT8             PIC 9.                                  080703ma
+060000*    05  BIT9             PIC 9.                                  080703ma
+060100*        88 DataFILE-Newlimits Value 1.                           080703ma
+060200*        88 DataFILE-Oldlimits Value 0.                           080703ma
+060300*    05  BIT10            PIC 9.                                  080703ma
+060400*        88 DataFILE-Entrynumber-Format Value 1.                  080703ma
+060500*        88 DataFILE-Entryname-Format   Value 0.                  080703ma
+060600*    05  BIT11            PIC 9.                                  080703ma
+060700*    05  BIT12            PIC 9.                                  080703ma
+060800*        88 Expandable-Master-Form     Value 1.                   080703ma
+060900*        88 No-Expandable-Master-Form   Value 0.                  080703ma
+061000*    05  BIT13            PIC 9.                                  080703ma
+061100*        88 B-Tree      Value 1.                                  080703ma
+061200*        88 No-B-Tree   Value 0.                                  080703ma
+061300*    05  BIT14            PIC 9.                                  080703ma
+061400*    05  BIT15            PIC 9.                                  080703ma
+061500*    05  BIT16            PIC 9.                                  080703ma
+061600 01  BINARY-VALUE.                                                        
+061700     05 BIT-ZERO                     PIC 9.                               
+061800     05 BIT OCCURS 15 TIMES          PIC 9.                               
+061900                                                                          
+062000 01 FFMIDX            PIC S9(18) COMP VALUE 0.                            
+062100 01 THISSERVER-FILCNT PIC S9(18) COMP VALUE 0.                            
+062200 01 THISFILE-FRMCNT   PIC S9(18) COMP VALUE 0.                            
+062300 01 THISFORM-FLDCNT   PIC S9(18) COMP VALUE 0.                            
+062400 01 FRMIDX            PIC S9(18) COMP VALUE 0.                            
+062500 01 MY-FLDCNT         PIC S9(18) COMP VALUE 0.                            
+062600 01 FLDIDX            PIC S9(18) COMP VALUE 0.                            
+062700 01 MY-FRMCNT         PIC S9(18) COMP VALUE 0.                            
+062800 01 LAST-FM-UNIQUE    PIC S9(18) COMP VALUE 0.                            
+062900                                                                          
+063000                                                                          
+063100 01 BC-FILE-CNT      PIC S9(18) COMP VALUE 0.                             
+063200 01 BC-FRMCNT        PIC S9(18) COMP VALUE 0.                             
+063300 01 BC-FLDCNT        PIC S9(18) COMP VALUE 0.                             
+063400 01 SC-FRMCNT        PIC S9(18) COMP VALUE 0.                             
+063500 01 SC-FLDCNT        PIC S9(18) COMP VALUE 0.                             
+063600 01 FC-FRMCNT        PIC S9(18) COMP VALUE 0.                             
+063700 01 REPORT-BUFFER.                                                080729ma
+063800    05 RPT-VFLD-NAME       PIC X(15).                             080729ma
+063900    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+064000    05 RPT-BUF-X           PIC ZZZ9.                              080729ma
+064100    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+064200    05 RPT-BUF-Y           PIC ZZZ9.                              080729ma
+064300    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+064400    05 RPT-SRN-X           PIC Z9.                                080729ma
+064500    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+064600    05 RPT-SRN-Y           PIC Z9.                                080729ma
+064700    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+064800    05 RPT-SRN-ORD-NUM     PIC ZZ9.                               080729ma
+064900    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+065000    05 RPT-VFLD-NUM        PIC ZZ9.                               080729ma
+065100    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+065200    05 RPT-VFLD-LENGTH     PIC ZZ9.                               080729ma
+065300    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+065400    05 RPT-VFLD-POSITION   PIC ZZZ9.                              080729ma
+065500    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+065600    05 RPT-VFLD-ENHANCE    PIC XXXX.                              080729ma
+065700    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+065800    05 RPT-VFLD-TYPE       PIC XX.                                080729ma
+065900    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+066000    05 RPT-VFLD-DATATYPE   PIC XXXX.                              080729ma
+066100 01 REPORT-HEADER.                                                080729ma
+066200    05 FILLER       PIC X(15) VALUE "FIELD NAME".                 080729ma
+066300    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+066400    05 FILLER           PIC XXXX VALUE " BFX".                    080729ma
+066500    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+066600    05 FILLER           PIC XXXX VALUE " BFY".                    080729ma
+066700    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+066800    05 FILLER           PIC XX VALUE " X".                        080729ma
+066900    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+067000    05 FILLER           PIC XX VALUE "Y".                         080729ma
+067100    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+067200    05 FILLER     PIC XXX VALUE "ORD".                            080729ma
+067300    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+067400    05 FILLER        PIC XXX VALUE "NUM".                         080729ma
+067500    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+067600    05 FILLER     PIC XXX VALUE "LEN".                            080729ma
+067700    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+067800    05 FILLER   PIC XXXX VALUE " POS".                            080729ma
+067900    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+068000    05 FILLER    PIC XXXX VALUE "ENH".                            080729ma
+068100    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+068200    05 FILLER       PIC XX VALUE "TY".                            080729ma
+068300    05 FILLER PIC XX VALUE SPACE.                                 080729ma
+068400    05 FILLER   PIC XXXX VALUE "DATA".                            080729ma
+068500                                                                  080729ma
+068600                                                                  080729ma
+068700                                                                          
+068800 01 BZ-FILE-CNT      PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+068900 01 BZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+069000 01 BZ-FLDCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+069100 01 SZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+069200 01 SZ-FLDCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+069300 01 FZ-FRMCNT        PIC ZZZ,ZZZ,ZZZ,ZZ9.                                 
+069400 01 DISP-FORMCNT1     PIC ZZZ9.                                           
+069500 01 DISP-FORMCNT2     PIC ZZZ9.                                           
+069600 01 DISP-FLDCNT1      PIC ZZ9.                                            
+069700 01 DISP-FLDCNT2      PIC ZZ9.                                            
+069800 01  speclen               PIC S9(4) COMP.                        080703ma
+069900 01  DATA-LEN              PIC S9(4) COMP.                        080703ma
+070000                                                                  080703ma
+070100 01  DATA-BUFFER           PIC X(32768).                          080703ma
+070200 01  SCRN-BUFFER           PIC X(32768).                          080703ma
+070300 01 forms-data.                                                   080703ma
+070400    05 frdidx pic s9(9) comp value 0.                             080703ma
+070500    05 frdptr pic s9(9) comp value 0.                             080703ma
+070600    05 PRCptr pic s9(9) comp value 0.                             080703ma
+070700    05 frdcnt pic s9(9) comp value 0.                             080703ma
+070800    05 PRCcnt pic s9(9) comp value 0.                             080703ma
+070900    05 frd-table.                                                 080703ma
+071000       10 frd-entries OCCURS 32767  times.                        080703ma
+071100          20 frdstr pic x(256).                                   080703ma
+071200                                                                  080703ma
+071300 01  N-ERR                 PIC S9(4) COMP.                                
+071400                                                                          
+071500 01 NUMERIC-EDITS.                                                        
+071600    02 Split-Word        Pic S9(4) Comp.                                  
+071700    02 Splating-a-word Redefines Split-Word.                              
+071800       05 Split-Word-1 Pic x.                                             
+071900       05 Split-Word-2 Pic x.                                             
+072000    02 CHR3              PIC XXX.                                         
+072100    02 Y1                PIC 9.                                           
+072200    02 Y2                PIC 99.                                          
+072300    02 Y3                PIC 999.                                         
+072400    02 Y4                PIC 9999.                                        
+072500    02 Y5                PIC 99999.                                       
+072600    02 CHR6              PIC XXXXXX.                                      
+072700    02 Z1                PIC 9.                                           
+072800    02 Z2                PIC 99.                                          
+072900    02 Z3                PIC 999.                                         
+073000    02 Z4                PIC 9999.                                        
+073100    02 Z5                PIC 99999.                                       
+073200 01 Collate-Str          Pic x(64).                                       
+073300 01  WS-LOGON-DESC                       VALUE SPACES.                    
+073400     05  WS-LD-JOB-NAME      PIC  X(16).                                  
+073500     05  WS-LD-ACCT-NAME     PIC  X(16).                                  
+073600     05  WS-LD-ACCT-PASS     PIC  X(16).                                  
+073700     05  WS-LD-USER-NAME     PIC  X(16).                                  
+073800     05  WS-LD-USER-PASS     PIC  X(16).                                  
+073900     05  WS-LD-GROUP-NAME    PIC  X(16).                                  
+074000     05  WS-LD-GROUP-PASS    PIC  X(16).                                  
+074100 01  WS-ERR PIC S9(4) COMP VALUE 0.                                       
+074200 01  WS-ERR-MSG PIC X(80) VALUE SPACES.                                   
+074300 01 clearscreen.                                                  080715ma
+074400    02 filler pic x value %33.                                    080715ma
+074500    02 filler pic x value "E".                                    080715ma
+074600 01  TDAY                PIC X(8)  VALUE SPACES.                          
+074700 01  MYTALLY             PIC S9(9) COMP VALUE 0.                  080729ma
+074800 01  TDOW                PIC S9(4) COMP VALUE 0.                          
+074900 01  DDAY                PIC X(8)  VALUE SPACES.                          
+075000 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                          
+075100 01  DDOW                PIC S9(4) COMP VALUE 0.                          
+075200 01  DCNT                PIC S9(4) COMP VALUE 0.                          
+075300*****************************************************************         
+075400 01  FILE-ERROR-DATA.                                                     
+075500     05 ERROR-NUMBER       PIC XX    VALUE SPACES.                        
+075600     05 FNAME              PIC X(8)  VALUE SPACES.                        
+075700     05 FILE-ERROR-RECORD  PIC X(79).                                     
+075800*----------------- FORMFILE.                                              
+075900 01  FORMFILE-STATUS        PIC XX     VALUE SPACES.                      
+076000 01  FORMFILE-COUNT         PIC S9(9) COMP VALUE 0.                       
+076100 01  FORMFILE-FLAG          PIC XX    VALUE SPACES.                       
+076200     88 FORMFILE-CLOSED     VALUE SPACES.                                 
+076300     88 FORMFILE-OPENED-INPUT  VALUE "01".                                
+076400     88 FORMFILE-OPENED-OUTPUT VALUE "02".                                
+076500     88 FORMFILE-EOF        VALUE "99".                                   
+076600 01  LAST-FORMFILE          PIC S9(4) COMP VALUE 1.                       
+076700 01  X2                    PIC S9(4) COMP VALUE 0.                        
+076800 01  I                     PIC S9(4) COMP VALUE 0.                080722ma
+076900 01  X                     PIC S9(4) COMP VALUE 0.                080722ma
+077000 01 Esc-len                PIC S9(4) COMP VALUE 0.                080729ma
+077100 01 ld-len                 PIC S9(4) COMP VALUE 0.                080729ma
+077200 01  Ascii-Value           PIC S9(4) COMP VALUE 0.                        
+077300 01  ASCII-CHARACTER       REDEFINES Ascii-Value.                         
+077400     02 ASCII-BYTE1        PIC X.                                         
+077500     02 ASCII-BYTE2        PIC X.                                         
+077600 01  DECIMAL-VALUE         PIC S9(4) COMP VALUE 0.                        
+077700 01  BINARY-VALUE.                                                        
+077800     05 BIT-ZERO           PIC 9.                                         
+077900     05 BIT OCCURS 15 TIMES PIC 9.                                        
+078000     COPY AMSCOMM   OF J3KLIB.                                            
+078100                                                                          
+078200                                                                          
+078300*=================================================================        
+078400$PAGE  "Main logical flow"                                                
+078500*=================================================================        
+078600 PROCEDURE DIVISION.                                                      
+078700 BEGIN-0000.                                                              
+078800     Display "V/Plus Documentation Tool version C.7.3".                   
+078900     DISPLAY "-------------------------------------------------".         
+079000     DISPLAY "***             FRM802.PUB.J3K                ***". 080806ma
+079100     DISPLAY "***                                           ***".         
+079200     DISPLAY "***     Reading MIGDB Formsfile data          ***". 080703ma
+079300     DISPLAY "***     Reading V/Plus source Formsfiles      ***". 080703ma
+079400     DISPLAY "***     Adding additional V/Plus data         ***". 080703ma
+079500     DISPLAY "***                                           ***".         
+079600     DISPLAY "-------------------------------------------------".         
+079700     CALL   INTRINSIC "WHO"                                               
+079800     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN                   
+079900            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.               
+080000     CALL "GETCURRENT" USING TDAY MYTALLY TDOW.                   080729ma
+080100     INITIALIZE                                                           
+080200     COPY AMSITEMS OF J3KLIB.                                             
+080300     WS-LOGON-DESC WS-ERR WS-ERR-MSG.                                     
+080400     MOVE SPACES TO SCREEN-COMAREA.                                       
+080500     MOVE "LAST-DBN-ENTRY" TO DBNAME(1).                                  
+080600     MOVE "J3KDIAG" TO WS-LD-JOB-NAME.                                    
+080700     MOVE "MANAGER" TO WS-LD-USER-NAME.                                   
+080800     MOVE "J3K"     TO WS-LD-ACCT-NAME.                                   
+080900     MOVE "PUB"     TO WS-LD-GROUP-NAME.                                  
+081000     INITIALIZE WS-ERR-MSG                                                
+081100     Perform ShowTime.                                                    
+081200     PERFORM GET-HPSUSAN.                                                 
+081300     Initialize DATABASE-TABLE My-FILEName.                               
+081400     MOVE 128 TO GINFO-LEN.                                               
+081500     MOVE 9 TO MIGDB.                                                     
+081600     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                                
+081700     MOVE "J3K;" TO  DATA-BASE-PASS(MIGDB).                               
+081800     CALL "DBOPEN" USING                                                  
+081900       DATA-BASE-NAME(MIGDB)                                              
+082000       DATA-BASE-PASS(MIGDB)                                              
+082100       MODE-1 STATUS-AREA.                                                
+082200     IF IMAGE-ERRORS PERFORM 9000-IMAGE-ERROR.                            
+082300     MOVE STATUS-AREA TO MIGDB-STATUS.                                    
+082400     Move 1 to SEARCH-KEY-I2.                                             
+082500     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+082600     Perform Get-SRVMST-Keyed.                                            
+082700     INITIALIZE FFMSTR-WIN-POS.                                   080729ma
+082800     PERFORM FIND-FFMSTR.                                                 
+082900     IF NOT NO-ENTRY                                                      
+083000      INITIALIZE FFMIDX THISSERVER-FILCNT forms-data              080703ma
+083100      PERFORM VARYING FFMIDX FROM 1 BY 1                                  
+083200        UNTIL (END-OF-CHAIN) OR (FFMIDX > 999999)                         
+083300       PERFORM GET-FFMSTR-CHAINED                                         
+083400       IF NOT END-OF-CHAIN                                                
+083500        Perform Load-forms-data                                   080703ma
+083600        ADD 1 TO THISSERVER-FILCNT                                        
+083700        Perform GET-FILE-DATA                                     080715ma
+083800        MOVE "VFIL-UNIQUE;" TO SEARCH-ITEM                                
+083900        MOVE FFMSTR-VFIL-UNIQUE TO SEARCH-KEY-I2                          
+084000        PERFORM FIND-FMMSTR                                               
+084100        IF NO-ENTRY                                                       
+084200         DISPLAY "*W* " FFMSTR-VFIL-NAME                                  
+084300                 " HAS NO FORMS"                                          
+084400        ELSE                                                              
+084500         INITIALIZE FRMIDX THISFILE-FRMCNT                                
+084600         PERFORM VARYING FRMIDX FROM 1 BY 1                               
+084700           UNTIL (END-OF-CHAIN) OR (FRMIDX > 999999)                      
+084800          PERFORM GET-FMMSTR-CHAINED                                      
+084900          IF NOT END-OF-CHAIN                                             
+085000           Move FFMSTR-VFIL-NAME To SCREEN-FORMS-FILE                     
+085100           Move FMMSTR-FRM-NAME  To SCREEN-NAME                           
+085200           perform GET-FORM-DATA                                  080715ma
+085300*                                                                 080729ma
+085400* NOTE: Comments here are especially interesting!                 080729ma
+085500*                                                                 080729ma
+085600*       At this point in the logic we are reading (CHAINED)       080729ma
+085700*       through datasets that was previously loaded using         080808ma
+085800*       the VGET____INFO intrinsics.  Here we have the value      080729ma
+085900*       of the forms filename and form name just read from        080729ma
+086000*       the database, we haven't read any data from the           080729ma
+086100*       Form Fields dataset yet.                                  080729ma
+086200*                                                                 080808ma
+086300*       The last paragraph performed above "GET-FORM-DATA" has    080729ma
+086400*       retrieved the following information about the form by     080729ma
+086500*       evaluating data in the source forms file.                 080808ma
+086510*                                                                 080808ma
+086600* The complete screen design as it was entered in FORMSPEC.       080808ma
+086700                                                                  080808ma
+087610* The cursor position and name of each field.                     080808ma
+087611                                                                  080808ma
+087620* The Processing Specs for each field.                            080808ma
+087621                                                                  080808ma
+087630* The screen order value of each field.                           080808ma
+087631                                                                  080808ma
+087640* The cursor position and length of all screen enhancements.      080808ma
+087641                                                                  080808ma
+087650* The cursor position and length of all Line Drawing characters.  080808ma
+087651                                                                  080808ma
+087660* The cursor position and length of all text on the screen.       080808ma
+087661                                                                  080808ma
+087670* The Function Keys that were painted as text on the screen       080808ma
+087671* design (row 1 and 2) using screen escape sequences.             080808ma
+087672                                                                  080808ma
+087680* The Function Key Labels (f1 thru f8) as entered in the          080808ma
+087681* FKEY screen in formspec.                                        080808ma
+087682                                                                  080808ma
+087690*                                                                 080808ma
+087700*       Now, based on the data above we are going to read the     080729ma
+087800*       Forms Fields dataset, search by the unique form ID, and   080729ma
+087900*       chain through each field record to match Screen Order.    080729ma
+088000                                                                  080729ma
+088100           ADD 1 TO THISFILE-FRMCNT                                       
+088200           MOVE "FM-UNIQUE;" TO SEARCH-ITEM                               
+088300           MOVE FMMSTR-FM-UNIQUE TO SEARCH-KEY-I2                         
+088400           PERFORM FIND-FFFLDS                                            
+088500           IF NO-ENTRY                                                    
+088600            DISPLAY "FORM: " FFMSTR-VFIL-NAME FMMSTR-FRM-NAME             
+088700                    "HAS NO FIELDS"                                       
+088800            CONTINUE                                                      
+088900           ELSE                                                           
+089000            INITIALIZE FLDIDX THISFORM-FLDCNT                             
+089100            DISPLAY REPORT-HEADER                                 080729ma
+089200            PERFORM VARYING FLDIDX FROM 1 BY 1                            
+089300              UNTIL (END-OF-CHAIN) OR (FLDIDX > 999999)                   
+089400             PERFORM GET-FFFLDS-CHAINED                                   
+089500             IF NOT END-OF-CHAIN                                          
+089600              ADD 1 TO THISFORM-FLDCNT                                    
+089700              INITIALIZE IROW XCOL                                080729ma
+089800              PERFORM VARYING IROW FROM 1 BY 1                    080729ma
+089900                UNTIL ( IROW > 32 )                               080729ma
+090000               PERFORM VARYING XCOL FROM 1 BY 1                   080729ma
+090100                 UNTIL ( XCOL > 79 )                              080729ma
+090200                If ( FFFLDS-SRN-ORD-NUM = OBJ-SRNORD(IROW,XCOL))  080729ma
+090300                 And (OBJ-TYPE(IROW,XCOL) = "DA")                 080729ma
+090400                 MOVE OBJ-STRTROW(IROW,XCOL) TO FFFLDS-SRN-X      080729ma
+090500                 MOVE OBJ-STRTCOL(IROW,XCOL) TO FFFLDS-SRN-Y      080729ma
+090600                 PERFORM GET-FIELD-DATA                           080729ma
+090700                End-If                                            080729ma
+090800               END-PERFORM                                        080729ma
+090900              END-PERFORM                                         080729ma
+091000                                                                  080729ma
+091100             END-IF                                                       
+091200            END-PERFORM                                                   
+091300            MOVE 0 TO CONDITION-WORD                                      
+091400            IF THISFORM-FLDCNT <> FMMSTR-FLDCNT                           
+091500             DISPLAY "*W* VGETFORMINFO EXPECTS " FMMSTR-FLDCNT            
+091600                     " FIELDS, VFIELDINFO FOUND " THISFORM-FLDCNT         
+091700            END-IF                                                        
+091800*           ACCEPT num1                                           080729ma
+091900*            DISPLAY FFMSTR-VFIL-NAME FMMSTR-FRM-NAME                     
+092000*                    "HAS " THISFORM-FLDCNT " FIELDS"                     
+092100           END-IF                                                         
+092200          END-IF                                                          
+092300         END-PERFORM                                                      
+092400         MOVE 0 TO CONDITION-WORD                                         
+092500         IF THISFILE-FRMCNT <> FFMSTR-NBR-OF-FORMS                        
+092600          MOVE FFMSTR-NBR-OF-FORMS TO DISP-FORMCNT1               080806ma
+092700          MOVE THISFILE-FRMCNT TO DISP-FORMCNT2                           
+092800          DISPLAY "*W* " FFMSTR-VFIL-NAME  DISP-FORMCNT1                  
+092900                  " FORMS, VGETFORMINFO FOUND " DISP-FORMCNT2             
+093000         END-IF                                                           
+093100        END-IF                                                            
+093200       END-IF                                                             
+093300      END-PERFORM.                                                        
+093400     CALL "DBCLOSE" USING DATA-BASE-NAME(MIGDB)                           
+093500                          NULL-ITEM MODE-1 STATUS-AREA.                   
+093600     GO TO 9900-RETURN.                                                   
+093700*=================================================================        
+093800$page "MISC SubParagraphs"                                                
+093900*=================================================================        
+094000*---------------------------------------------------------                
+094100 GET-NUM.                                                                 
+094200D    DISPLAY "GET-NUM".                                                   
+094300     INITIALIZE NUM2 NUMDEC NUMERR.                                       
+094400     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                         
+094500     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                                    
+094600     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                                    
+094700*---------------------------------------------------------                
+094800 MPE-COMMAND.                                                             
+094900D    DISPLAY "MPE-COMMAND".                                               
+095000     INITIALIZE CSTR.                                                     
+095100     STRING CMD DELIMITED BY "  " %15 DELIMITED BY SIZE INTO CSTR.        
+095200     Move 2 To CMSG.                                                      
+095300     CALL INTRINSIC "HPCICOMMAND" USING                                   
+095400          CSTR CERR CPARM CMSG.                                           
+095500     INITIALIZE CMD.                                                      
+095600*---------------------------------------------------------                
+095700 SHOWTIME.                                                                
+095800     CALL INTRINSIC "HPCICOMMAND" USING                                   
+095900          SHOWTIME-STR CERR CPARM CMSG.                                   
+096000*---------------------------------------------------------                
+096100 COPY SRVMST0 OF J3KLIB.                                                  
+096200 COPY SRVMST1 OF J3KLIB.                                                  
+096300 COPY SRVMST2 OF J3KLIB.                                                  
+096400 COPY SRVMST3 OF J3KLIB.                                                  
+096500 COPY SRVMST4 OF J3KLIB.                                                  
+096600 COPY SRVMST5 OF J3KLIB.                                                  
+096700 COPY SRVMST6 OF J3KLIB.                                                  
+096800 COPY SRVMST7 OF J3KLIB.                                                  
+096900 COPY SRVMST8 OF J3KLIB.                                                  
+097000                                                                          
+097100 COPY FFFLDS1 OF J3KLIB.                                                  
+097200 COPY FFFLDS2 OF J3KLIB.                                                  
+097300                                                                          
+097400 COPY FMMSTR1 OF J3KLIB.                                                  
+097500 COPY FMMSTR2 OF J3KLIB.                                                  
+097600                                                                          
+097700 COPY FFMSTR1 OF J3KLIB.                                                  
+097800 COPY FFMSTR2 OF J3KLIB.                                                  
+097900*---------------------------------------------------------                
+098000 9000-IMAGE-ERROR.                                                        
+098100D    DISPLAY "9000-IMAGE-ERROR".                                          
+098200     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+098300*---------------------------------------------------------                
+098400*---------------------------------------------------------                
+098500 9999-RETURN.                                                             
+098600D    DISPLAY "9999-RETURN".                                               
+098700     GOBACK.                                                              
+098800*--------------------------------------------------------                 
+098900 GET-HPSUSAN.                                                             
+099000D    DISPLAY "GET-HPSUSAN".                                               
+099100     MOVE "HPSUSAN~" TO HPVAR-NAME.                                       
+099200     MOVE 1 TO HPVAR-ITEMNUM.                                             
+099300     INITIALIZE HPVAR-ITEM HPVAR-STAT.                                    
+099400     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                         
+099500         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                              
+099600     DISPLAY "HPSUSAN: " MYHPSUSAN.                                       
+099700                                                                  080703ma
+099800*--------------------------------                                         
+099900 Fopen-Formsfile.                                                         
+100000D    DISPLAY "Fopen-Formsfile".                                           
+100100     MOVE 1 TO S1.                                                        
+100200     INSPECT FFMSTR-VFIL-NAME                                             
+100300      TALLYING S1 FOR CHARACTERS BEFORE ' '.                              
+100400     IF S1 > 28 MOVE 28 TO S1.                                            
+100500     MOVE 'FILE FORM='           TO CMD.                          080703ma
+100600     MOVE FFMSTR-VFIL-NAME(1:S1) TO CMD(11:).                     080703ma
+100700     Perform MPE-COMMAND.                                                 
+100800     MOVE "FORMFILE" TO FNAME.                                    080715ma
+100900     OPEN INPUT FORMA-FILE.                                               
+101000     IF FORMFILE-STATUS <> "00"                                           
+101100        PERFORM 9001-FILE-ERROR.                                          
+101200     MOVE ZERO TO FORMFILE-COUNT.                                         
+101300     MOVE "01" TO  FORMFILE-FLAG.                                         
+101400$PAGE "MISC. ERROR CONDITION SUBROUTINES"                                 
+101500 9001-FILE-ERROR.                                                         
+101600D    DISPLAY "9001-FILE-ERROR".                                           
+101700     MOVE SPACES TO FILE-ERROR-RECORD.                                    
+101800     MOVE "00" TO ERROR-NUMBER.                                           
+101900*     IF FNAME = "PRINTER" MOVE PRINTER-STATUS TO ERROR-NUMBER.           
+102000     IF FNAME = "FORMFILE" MOVE FORMFILE-STATUS TO ERROR-NUMBER.          
+102100     EVALUATE ERROR-NUMBER                                                
+102200     WHEN "00" MOVE "0" TO ERRORS-SW                                      
+102300     WHEN "04" MOVE "1" TO ERRORS-SW                                      
+102400               STRING "Read length of record  doesn't match "             
+102500                      FNAME " length."                                    
+102600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+102700     WHEN "05" MOVE "0" TO ERRORS-SW                                      
+102800               STRING "OPEN " FNAME " not present,  created."             
+102900                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+103000     WHEN "07" MOVE "1" TO ERRORS-SW                                      
+103100               STRING FNAME " is not a tape as the OPEN/CLOSE "           
+103200                      "phrase implies."                                   
+103300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+103400     WHEN "30" MOVE "1" TO ERRORS-SW                                      
+103500               STRING FNAME " error.  problem unknown! "                  
+103600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+103700     WHEN "34" MOVE "1" TO ERRORS-SW                                      
+103800               STRING FNAME " boundary violation."                        
+103900                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+104000     WHEN "35" MOVE "1" TO ERRORS-SW                                      
+104100               STRING FNAME " not found."                                 
+104200                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+104300     WHEN "37" MOVE "1" TO ERRORS-SW                                      
+104400               STRING FNAME " error.  Inconsistent operation "            
+104500                      "during file I/O !"                                 
+104600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+104700     WHEN "39" MOVE "1" TO ERRORS-SW                                      
+104800               STRING "OPEN " FNAME " failed due to fixed file"           
+104900                      " attribute conflict."                              
+105000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+105100     WHEN "41" MOVE "0" TO ERRORS-SW                                      
+105200               STRING FNAME " was already opened."                        
+105300                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+105400     WHEN "42" MOVE "0" TO ERRORS-SW                                      
+105500               STRING "CLOSE " FNAME " without openning first."           
+105600                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+105700     WHEN "44" MOVE "1" TO ERRORS-SW                                      
+105800               STRING FNAME " error.   boundary violation, "              
+105900                      " Record too big or record too small."              
+106000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+106100     WHEN "46" MOVE "1" TO ERRORS-SW                                      
+106200               STRING "READ " FNAME " after AT END  or   after"           
+106300                      " unsuccessful READ."                               
+106400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+106500     WHEN "47" MOVE "1" TO ERRORS-SW                                      
+106600               STRING "READ on " FNAME " not open for INPUT."             
+106700                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+106800     WHEN "48" MOVE "1" TO ERRORS-SW                                      
+106900               STRING "WRITE on " FNAME " not open for OUTPUT."           
+107000                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+107100     WHEN "49" MOVE "1" TO ERRORS-SW                                      
+107200               STRING "REWRITE on " FNAME                                 
+107300                      " not open for I-O."                                
+107400                      DELIMITED BY SIZE INTO FILE-ERROR-RECORD            
+107500     WHEN OTHER MOVE "1" TO ERRORS-SW                                     
+107600                MOVE ERROR-NUMBER TO DECIMAL-VALUE                        
+107700                STRING FNAME " ERROR #" ERROR-NUMBER                      
+107800                             " MESSAGE UNDEFINED ."                       
+107900                DELIMITED BY SIZE INTO FILE-ERROR-RECORD.                 
+108000     MOVE ERROR-NUMBER TO ASCII-CHARACTER.                                
+108100     IF ASCII-BYTE1 = "9"                                                 
+108200        MOVE ASCII-BYTE2 TO Ascii-Value                                   
+108300        MOVE Ascii-Value TO DISP-N                                        
+108400        DISPLAY "MPE FILE ERROR #" DISP-N                                 
+108500        MOVE "1" TO ERRORS-SW                                             
+108600        MOVE SPACES TO FILE-ERROR-RECORD                                  
+108700        CALL INTRINSIC "FERRMSG" USING                                    
+108800            Ascii-Value FILE-ERROR-RECORD I.                              
+108900     IF NOT ERRORS DISPLAY FILE-ERROR-RECORD                              
+109000     ELSE GO TO 9900-ABEND.                                               
+109100     MOVE FILE-ERROR-RECORD TO EDIT-MESSAGE.                              
+109200     PERFORM 7805-LOG-EDIT-MESSAGE.                                       
+109300*--------------------------                                               
+109400 7805-LOG-EDIT-MESSAGE.                                                   
+109500     DISPLAY EDIT-MESSAGE.                                                
+109600*****************************************************************         
+109700 9900-ABEND.                                                              
+109800     DISPLAY "----------------------------------------".                  
+109900     DISPLAY "-FRM802- ABNORMAL END OF PROGRAM".                  080806ma
+110000     DISPLAY "----------------------------------------".                  
+110100*---------------------------------------------------------------          
+110200 9900-RETURN.                                                             
+110300     IF FILE-ERROR-RECORD NOT = SPACES DISPLAY FILE-ERROR-RECORD.         
+110400     IF NOT FORMFILE-CLOSED  CLOSE FORMA-FILE.                            
+110500     GOBACK.                                                              
+110600*----------------------------                                     080722ma
+110700 Load-forms-data.                                                 080703ma
+110800     INITIALIZE CMD forms-data.                                   080703ma
+110900     Perform Fopen-Formsfile.                                     080703ma
+111000     MOVE 256 TO DATA-LEN.                                        080703ma
+111100     Perform varying DB-Idx From 1 By 1                           080703ma
+111200       Until ( EXTFILE-EOF ) Or ( DB-Idx > 32766 )                080703ma
+111300      Read Forma-File                                             080715ma
+111400          At End     Move '1' To Formsfile-Sw                     080715ma
+111500          Not At End                                              080715ma
+111600       Move '0' To Formsfile-Sw                                   080715ma
+111700       Add 1 to frdcnt                                            080715ma
+111800       Move Form-Rec to frdstr(frdcnt)                            080715ma
+111900       Move Frdstr(frdcnt)(1:2) To Ascii-Character                080715ma
+112000       MOVE Frdstr(frdcnt)(3:1) TO FORMFILES-REC-TYPE-SW          080715ma
+112100      End-Read                                                    080715ma
+112200     End-Perform.                                                 080703ma
+112300     CLOSE FORMA-FILE.                                            080715ma
+112400     Display FFMSTR-VFIL-NAME "Records : " frdcnt.                080710ma
+112500*----------------                                                 080715ma
+112600 GET-FILE-DATA.                                                   080715ma
+112700     Display "GET-FILE-DATA".                                     080722ma
+112800     INSPECT FFMSTR-VFIL-NAME                                     080715ma
+112900      TALLYING S1 FOR CHARACTERS BEFORE ' '.                      080715ma
+113000     IF S1 > 15 MOVE 15 TO S1.                                    080715ma
+113100     Move Frdstr(2)(21:4) To FILE-ERR-ENH.                        080715ma
+113200     Move Frdstr(2)(25:4) To FILE-FLD-ENH.                        080715ma
+113300     Move Frdstr(2)(29:7) To FILE-VERSION.                        080715ma
+113400     Display "Formsfile: " FFMSTR-VFIL-NAME.                      080715ma
+113500     Display "Err Enh:   " FFMSTR-ERR-ENH.                        080806ma
+113600     Display "FLD Enh:   " FFMSTR-WIN-ENH.                        080806ma
+113700     Display "Version:   " FFMSTR-VERSION.                        080806ma
+113800     Display "Forms:     " FFMSTR-NBR-OF-FORMS.                   080806ma
+113900     Display "Save Flds: " FFMSTR-SAVE-FLDS.                      080806ma
+114000     Display "Msg Pos:   " FFMSTR-WIN-POS.                        080806ma
+114100     If FFMSTR-SAVE-FLDS > 0 PERFORM GET-D-RECORDS.               080806ma
+114200     PERFORM GET-G-RECORDS.                                       080806ma
+114300*----------------                                                 080715ma
+114400 GET-FORM-DATA.                                                   080715ma
+114500     Display "GET-FORM-DATA".                                     080722ma
+114600     MOVE 15 TO S1.                                               080729ma
+114700     INITIALIZE FORM-DATA.                                        080729ma
+114800*                                                                 080715ma
+114900* The "E" record type is the first screen to define a form        080729ma
+115000*                                                                 080715ma
+115100     Perform Varying Frdidx From 1 By 1                           080715ma
+115200       Until ( Frdidx > Frdcnt )                                  080715ma
+115300      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080715ma
+115400      If   (Frdstr(Frdidx)(4:S1) = FMMSTR-FRM-NAME(1:S1))         080715ma
+115500            And (Frdstr(Frdidx)(3:1) = "E")                       080715ma
+115600            And (Ascii-Value  > 113 and Ascii-Value < 150)        080715ma
+115700       Move Frdstr(Frdidx)(4:15)  To FDATA-FORM                   080715ma
+115800       Move Frdstr(Frdidx)(19:15) To FDATA-FORM2                  080715ma
+115900       Move Frdstr(Frdidx)(34:1)  To FDATA-REPEAT-OPTION          080715ma
+116000       Move Frdstr(Frdidx)(35:1)  To FDATA-NFORM-OPTION           080715ma
+116100       Move Frdstr(Frdidx)(36:15) To FDATA-NFORM                  080715ma
+116200       Move Frdstr(Frdidx)(51:1)  To FDATA-FKEY-DEF               080715ma
+116300       Move Frdstr(Frdidx)(52:15) To FDATA-REPRODUCED-FR          080715ma
+116400       Move Frdstr(Frdidx)(67:50) To FDATA-COMMENTS               080715ma
+116500       Display "Formsfile: " FFMSTR-VFIL-NAME                     080729ma
+116600       Display "FORM         ["  FDATA-FORM           "]"         080715ma
+116700       Display "FORM2        ["  FDATA-FORM2          "]"         080715ma
+116800       Display "REPEAT-OPTION["  FDATA-REPEAT-OPTION  "]"         080715ma
+116900       Display "NFORM-OPTION ["  FDATA-NFORM-OPTION   "]"         080715ma
+117000       Display "NFORM        ["  FDATA-NFORM          "]"         080715ma
+117100       Display "FKEY-DEF     ["  FDATA-FKEY-DEF       "]"         080715ma
+117200       Display "REPRODUCED-FR["  FDATA-REPRODUCED-FR  "]"         080715ma
+117300       Display "COMMENTS     ["  FDATA-COMMENTS       "]"         080715ma
+117400      End-If                                                      080715ma
+117500     End-Perform.                                                 080715ma
+117600*                                                                 080715ma
+117700* If an "E" record type is found, and VGETFORMINFO agrees,        080715ma
+117800* then this is a valid form, now get the design form records.     080715ma
+117900*  The design form screen in formspec stores the screen data      080715ma
+118000* in two separate records, the "V" and "F" record types.          080715ma
+118100* If both records are not found (with the same record length)     080715ma
+118200* then this is not a valid form.                                  080715ma
+118300*                                                                 080715ma
+118400*                                                                 080715ma
+118500* -- N O T E --                                                   080715ma
+118600*            If FDATA-REPRODUCED-FR is not blank, then this       080715ma
+118700*            form will not have a "V" and "F" record type.        080715ma
+118800*            Instead find the "V" and "F" records where the       080715ma
+118900*            Design-Name matches the value in FDATA-REPRODUCED-FR.080715ma
+119000*                                                                 080715ma
+119100     Initialize Design-Area.                                      080715ma
+119200     Move FMMSTR-FRM-NAME to Design-Name.                         080715ma
+119300     Move 16 To i.                                                080729ma
+119400     Perform varying i from 16 by -1                              080722ma
+119500       until i < 2 or FDATA-REPRODUCED-FR(i:1) > " "              080722ma
+119600      Continue                                                    080722ma
+119700     End-Perform                                                  080722ma
+119800     Move i To deslen.                                            080722ma
+119900     If deslen = S1                                               080729ma
+120000      Move FDATA-REPRODUCED-FR to Design-name                     080729ma
+120100      MOVE S1 TO DESLEN                                           080729ma
+120200     ELSE                                                         080729ma
+120300      MOVE FMMSTR-FRM-NAME(1:S1) TO DESIGN-NAME                   080729ma
+120400      MOVE S1 TO DESLEN.                                          080729ma
+120500                                                                  080729ma
+120600     IF deslen > 15 MOVE 15 TO deslen.                            080715ma
+120700*                                                                 080729ma
+120800* L O A D    F D E S I G N    P O I N T E R S                     080729ma
+120900*                                                                 080729ma
+121000     INITIALIZE F-DESIGN-POINTERS.                                080729ma
+121100     Perform Varying Frdidx From 1 By 1                           080729ma
+121200       Until ( Frdidx > Frdcnt ) or (FDPCNT > 109)                080729ma
+121300      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080729ma
+121400      If (Frdstr(Frdidx)(4:deslen) = Design-name(1:deslen))       080729ma
+121500          And (Frdstr(Frdidx)(3:1) = "F")                         080729ma
+121600          And ( Ascii-Value > 0 )                                 080729ma
+121700       ADD 1 TO FDPCNT                                            080729ma
+121800       Compute FDP-STRT(FDPCNT) =                                 080729ma
+121900        18 + ((Frdidx * 256) - 255 )                              080729ma
+122000       End-compute                                                080729ma
+122100       Compute FDP-END(FDPCNT) =                                  080729ma
+122200        FDP-STRT(FDPCNT) + (Ascii-Value - 20)                     080729ma
+122300       End-Compute                                                080729ma
+122400       Move Ascii-Value To FDP-LEN(FDPCNT)                        080729ma
+122500       DISPLAY Design-name(1:deslen) "  "                         080729ma
+122600        " F S=" FDP-STRT(FDPCNT)                                  080729ma
+122700        " F E=" FDP-END(FDPCNT)                                   080729ma
+122800        " F L=" FDP-LEN(FDPCNT)                                   080729ma
+122900      END-IF                                                      080729ma
+123000     END-Perform.                                                 080729ma
+123100*                                                                 080729ma
+123200* L O A D    V D E S I G N    P O I N T E R S                     080729ma
+123300*                                                                 080729ma
+123400     INITIALIZE V-DESIGN-POINTERS.                                080729ma
+123500     Perform Varying Frdidx From 1 By 1                           080729ma
+123600       Until ( Frdidx > Frdcnt ) or (VDPCNT > 109)                080729ma
+123700      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080729ma
+123800      If (Frdstr(Frdidx)(4:deslen) = Design-name(1:deslen))       080729ma
+123900          And (Frdstr(Frdidx)(3:1) = "V")                         080729ma
+124000          And ( Ascii-Value > 0 )                                 080729ma
+124100       ADD 1 TO VDPCNT                                            080729ma
+124200       Compute VDP-STRT(VDPCNT) =                                 080729ma
+124300        18 + ((Frdidx * 256) - 255 )                              080729ma
+124400       End-compute                                                080729ma
+124500       Compute VDP-END(VDPCNT) =                                  080729ma
+124600        VDP-STRT(FDPCNT) + (Ascii-Value - 20)                     080729ma
+124700       End-Compute                                                080729ma
+124800       Move Ascii-Value To VDP-LEN(VDPCNT)                        080729ma
+124900       DISPLAY Design-name(1:deslen) "  "                         080729ma
+125000        " V S=" VDP-STRT(VDPCNT)                                  080729ma
+125100        " V E=" VDP-END(VDPCNT)                                   080729ma
+125200        " V L=" VDP-LEN(VDPCNT)                                   080729ma
+125300      END-IF                                                      080729ma
+125400     END-Perform.                                                 080729ma
+125500*                                                                 080729ma
+125600* L I N K   " F "   A N D    " V "   P O I N T E R S              080729ma
+125700*                                                                 080729ma
+125800     MOVE "0" TO POINTER-LINK-SW.                                 080729ma
+125900     PERFORM VARYING FDPIDX FROM 1 BY 1                           080729ma
+126000       UNTIL (POINTERS-LINKED) OR (FDPIDX > FDPCNT)               080729ma
+126100      PERFORM VARYING VDPIDX FROM 1 BY 1                          080729ma
+126200        UNTIL (POINTERS-LINKED) OR (VDPIDX > VDPCNT)              080729ma
+126300       IF FDP-LEN(FDPIDX) = VDP-LEN(VDPIDX)                       080729ma
+126400        MOVE "1" TO POINTER-LINK-SW                               080729ma
+126500        MOVE FDPIDX TO FDPCNT                                     080729ma
+126600       END-IF                                                     080729ma
+126700      END-PERFORM                                                 080729ma
+126800     END-PERFORM.                                                 080729ma
+126900     IF POINTERS-LINKED                                           080729ma
+127000      PERFORM GET-SCREEN-OBJECTS                                  080729ma
+127100     ELSE                                                         080729ma
+127200      Display "Unable to find form design records!  "             080729ma
+127300              "V= " V-DESIGN-LEN ", F= " F-DESIGN-LEN             080729ma
+127400              "Form: " Design-name.                               080729ma
+127500     PERFORM GET-T-RECORDS.                                       080729ma
+127600                                                                  080729ma
+127700*---------------------------------------------------------        080729ma
+127800 GET-SCREEN-OBJECTS.                                              080729ma
+127900     MOVE FDP-STRT(FDPCNT) TO startx.                             080729ma
+128000     MOVE FDP-END(FDPCNT)  TO endx.                               080729ma
+128100     Move FDP-LEN(FDPCNT)  To F-Design-Len.                       080729ma
+128200     Initialize F-xlen F-Design.                                  080729ma
+128300     Perform Varying xidx from Startx by 1                        080729ma
+128400       Until ( xidx > Endx )                                      080729ma
+128500          OR ( F-xlen > 16382 )                                   080729ma
+128600      Add 1 to F-xlen                                             080729ma
+128700      Move frd-table(xidx:1) to F-Design(F-xlen:1)                080729ma
+128800     End-Perform.                                                 080729ma
+128900     COMPUTE Y = F-xlen * -1.                                     080729ma
+129000     CALL INTRINSIC "FWRITE" USING \1\ clearscreen \-2\ \0\.      080806ma
+129100     CALL INTRINSIC "FWRITE" USING \1\ F-Design Y \0\.            080806ma
+129200     Display "Formsfile: [" FFMSTR-VFIL-NAME "]".                 080806ma
+129300     Display "FORM:      ["  FDATA-FORM "]".                      080806ma
+129400     Perform GET-ROWS.                                            080722ma
+129500     PERFORM VARYING I FROM 1 BY 1                                080722ma
+129600       UNTIL I > ROWCNT                                           080722ma
+129700      PERFORM VARYING X FROM 1 BY 1                               080722ma
+129800        UNTIL X > OBJCNT(I)                                       080722ma
+129900       DISPLAY  OBJ-TYPE(I,X) " "                                 080729ma
+130000        OBJ-NAME(I,X) " "                                         080729ma
+130100        OBJ-SRNORD(I,X) " "                                       080729ma
+130200        OBJ-STRTROW(I,X) " "                                      080729ma
+130300        OBJ-STRTCOL(I,X) " "                                      080729ma
+130400        OBJ-ENDROW(I,X) " "                                       080729ma
+130500        OBJ-ENDCOL(I,X) " "                                       080729ma
+130600        OBJ-FLDNUM(I,X) " "                                       080729ma
+130700        OBJ-VALUE(I,X)(1:4)                                       080729ma
+130800      END-PERFORM                                                 080722ma
+130900     END-PERFORM.                                                 080722ma
+131000     Move "Pause 1" to CMD.                                       080729ma
+131100     Perform MPE-Command.                                         080729ma
+131200                                                                  080729ma
+131300* // Now find the Function Key values, if any!                    080715ma
+131400     Initialize FKEY-TEST1 FKEY-TEST2 FDATA-FUNCTION-KEYS.        080729ma
+131500     If FDATA-FKEY-DEF = "X"                                      080715ma
+131600      Perform Varying Frdidx From 1 By 1                          080715ma
+131700        Until ( Frdidx > Frdcnt )                                 080715ma
+131800       Move Frdstr(Frdidx)(1:2) To Ascii-Character                080715ma
+131900       If   (Frdstr(Frdidx)(4:S1) = FMMSTR-FRM-NAME(1:S1))        080715ma
+132000             And (Frdstr(Frdidx)(3:1) = "H")                      080715ma
+132100             And (Ascii-Value  >  140)                            080715ma
+132200             And (Ascii-Value  <  180)                            080715ma
+132300        Move Frdstr(Frdidx)(19:128) To  FDATA-FUNCTION-KEYS       080715ma
+132400       End-If                                                     080715ma
+132500      End-Perform                                                 080729ma
+132600     ELSE                                                         080729ma
+132700      MOVE 2 TO I                                                 080729ma
+132800      PERFORM VARYING X FROM 1 BY 1                               080729ma
+132900        UNTIL X > OBJCNT(I)                                       080729ma
+133000       IF OBJ-TYPE(I,X) = "EN"                                    080729ma
+133100        MOVE "|" TO FKEY-TEST1(OBJ-STRTCOL(I,X):1)                080729ma
+133200       END-IF                                                     080729ma
+133300      END-PERFORM                                                 080729ma
+133400      MOVE 3 TO I                                                 080729ma
+133500      PERFORM VARYING X FROM 1 BY 1                               080729ma
+133600        UNTIL X > OBJCNT(I)                                       080729ma
+133700       IF OBJ-TYPE(I,X) = "EN"                                    080729ma
+133800        MOVE "|" TO FKEY-TEST2(OBJ-STRTCOL(I,X):1)                080729ma
+133900       END-IF                                                     080729ma
+134000      END-PERFORM                                                 080729ma
+134100      DISPLAY FKEY-TEST1                                          080729ma
+134200      DISPLAY FKEY-TEST2.                                         080729ma
+134300*----------------                                                 080703ma
+134400 GET-FIELD-DATA.                                                  080710ma
+134500     MOVE FDFCNT TO OLD-FDFCNT.                                   080729ma
+134600*    Display "GET-FIELD-DATA".                                    080729ma
+134700     Move 0 To i.                                                 080722ma
+134800     Perform varying i from 15 by -1                              080729ma
+134900       until i < 2 or FMMSTR-FRM-NAME(i:1) > " "                  080722ma
+135000      Continue                                                    080722ma
+135100     End-Perform.                                                 080722ma
+135200     Move i To S1.                                                080722ma
+135300     Move 0 To i.                                                 080722ma
+135400     Perform varying i from 15 by -1                              080729ma
+135500       until i < 2 or FFFLDS-VFLD-NAME(i:1) > " "                 080722ma
+135600      Continue                                                    080722ma
+135700     End-Perform.                                                 080722ma
+135800     Move i To S2.                                                080722ma
+135900     IF S1 > 15 MOVE 15 TO S1.                                    080715ma
+136000     IF S2 > 15 MOVE 15 TO S2.                                    080715ma
+136100     Compute FDATA-PTR = (256 - S1).                              080703ma
+136200     Perform Varying Frdidx From 1 By 1                           080703ma
+136300       Until ( Frdidx > Frdcnt )                                  080703ma
+136400      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080715ma
+136500      MOVE 0 TO MYTALLY                                           080729ma
+136600      If (Frdstr(Frdidx)(3:1) = "G")                              080729ma
+136700       Initialize  num2 numdec numerr                             080722ma
+136800       MOVE Frdstr(Frdidx)(34:4)  TO num1                         080722ma
+136900       call "numget" using num1 num2 numdec numerr                080722ma
+137000       If (NUMERR = 0)                                            080722ma
+137100         And (Frdstr(Frdidx)(4:S1) = FMMSTR-FRM-NAME(1:S1))       080722ma
+137200         And (num2 = FFFLDS-VFLD-NUM)                             080729ma
+137300        Initialize  num2 numdec numerr                            080729ma
+137400        MOVE Frdstr(Frdidx)(38:4)  TO num1                        080729ma
+137500        call "numget" using num1 num2 numdec numerr               080729ma
+137600        IF NUM2 = FFFLDS-VFLD-LENGTH                              080729ma
+137700         Add 1 To FDFCNT                                          080729ma
+137800         MOVE Frdstr(Frdidx)(19:S2) TO FDF-NAME(FDFCNT)           080729ma
+137900         Initialize  NUM1 num2 numdec numerr                      080729ma
+138000         MOVE Frdstr(Frdidx)(34:4)  TO num1                       080729ma
+138100         call "numget" using num1 num2 numdec numerr              080729ma
+138200         MOVE NUM2 TO FDF-NUM(FDFCNT)                             080729ma
+138300         Initialize  NUM1 num2 numdec numerr                      080729ma
+138400         MOVE Frdstr(Frdidx)(38:4)  TO num1                       080729ma
+138500         call "numget" using num1 num2 numdec numerr              080729ma
+138600         MOVE NUM2 TO FDF-LEN(FDFCNT)                             080729ma
+138700         MOVE Frdstr(Frdidx)(57:4)  TO FDF-ENH(FDFCNT)            080729ma
+138800         MOVE Frdstr(Frdidx)(61:1)  TO FDF-FTYPE(FDFCNT)          080729ma
+138900         MOVE Frdstr(Frdidx)(62:4)  TO FDF-DTYPE(FDFCNT)          080729ma
+139000         Perform Get-ProcSpecs                                    080729ma
+139100        END-IF                                                    080729ma
+139200       End-If                                                     080722ma
+139300      End-If                                                      080722ma
+139400     End-Perform.                                                 080722ma
+139500     IF FDFCNT = OLD-FDFCNT                                       080729ma
+139600      PERFORM VARYING TIDX FROM 1 BY 1                            080729ma
+139700        UNTIL TIDX > THF-CNT1 OR FDFCNT > OLD-FDFCNT              080729ma
+139800       MOVE T-FIELD(TIDX) TO T-FIELD-FORMAT                       080729ma
+139900       IF TFF-FLDNUM = FFFLDS-VFLD-NUM                            080729ma
+140000        ADD 1 TO FDFCNT                                           080729ma
+140100        MOVE TFF-FLD1    TO  FDF-NAME(FDFCNT)                     080729ma
+140200        MOVE TFF-ENH     TO  FDF-ENH(FDFCNT) FFFLDS-VFLD-ENHANCE  080729ma
+140300        MOVE TFF-FLDNUM  TO  FDF-NUM(FDFCNT)                      080729ma
+140400        MOVE TFF-LEN     TO  FDF-LEN(FDFCNT)                      080729ma
+140500       END-IF                                                     080729ma
+140600      END-PERFORM.                                                080729ma
+140700      IF FFFLDS-VFLD-ENHANCE  = SPACES                            080729ma
+140800        MOVE FDF-ENH(FDFCNT)   TO FFFLDS-VFLD-ENHANCE.            080729ma
+140900      IF FFFLDS-VFLD-TYPE     = SPACES                            080729ma
+141000        MOVE FDF-FTYPE(FDFCNT) TO FFFLDS-VFLD-TYPE.               080729ma
+141100      IF FFFLDS-VFLD-DATATYPE = SPACES                            080729ma
+141200        MOVE FDF-DTYPE(FDFCNT) TO FFFLDS-VFLD-DATATYPE.           080729ma
+141300      IF (FFFLDS-VFLD-TYPE     = SPACES) AND                      080806ma
+141400         (FFFLDS-VFLD-DATATYPE = SPACES)                          080806ma
+141500       PERFORM CHKALL-G-STRINGS                                   080806ma
+141600       IF MATCH-FOUND                                             080806ma
+141700        MOVE GFF-FTYPE TO FFFLDS-VFLD-TYPE                        080806ma
+141800        MOVE GFF-DTYPE TO FFFLDS-VFLD-DATATYPE.                   080806ma
+141900      MOVE  FFFLDS-VFLD-NAME     TO RPT-VFLD-NAME.                080729ma
+142000      MOVE  FFFLDS-BUF-X         TO RPT-BUF-X.                    080729ma
+142100      MOVE  FFFLDS-BUF-Y         TO RPT-BUF-Y.                    080729ma
+142200      MOVE  FFFLDS-SRN-X         TO RPT-SRN-X.                    080729ma
+142300      MOVE  FFFLDS-SRN-Y         TO RPT-SRN-Y.                    080729ma
+142400      MOVE  FFFLDS-SRN-ORD-NUM   TO RPT-SRN-ORD-NUM.              080729ma
+142500      MOVE  FFFLDS-VFLD-NUM      TO RPT-VFLD-NUM.                 080729ma
+142600      MOVE  FFFLDS-VFLD-LENGTH   TO RPT-VFLD-LENGTH.              080729ma
+142700      MOVE  FFFLDS-VFLD-POSITION TO RPT-VFLD-POSITION.            080729ma
+142800      MOVE  FFFLDS-VFLD-ENHANCE  TO RPT-VFLD-ENHANCE.             080729ma
+142900      MOVE  FFFLDS-VFLD-TYPE     TO RPT-VFLD-TYPE.                080729ma
+143000      MOVE  FFFLDS-VFLD-DATATYPE TO RPT-VFLD-DATATYPE.            080729ma
+143100      DISPLAY REPORT-BUFFER.                                      080729ma
+143200      INITIALIZE REPORT-BUFFER.                                   080729ma
+143300      PERFORM VARYING XIDX FROM speclen BY -1                     080729ma
+143400        UNTIL XIDX < 2 OR FDF-PROCSPECS(FDFCNT)(XIDX:1) > " "     080729ma
+143500       CONTINUE                                                   080729ma
+143600      END-PERFORM                                                 080729ma
+143700      IF XIDX > 1                                                 080729ma
+143800       COMPUTE Y = XIDX * -1 END-COMPUTE                          080729ma
+143900       CALL INTRINSIC "FWRITE"                                    080729ma
+144000        USING \1\ FDF-PROCSPECS(FDFCNT) Y \0\.                    080729ma
+144100*---------------------------------------------------              080722ma
+144200 Get-ProcSpecs.                                                   080722ma
+144300*    Display "Get-ProcSpecs".                                     080729ma
+144400     Compute startx = 67 + ((Frdidx * 256) - 255 ).               080722ma
+144500     Compute endx = Startx + (Ascii-Value - 67).                  080722ma
+144600     Move Ascii-Value To speclen.                                 080722ma
+144700     Move "0" to nonblank-sw.                                     080722ma
+144800     Initialize FdfPtr xidx.                                      080722ma
+144900     Perform Varying xidx from Startx by 1                        080722ma
+145000       Until ( xidx > Endx )                                      080722ma
+145100      If ( frd-table(xidx:1) > Spaces )                           080722ma
+145200       move "1" to nonblank-sw                                    080722ma
+145300      End-If                                                      080722ma
+145400      If (nonblank-sw = "1") and                                  080722ma
+145500         ((frd-table(xidx:1) >= Spaces)                           080722ma
+145600           or ( frd-table(xidx:1)  = %15 )                        080722ma
+145700           or ( frd-table(xidx:1)  = %12 ))                       080722ma
+145800       Add 1 to fdfptr                                            080722ma
+145900       Move frd-table(xidx:1) to fdf-procspecs(FDFCNT)(fdfptr:1)  080722ma
+146000      End-If                                                      080722ma
+146100     End-Perform                                                  080722ma
+146200                                                                  080722ma
+146300     Compute speclen = (Ascii-Value - 69).                        080722ma
+146400*    Display fdf-procspecs(FDFCNT).                               080729ma
+146500*---------------------------------------------------              080729ma
+146600*Get-Field-XY.                                                    080729ma
+146700*    Display "Get-Field-XY".                                      080729ma
+146800*    MOVE "U" TO FDF-OBJ(FDFCNT).                                 080729ma
+146900*    Move FDF-Name(FDFCNT) To Field-Name.                         080729ma
+147000*    Move 0 To FDF-Row(FDFCNT) Field-Column.                      080729ma
+147100*    Move 1 To Field-Row.                                         080729ma
+147200*    Move 0 To i.                                                 080729ma
+147300*    Perform varying i from 16 by -1                              080729ma
+147400*      until i < 2 or Field-Name(i:1) > " "                       080729ma
+147500*     Continue                                                    080729ma
+147600*    End-Perform.                                                 080729ma
+147700*    Move i To F1.                                                080729ma
+147800*    IF F1 > 15 MOVE 15 TO F1.                                    080729ma
+147900*    Perform Varying F-idx from 1 by 1                            080729ma
+148000*      until (F-idx > F-xlen)                                     080729ma
+148100*         or (Field-Row = FDF-Row(FDFCNT))                        080729ma
+148200*     Display "F-Design(F-idx:1) [" F-Design(F-idx:1) "]"         080729ma
+148300*     If F-Design(F-idx:1) = %33                                  080729ma
+148400*      Perform Skip-Escape                                        080729ma
+148500*     End-If                                                      080729ma
+148600*     If F-Design(f-idx:1) = %16                                  080729ma
+148700*      Perform Skip-LineDraw                                      080729ma
+148800*     End-if                                                      080729ma
+148900*     If infield                                                  080729ma
+149000*      Compute i = Esc-len + 2 End-Compute                        080729ma
+149100*      Perform varying i from i by 1                              080729ma
+149200*        until i > F-xlen                                         080729ma
+149300*           or F-Design(i:1) = %33                                080729ma
+149400*           or F-Design(i:1) = ' '                                080729ma
+149500*           or F-Design(i:1) = '.'                                080729ma
+149600*       Continue                                                  080729ma
+149700*      display "FIND field: |" F-Design(i:1) "|"                  080729ma
+149800*      End-Perform                                                080729ma
+149900*      Compute Found-len = i - F-idx End-Compute                  080729ma
+150000*      if Found-len < 1 move 1 to found-len end-if                080729ma
+150100*      Display Found-len "=" f1                                   080729ma
+150200*      Display "F-Design(F-idx:Found-len)["                       080729ma
+150300*                        F-Design(F-idx:Found-len) "]"            080729ma
+150400*      Display "Field-Name(1:f1)         ["                       080729ma
+150500*                        Field-Name(1:f1) "]"                     080729ma
+150600*      If F-Design(F-idx:Found-len) = Field-Name(1:f1)            080729ma
+150700*       If Field-Column < 1 Add 1 To Field-Column End-If          080729ma
+150800*       Move Field-Column To FDF-Column(FDFCNT)                   080729ma
+150900*       Move Field-Row To FDF-Row(FDFCNT)                         080729ma
+151000*       Compute F-idx = F-idx + f1 + 4 end-compute                080729ma
+151100*       add f1 to Field-Column                                    080729ma
+151200*       Move "0" To Infield-sw                                    080729ma
+151300*      End-If                                                     080729ma
+151400*     End-If                                                      080729ma
+151500*     If (F-Design(f-idx:1) > %37)                                080729ma
+151600*       AND F-Design(F-idx - 1:1) <> %33                          080729ma
+151700*      Add 1 To Field-Column                                      080729ma
+151800*     End-If                                                      080729ma
+151900*     If (Field-Column > 80)                                      080729ma
+152000*     or (F-Design(f-idx:1) = %12)                                080729ma
+152100*      Add 1 To Field-Row                                         080729ma
+152200*      Move 0 To Field-Column                                     080729ma
+152300*     End-if                                                      080729ma
+152400*    End-Perform.                                                 080729ma
+152500*    Display "Field: [" FDF-Name(FDFCNT)                          080729ma
+152600*            "], col=[" FDF-Column(FDFCNT)                        080729ma
+152700*            "], row=[" FDF-Row(FDFCNT).                          080729ma
+152800*-----------------------------------------------------------      080729ma
+152900*Skip-Escape.                                                     080729ma
+153000*     Display "Skip-Escape".                                      080729ma
+153100*    Perform WITH TEST AFTER Varying Esc-len from F-idx by 1      080729ma
+153200*      until (Esc-len > F-xlen)                                   080729ma
+153300*         or (F-Design(Esc-len:1) >= %101 and                     080729ma
+153400*             F-Design(Esc-len:1) <= %132)                        080729ma
+153500*         or (F-Design(Esc-len:1) = "]" or "[")                   080729ma
+153600*         or (F-Design(Esc-len:1) = %12)                          080729ma
+153700*         or ((Esc-len + Field-Column) > 80)                      080729ma
+153800*                                                                 080729ma
+153900*     If (F-Design(Esc-len:1) = "[")                              080729ma
+154000*      Move "1" to infield-sw                                     080729ma
+154100*     End-If                                                      080729ma
+154200*     If (F-Design(Esc-len:1) = "]")                              080729ma
+154300*      Move "0" to infield-sw                                     080729ma
+154400*     End-If                                                      080729ma
+154500*    End-Perform.                                                 080729ma
+154600*    add Esc-len to F-idx.                                        080729ma
+154700*-----------------------------------------------------------      080729ma
+154800*Skip-LineDraw.                                                   080729ma
+154900*    Display "Skip-LineDraw".                                     080729ma
+155000*    Initialize ld-len.                                           080729ma
+155100*    Perform Varying ld-len from F-idx by 1                       080729ma
+155200*      until (ld-len > F-xlen)                                    080729ma
+155300*         or ((ld-len + Field-Column) > 80)                       080729ma
+155400*         or (F-Design(ld-len:1) = %17)                           080729ma
+155500*         or (F-Design(ld-len:1) = %12)                           080729ma
+155600*         or (F-Design(ld-len:1) = %15)                           080729ma
+155700*     Continue                                                    080729ma
+155800*    End-Perform.                                                 080729ma
+155900*    add ld-len to F-idx.                                         080729ma
+156000*-----------------------------------------------------------      080722ma
+156100 GET-ROWS.                                                        080722ma
+156200*    Display "GET-ROWS".                                          080729ma
+156300* //                                                              080729ma
+156400*    The screen image is processed 1 character at a time. As each 080729ma
+156500*    character is processed 1 is added to the column value.       080729ma
+156600*    In this paragraph F-idx is used to point to 1 character.     080729ma
+156700*                                                                 080729ma
+156800*    When terminal commands are incountered the appropriate value 080729ma
+156900*    will be subtracted from the column value, because commands   080729ma
+157000*    do not use any space on the screen.                          080729ma
+157100*    When CR/LF is incountered or the column value reaches 80,    080729ma
+157200*    then 1 is added to the row value, and the column value is    080729ma
+157300*    set to zero.                                                 080729ma
+157400*                                                                 080729ma
+157500*    Maximum of 32 rows, and 80 columns.                          080729ma
+157600*                                                                 080729ma
+157700* NOTE: The V/Plus message window, is inserted into the           080729ma
+157800*       screen based on the forms file window position setting.   080729ma
+157900*                                                                 080729ma
+158000*    1.Terminal commands supported in this paragraph:             080729ma
+158100*    2.ESC [  Start of a data field                               080729ma
+158200*    3.ESC ]  End of a data field                                 080729ma
+158300*    4.ESC &d < and one of the following upper case characters >  080729ma
+158400*                                                                 080729ma
+158500*      CHAR Description                        V/Plus Equivalence 080729ma
+158600*         @ End Enhancement                     NONE              080729ma
+158700*         A Blink                               B                 080729ma
+158800*         B Inverse                             I                 080729ma
+158900*         C Blink, Inverse                      BI                080729ma
+159000*         D Underline                           U                 080729ma
+159100*         E Blink, Underline                    BU                080729ma
+159200*         F Inverse, Underline                  IU                080729ma
+159300*         G Blink, Inverse, Underline           BIU               080729ma
+159400*         H HalfBright                          H                 080729ma
+159500*         I Blink, Half Bright                  BH                080729ma
+159600*         J Inverse, Half Bright                IH                080729ma
+159700*         K Blink, Inverse, Half Bright         BIH               080729ma
+159800*         L Underline, Half Bright              UH                080729ma
+159900*         M Blink, Underine, HBright            BUH               080729ma
+160000*         N Inverse, Underline, HBright         IUH               080729ma
+160100*         O Blink, Inverse, Underline, HBright  BIUH              080729ma
+160200*         S Secure Field {Newer terminals HP700/XX}               080729ma
+160300*                                                                 080729ma
+160400*    5. Ascii decimal value 14; Start line drawing character set. 080729ma
+160500*    6. Ascii decimal value 15; End line drawing character set.   080729ma
+160600*                                                                 080729ma
+160700                                                                  080729ma
+160800     Initialize ALL-ROWS.                                         080722ma
+160900     MOVE 32 TO ROWMAX.                                           080729ma
+161000     MOVE 1  TO ROWCNT ROWSTART.                                  080722ma
+161100* Check if window position is before all rows.                    080729ma
+161200     IF FFMSTR-WIN-POS = 0                                        080729ma
+161300      PERFORM ADD-OBJ-SCRNMSG                                     080722ma
+161400      ADD 1 TO ROWCNT                                             080722ma
+161500     END-IF                                                       080722ma
+161600* Start iterations through screen image                           080729ma
+161700     Perform Varying F-idx from 1 by 1                            080722ma
+161800       until (F-idx > F-xlen)                                     080722ma
+161900          or (ROWCNT > 39)                                        080729ma
+162000      ADD 1 TO ROW-COLUMN                                         080729ma
+162100* Check for end of line conditions                                080729ma
+162200      IF ((F-Design(F-idx:1) = %15)                               080722ma
+162300          AND (F-Design(F-idx + 1:1) = %12))                      080722ma
+162400        OR ROW-COLUMN > 80                                        080729ma
+162500*      DISPLAY "SAVING ROW"                                       080729ma
+162600       MOVE F-idx TO ROWEND                                       080722ma
+162700       COMPUTE ROWLEN =  ROWEND - ROWSTART END-COMPUTE            080722ma
+162800       IF ROWLEN < 1 MOVE 1 TO ROWLEN END-IF                      080722ma
+162900       MOVE F-Design(ROWSTART:ROWLEN) TO ROWSTR(ROWCNT)           080722ma
+163000       PERFORM GET-TEXT                                           080806ma
+163100       COMPUTE ROWSTART = F-idx + 2 END-COMPUTE                   080722ma
+163200       move 0 to ROW-COLUMN                                       080729ma
+163300*      DISPLAY "START NEW ROW"                                    080729ma
+163400       ADD 1 TO ROWCNT F-idx                                      080722ma
+163500* NEW ROW: Check window position                                  080729ma
+163600*      IF ROWCNT = FFMSTR-WIN-POS                                 080729ma
+163700*       PERFORM ADD-OBJ-SCRNMSG                                   080729ma
+163800*       ADD 1 TO ROWCNT                                           080729ma
+163900*      END-IF                                                     080729ma
+164000       INITIALIZE ROW-ENTRIES(ROWCNT)                             080722ma
+164100      END-IF                                                      080722ma
+164200* NOT AT END OF LINE                                              080729ma
+164300*                                                                 080729ma
+164400* Check for Escaped DATA FIELD                                    080729ma
+164500*                                                                 080729ma
+164600      IF (F-Design(F-idx:1) = %33)                                080722ma
+164700          AND (F-Design(F-idx + 1:1) = "[" OR "]")                080722ma
+164800       SUBTRACT 2 FROM ROW-COLUMN                                 080729ma
+164900       IF F-Design(F-idx + 1:1) = "["                             080729ma
+165000       AND F-Design(F-idx + 2:1) <> "."                           080729ma
+165100        PERFORM ADD-OBJ-DATAFIELD                                 080722ma
+165200       END-IF                                                     080722ma
+165300      ELSE                                                        080722ma
+165400       IF (F-Design(F-idx:1) = %33)                               080722ma
+165500        PERFORM GET-ESCAPE-SEQ-LENGTH                             080722ma
+165600        SUBTRACT ESC-LEN FROM ROW-COLUMN                          080729ma
+165700       END-IF                                                     080722ma
+165800      END-IF                                                      080722ma
+165900*                                                                 080729ma
+166000* Check for Line Drawing Character set                            080729ma
+166100*                                                                 080729ma
+166200      IF (F-Design(F-idx:1) = %17 OR %16)                         080722ma
+166300        SUBTRACT 1 FROM ROW-COLUMN                                080729ma
+166400      END-IF                                                      080722ma
+166500      IF (F-Design(F-idx:1) = %17)                                080729ma
+166600        PERFORM GET-Linedrawing                                   080729ma
+166700      END-IF                                                      080729ma
+166800*     DISPLAY "SHOW CHAR DATA"                                    080729ma
+166900      Move LOW-VALUE          to ASCII-BYTE1                      080722ma
+167000      Move  F-Design(F-idx:1) To ASCII-BYTE2                      080722ma
+167100*     Display "Chr [" F-Design(F-idx:1) "] idx=" f-idx            080729ma
+167200*      " row=" rowcnt  " col=" ROW-COLUMN " ASCII= " Ascii-Value  080729ma
+167300     End-Perform.                                                 080722ma
+167400* End iterations through screen image                             080729ma
+167500     If FFMSTR-WIN-POS > 1                                        080729ma
+167600      ADD 1 TO ROWCNT                                             080729ma
+167700      IF ROWCNT <= FFMSTR-WIN-POS                                 080729ma
+167800       Move FFMSTR-WIN-POS to ROWCNT                              080729ma
+167900      End-If                                                      080729ma
+168000      PERFORM ADD-OBJ-SCRNMSG.                                    080729ma
+168100*------------------------------------------------                 080806ma
+168200 GET-TEXT.                                                        080806ma
+168300     DISPLAY "GET-TEXT".                                          080806ma
+168400     INITIALIZE NEW-TEXT-AREA.                                    080806ma
+168500     MOVE "0"        TO END-ROW-SW.                               080806ma
+168600     MOVE "0"        TO NON-TEXT-SW.                              080806ma
+168700     MOVE 1          TO TEXT-COLUMN.                              080806ma
+168800     MOVE 1          TO TXPTR-START.                              080806ma
+168900     MOVE "@"        TO TEXT-ENH.                                 080806ma
+169000     If (FFMSTR-WIN-POS > 22) and (rowcnt = 2 or 3)               080806ma
+169100      Move "1" to End-Row-Sw                                      080806ma
+169110      Initialize INSPECT-IDX                                      080806ma
+169200      Inspect ROWSTR(ROWCNT) tallying INSPECT-IDX for all %33.    080806ma
+169300     If INSPECT-IDX >= 7 and rowcnt = 2                           080806ma
+169400       Move ROWSTR(ROWCNT)(5:8)   To Txkey1-1                     080806ma
+169500       Move ROWSTR(ROWCNT)(22:8)  To Txkey2-1                     080806ma
+169600       Move ROWSTR(ROWCNT)(39:8)  To Txkey3-1                     080806ma
+169700       Move ROWSTR(ROWCNT)(56:8)  To Txkey4-1                     080806ma
+169800       Move ROWSTR(ROWCNT)(82:8)  To Txkey5-1                     080806ma
+169900       Move ROWSTR(ROWCNT)(99:8)  To Txkey6-1                     080806ma
+170000       Move ROWSTR(ROWCNT)(116:8) To Txkey7-1                     080806ma
+170100       Move ROWSTR(ROWCNT)(133:8) To Txkey8-1.                    080806ma
+170300     If INSPECT-IDX >= 7 and rowcnt = 3                           080806ma
+170400       Move ROWSTR(ROWCNT)(5:8)   To Txkey1-2                     080806ma
+170500       Move ROWSTR(ROWCNT)(22:8)  To Txkey2-2                     080806ma
+170600       Move ROWSTR(ROWCNT)(39:8)  To Txkey3-2                     080806ma
+170700       Move ROWSTR(ROWCNT)(56:8)  To Txkey4-2                     080806ma
+170800       Move ROWSTR(ROWCNT)(82:8)  To Txkey5-2                     080806ma
+170900       Move ROWSTR(ROWCNT)(99:8)  To Txkey6-2                     080806ma
+171000       Move ROWSTR(ROWCNT)(116:8) To Txkey7-2                     080806ma
+171100       Move ROWSTR(ROWCNT)(133:8) To Txkey8-2.                    080806ma
+171200     If (FFMSTR-WIN-POS > 22) and (rowcnt = 2 or 3)               080806ma
+171310      String Txkey1-1 Txkey1-2                                    080806ma
+171400       Delimited by size into TEXT-BTNSTR(1)                      080806ma
+171410       End-String                                                 080806ma
+171500      String Txkey2-1 Txkey2-2                                    080806ma
+171600       Delimited by size into TEXT-BTNSTR(2)                      080806ma
+171610       End-String                                                 080806ma
+171710      String Txkey3-1 Txkey3-2                                    080806ma
+171800       Delimited by size into TEXT-BTNSTR(3)                      080806ma
+171810       End-String                                                 080806ma
+171910      String Txkey4-1 Txkey4-2                                    080806ma
+172000       Delimited by size into TEXT-BTNSTR(4)                      080806ma
+172010       End-String                                                 080806ma
+172110      String Txkey5-1 Txkey5-2                                    080806ma
+172200       Delimited by size into TEXT-BTNSTR(5)                      080806ma
+172210       End-String                                                 080806ma
+172310      String Txkey6-1 Txkey6-2                                    080806ma
+172400       Delimited by size into TEXT-BTNSTR(6)                      080806ma
+172410       End-String                                                 080806ma
+172510      String Txkey7-1 Txkey7-2                                    080806ma
+172600       Delimited by size into TEXT-BTNSTR(7)                      080806ma
+172610       End-String                                                 080806ma
+172710      String Txkey8-1 Txkey8-2                                    080806ma
+172800       Delimited by size into TEXT-BTNSTR(8)                      080806ma
+172810       End-String.                                                080806ma
+172910                                                                  080806ma
+173000     PERFORM VARYING TXPTR FROM TXPTR-START BY 1                  080806ma
+173100        UNTIL END-OF-ROW                                          080808ma
+173110           OR (TXPTR > ROWLEN)                                    080808ma
+173120           Or (text-char > 80)                                    080808ma
+173200      MOVE "0" TO NEW-TEXT-FOUND-SW                               080806ma
+173300      IF ((ROWSTR(ROWCNT)(TXPTR:1) = %15)                         080806ma
+173400          AND (ROWSTR(ROWCNT)(TXPTR + 1:1) = %12))                080806ma
+173410        OR (ROWSTR(ROWCNT)(TXPTR:1) = %0)                         080808ma
+173500        OR (TXPTR > ROWLEN)                                       080808ma
+173510        Or (text-char > 80)                                       080808ma
+173600       MOVE "1" TO END-ROW-SW                                     080806ma
+173700      END-IF                                                      080806ma
+173800      IF NOT END-OF-ROW                                           080806ma
+173810       IF  ( ROWSTR(ROWCNT)(TXPTR:1)     = %33 ) AND              080812MA
+173910           ( ROWSTR(ROWCNT)(TXPTR + 1:1) = %46 ) AND              080812MA
+173920           ( ROWSTR(ROWCNT)(TXPTR + 2:1) = %144)                  080812MA
+173930        MOVE ROWSTR(ROWCNT)(TXPTR + 3:1) TO TEXT-ENH              080812MA
+173940        ADD 4 TO TXPTR                                            080812MA
+173950        IF TXPTR > ROWLEN                                         080812MA
+173960         MOVE ROWLEN TO TXPTR                                     080812MA
+173970        END-IF                                                    080812MA
+173980       END-IF                                                     080812MA
+173990       IF (ROWSTR(ROWCNT)(TXPTR:1) = %33)                         080806ma
+174000           AND (ROWSTR(ROWCNT)(TXPTR + 1:1) = %133 )              080806ma
+174010        If text-char > 0                                          080808ma
+174110         MOVE "1" TO NEW-TEXT-FOUND-SW                            080808ma
+174121         MOVE TEXT-CHAR TO TEXT-FLDLEN(TEXT-FLDCNT)               080808ma
+174122         MOVE ROWCNT    TO TEXT-FLDROW(TEXT-FLDCNT)               080808ma
+174123         DISPLAY "TEXT: " TEXT-FLDCOL(TEXT-FLDCNT)                080808ma
+174124                          TEXT-FLDROW(TEXT-FLDCNT)                080808ma
+174125                     " "  TEXT-FLDENH(TEXT-FLDCNT)                080808ma
+174126         " [" TEXT-FLDSTR(TEXT-FLDCNT)(1:TEXT-CHAR) "]"           080808ma
+174127         MOVE 0 TO TEXT-CHAR                                      080808ma
+174128        End-If                                                    080808ma
+174130        MOVE "1" TO NON-TEXT-SW                                   080808ma
+174200        Add 2 To TxPtr                                            080808ma
+174300       END-IF                                                     080806ma
+174400       IF (ROWSTR(ROWCNT)(TXPTR:1) = %33)                         080806ma
+174500           AND (ROWSTR(ROWCNT)(TXPTR + 1:1) = %135 )              080806ma
+174600         MOVE "0" TO NON-TEXT-SW                                  080806ma
+174700         Add 2 To TxPtr                                           080806ma
+174800       END-IF                                                     080806ma
+174900       IF (ROWSTR(ROWCNT)(TXPTR:1) = %16)                         080806ma
+174910        If text-char > 0                                          080808ma
+175001         MOVE "1" TO NEW-TEXT-FOUND-SW                            080808ma
+175002         MOVE TEXT-CHAR TO TEXT-FLDLEN(TEXT-FLDCNT)               080808ma
+175003         MOVE ROWCNT    TO TEXT-FLDROW(TEXT-FLDCNT)               080808ma
+175004         DISPLAY "TEXT: " TEXT-FLDCOL(TEXT-FLDCNT)                080808ma
+175005                          TEXT-FLDROW(TEXT-FLDCNT)                080808ma
+175006                     " "  TEXT-FLDENH(TEXT-FLDCNT)                080808ma
+175007         " [" TEXT-FLDSTR(TEXT-FLDCNT)(1:TEXT-CHAR) "]"           080808ma
+175008         MOVE 0 TO TEXT-CHAR                                      080808ma
+175009        End-If                                                    080808ma
+175010        MOVE "1" TO NON-TEXT-SW                                   080808ma
+175100        Add 1 To TxPtr                                            080808ma
+175200       END-IF                                                     080806ma
+175300       IF (ROWSTR(ROWCNT)(TXPTR:1) = %17)                         080806ma
+175410        MOVE "0" TO NON-TEXT-SW                                   080808ma
+175500        Add 1 To TxPtr                                            080808ma
+175600       END-IF                                                     080806ma
+176600       IF (IN-TEXT-AREA) AND ( TEXT-CHAR > 0 ) AND                080806ma
+176700         ( (( ROWSTR(ROWCNT)(TXPTR:1)     = %40 ) AND             080808ma
+176800           ( ROWSTR(ROWCNT)(TXPTR + 1:1) = %40 ))                 080806ma
+176810          or                                                      080808ma
+176820           (( ROWSTR(ROWCNT)(TXPTR:1)     = %0 ) AND              080808ma
+176830           ( ROWSTR(ROWCNT)(TXPTR + 1:1) = %0 ))                  080808ma
+176840          or                                                      080808ma
+176850           ( text-char > 79 ) )                                   080808ma
+176900        MOVE "1" TO NEW-TEXT-FOUND-SW                             080806ma
+177000        MOVE TEXT-CHAR TO TEXT-FLDLEN(TEXT-FLDCNT)                080806ma
+177100        MOVE ROWCNT    TO TEXT-FLDROW(TEXT-FLDCNT)                080806ma
+177200        DISPLAY "TEXT: " TEXT-FLDCOL(TEXT-FLDCNT)                 080806ma
+177300                         TEXT-FLDROW(TEXT-FLDCNT)                 080806ma
+177400                    " "  TEXT-FLDENH(TEXT-FLDCNT)                 080806ma
+177500        " [" TEXT-FLDSTR(TEXT-FLDCNT)(1:TEXT-CHAR) "]"            080806ma
+177600        MOVE 0 TO TEXT-CHAR                                       080806ma
+177700       END-IF                                                     080806ma
+177800       IF (IN-TEXT-AREA) AND ( NOT NEW-TEXT-FOUND ) AND           080806ma
+177900          (((ROWSTR(ROWCNT)(TXPTR:1) > %37) AND TEXT-CHAR > 0)    080806ma
+178000           OR                                                     080806ma
+178100           ((ROWSTR(ROWCNT)(TXPTR:1) > %40) AND TEXT-CHAR = 0))   080806ma
+178200        ADD 1 TO TEXT-CHAR                                        080806ma
+178300        IF TEXT-CHAR = 1                                          080806ma
+178400         ADD 1 TO TEXT-FLDCNT                                     080806ma
+178500         MOVE TEXT-COLUMN TO TEXT-FLDCOL(TEXT-FLDCNT)             080806ma
+178600         MOVE ROWCNT      TO TEXT-FLDROW(TEXT-FLDCNT)             080806ma
+178700         MOVE TEXT-ENH    TO TEXT-FLDENH(TEXT-FLDCNT)             080806ma
+178800        END-IF                                                    080806ma
+178900        MOVE ROWSTR(ROWCNT)(TXPTR:1)                              080806ma
+179000          TO TEXT-FLDSTR(TEXT-FLDCNT)(TEXT-CHAR:1)                080806ma
+179100       END-IF                                                     080806ma
+179200       display "in=" NON-TEXT-SW "[" ROWSTR(ROWCNT)(TXPTR:1)      080806ma
+179210         "] txptr=" txptr                                         080806ma
+179300         " text column=" TEXT-COLUMN " text char=" TEXT-CHAR      080806ma
+179400       ADD 1 TO TEXT-COLUMN                                       080806ma
+179500      END-IF                                                      080806ma
+179600     END-PERFORM.                                                 080806ma
+179700     IF TEXT-CHAR > 0                                             080806ma
+179800      MOVE TEXT-CHAR TO TEXT-FLDLEN(TEXT-FLDCNT)                  080806ma
+179900      MOVE ROWCNT    TO TEXT-FLDROW(TEXT-FLDCNT)                  080806ma
+180000      DISPLAY "TEXT: " TEXT-FLDCOL(TEXT-FLDCNT)                   080806ma
+180100                       TEXT-FLDROW(TEXT-FLDCNT)                   080806ma
+180200                  " "  TEXT-FLDENH(TEXT-FLDCNT)                   080806ma
+180300         " [" TEXT-FLDSTR(TEXT-FLDCNT)(1:TEXT-CHAR) "]".          080806ma
+180400*------------------------------------------------                 080722ma
+180500 ADD-OBJ-DATAFIELD.                                               080729ma
+180600*    DISPLAY "ADD-OBJ-DATAFIELD".                                 080729ma
+180700     ADD 1 TO OBJCNT(ROWCNT).                                     080722ma
+180800     ADD 1 TO FORM-SCRNORD.                                       080722ma
+180900     COMPUTE ODF = F-idx + 2.                                     080722ma
+181000     PERFORM VARYING ODF FROM ODF BY 1                            080729ma
+181100       UNTIL ODF > F-xlen                                         080729ma
+181200            or F-Design(ODF:1) > ' '                              080729ma
+181300      CONTINUE                                                    080729ma
+181400     END-PERFORM.                                                 080729ma
+181500     PERFORM VARYING ODF FROM ODF BY 1                            080722ma
+181600       UNTIL ODF > F-xlen                                         080722ma
+181700            or F-Design(ODF:1) = %33                              080722ma
+181800            or F-Design(ODF:1) = ' '                              080722ma
+181900            or F-Design(ODF:1) = ']'                              080722ma
+182000            or F-Design(ODF:1) = '.'                              080729ma
+182100            or F-Design(ODF:1) = %0                               080729ma
+182200      CONTINUE                                                    080722ma
+182300     END-PERFORM.                                                 080722ma
+182400     COMPUTE ODFLEN = (ODF - (F-idx + 2)).                        080722ma
+182500     COMPUTE ODF = F-idx + 2.                                     080722ma
+182600     MOVE OBJCNT(ROWCNT) TO X.                                    080722ma
+182700     MOVE "DA"                 TO OBJ-TYPE(ROWCNT,X).             080722ma
+182800     MOVE F-Design(ODF:ODFLEN) TO OBJ-NAME(ROWCNT,X).             080722ma
+182900     MOVE FORM-SCRNORD         TO OBJ-SRNORD(ROWCNT,X).           080722ma
+183000     MOVE ROWCNT               TO OBJ-STRTROW(ROWCNT,X)           080729ma
+183100     COMPUTE OBJ-STRTCOL(ROWCNT,X) = ROW-COLUMN + 2.              080729ma
+183200     INITIALIZE OBJ-VALUE(ROWCNT,X) OBJ-FLDNUM(ROWCNT,X).         080729ma
+183300*------------------------------------------------                 080722ma
+183400 ADD-OBJ-SCRNMSG.                                                 080722ma
+183500     ADD 1 TO OBJCNT(ROWCNT).                                     080722ma
+183600     MOVE OBJCNT(ROWCNT) TO X.                                    080722ma
+183700     MOVE "MW"                 TO OBJ-TYPE(ROWCNT,X).             080722ma
+183800     MOVE "SCREEN-MSG"         TO OBJ-NAME(ROWCNT,X).             080722ma
+183900     MOVE 0                    TO OBJ-SRNORD(ROWCNT,X).           080722ma
+184000     MOVE ROWCNT               TO OBJ-STRTROW(ROWCNT,X)           080729ma
+184100     MOVE 1                    TO OBJ-STRTCOL(ROWCNT,X).          080729ma
+184200     INITIALIZE OBJ-VALUE(ROWCNT,X) OBJ-FLDNUM(ROWCNT,X) .        080722ma
+184300                                                                  080722ma
+184400*------------------------------------------------                 080729ma
+184500 ADD-OBJ-ENHANCEMENT.                                             080729ma
+184600     ADD 1 TO OBJCNT(ROWCNT).                                     080729ma
+184700     MOVE OBJCNT(ROWCNT) TO X.                                    080729ma
+184800     MOVE "EN"                 TO OBJ-TYPE(ROWCNT,X).             080729ma
+184900     MOVE "ENHANCEMENT"        TO OBJ-NAME(ROWCNT,X).             080729ma
+185000     MOVE 0                    TO OBJ-SRNORD(ROWCNT,X).           080729ma
+185100     MOVE ROWCNT               TO OBJ-STRTROW(ROWCNT,X)           080729ma
+185200     MOVE ROW-COLUMN TO OBJ-STRTCOL(ROWCNT,X).                    080729ma
+185300     PERFORM VARYING ENHIDX FROM 1 BY 1                           080729ma
+185400      UNTIL HPENH(ENHIDX) = PARSED-STRING(4:1)                    080729ma
+185500         OR ENHIDX > 17                                           080729ma
+185600      CONTINUE                                                    080729ma
+185700     END-PERFORM.                                                 080729ma
+185800     MOVE VPLUSENH(ENHIDX) TO OBJ-VALUE(ROWCNT,X)                 080729ma
+185900     INITIALIZE OBJ-FLDNUM(ROWCNT,X).                             080729ma
+186000*------------------------------------------------                 080729ma
+186100 ADD-OBJ-LINEDRAW.                                                080729ma
+186200     ADD 1 TO OBJCNT(ROWCNT).                                     080729ma
+186300     MOVE OBJCNT(ROWCNT) TO X.                                    080729ma
+186400     MOVE "LD"                 TO OBJ-TYPE(ROWCNT,X).             080729ma
+186500     MOVE "Line"               TO OBJ-NAME(ROWCNT,X).             080729ma
+186600     MOVE 0                    TO OBJ-SRNORD(ROWCNT,X).           080729ma
+186700     MOVE ROWCNT               TO OBJ-STRTROW(ROWCNT,X)           080729ma
+186800     MOVE ROW-COLUMN TO OBJ-STRTCOL(ROWCNT,X).                    080729ma
+186900     MOVE PARSED-STRING(1:ld-len) TO OBJ-VALUE(ROWCNT,X)          080729ma
+187000     INITIALIZE OBJ-FLDNUM(ROWCNT,X).                             080729ma
+187100*-----------------------------------------------------------      080722ma
+187200 GET-ESCAPE-SEQ-LENGTH.                                           080722ma
+187300*     Display "GET-ESCAPE-SEQ-LENGTH".                            080722ma
+187400*                                                                 080722ma
+187500* The octal value 101 thru 132 define the upper case alpha        080722ma
+187600* characters in the ASCII Collating Sequence.                     080722ma
+187700*                                                                 080722ma
+187800* All escape sequences sent to HP teminals are terminated         080722ma
+187900* with an upper case alpha character.                             080722ma
+188000*                                                                 080722ma
+188100     Perform Varying Esc-len from F-idx by 1                      080722ma
+188200       until (Esc-len > F-xlen)                                   080722ma
+188300          or (F-Design(Esc-len:1) >= %101 and                     080722ma
+188400              F-Design(Esc-len:1) <= %132)                        080722ma
+188500          or (F-Design(Esc-len:1) = "@" )                         080729ma
+188600          or (F-Design(Esc-len:1) = %15 AND                       080729ma
+188700              F-Design(Esc-len + 1:1) = %12 )                     080722ma
+188800      CONTINUE                                                    080722ma
+188900     End-Perform.                                                 080722ma
+189000     COMPUTE ESC-LEN = (ESC-LEN - F-IDX) + 1.                     080729ma
+189100     MOVE F-Design(F-idx:Esc-len) TO PARSED-STRING.               080729ma
+189200     INSPECT PARSED-STRING REPLACING ALL %33 BY ".".              080729ma
+189300*    Display "ESCAPE-SEQ [" PARSED-STRING(1:Esc-len) "]".         080729ma
+189400     IF ESC-LEN = 4                                               080729ma
+189500      IF PARSED-STRING(2:2) = "&d"                                080729ma
+189600       PERFORM ADD-OBJ-ENHANCEMENT.                               080729ma
+189700                                                                  080729ma
+189800*-----------------------------------------------------------      080729ma
+189900 GET-Linedrawing.                                                 080729ma
+190000*     Display "GET-Linedrawing".                                  080729ma
+190100*                                                                 080729ma
+190200* The octal value 16 begins the line drawing character set.       080729ma
+190300* The octal value 17 ends the line drawing character set.         080729ma
+190400                                                                  080729ma
+190500     Perform Varying ld-len from F-idx by 1                       080729ma
+190600       until (ld-len > F-xlen)                                    080729ma
+190700          or (F-Design(ld-len:1) = %17)                           080729ma
+190800          or (F-Design(ld-len:1) = %15 AND                        080729ma
+190900              F-Design(ld-len + 1:1) = %12 )                      080729ma
+191000      CONTINUE                                                    080729ma
+191100     End-Perform.                                                 080729ma
+191200     COMPUTE ld-len = (ld-len - F-IDX) + 1.                       080729ma
+191300     MOVE F-Design(F-idx:ld-len) TO PARSED-STRING.                080729ma
+191400     INSPECT PARSED-STRING REPLACING ALL %16 BY ".".              080729ma
+191500     INSPECT PARSED-STRING REPLACING ALL %17 BY ".".              080729ma
+191600     Display "Line Draw [" PARSED-STRING(1:ld-len) "]".           080729ma
+191700     IF ld-len > 0                                                080729ma
+191800       PERFORM ADD-OBJ-LINEDRAW.                                  080729ma
+191900                                                                  080729ma
+192000*---------------------------------------------------------------- 080729ma
+192100 GET-T-RECORDS.                                                   080729ma
+192200     DISPLAY "GET-T-RECORDS".                                     080729ma
+192300*                                                                 080729ma
+192400* L O A D    "T"    R E C O R D S                                 080729ma
+192500*                                                                 080729ma
+192600     INITIALIZE T-RECORD.                                         080729ma
+192700     MOVE "0" TO VALID-T-SW.                                      080729ma
+192800     Perform Varying Frdidx From 1 By 1                           080729ma
+192900       Until (VALID-T) OR ( Frdidx > Frdcnt )                     080729ma
+193000      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080729ma
+193100      If (Frdstr(Frdidx)(4:deslen) = Design-name(1:deslen))       080729ma
+193200          And (Frdstr(Frdidx)(3:1) = "T")                         080729ma
+193300          And ( Ascii-Value > 0 )                                 080729ma
+193400       Compute T-STRT = ((Frdidx * 256) - 255 ) End-compute       080729ma
+193500       Compute T-END  = T-STRT + (Ascii-Value - 1) End-Compute    080729ma
+193600       Move Ascii-Value To T-LEN                                  080729ma
+193700       Move frd-table(T-STRT:T-LEN) to T-RECORD                   080729ma
+193800       MOVE T-HEADER TO T-HEADER-FORMAT                           080729ma
+193900       IF (( THF-LENGTH = T-LEN)) AND                             080729ma
+194000          (((( THF-CNT1 * 62) + 40) = THF-LENGTH )                080729ma
+194100           OR ((( THF-CNT2 * 62) + 40) = THF-LENGTH ))            080729ma
+194200        MOVE "1" TO VALID-T-SW                                    080729ma
+194300        PERFORM VARYING TIDX FROM 1 BY 1                          080729ma
+194400          UNTIL TIDX > THF-CNT1                                   080729ma
+194500         MOVE T-FIELD(TIDX) TO T-FIELD-FORMAT                     080729ma
+194600         ADD 1 TO TFF-ROW                                         080729ma
+194700         ADD 1 TO TFF-COL                                         080729ma
+194800         MOVE T-FIELD-FORMAT TO T-FIELD(TIDX)                     080729ma
+194900         MOVE %0 TO ASCII-BYTE1                                   080806ma
+195000         MOVE TFF-A TO ASCII-BYTE2                                080806ma
+195100         DISPLAY TFF-FLD1 " " TFF-ENH " " TFF-ESCVAL " "          080806ma
+195200                 Ascii-Value " " TFF-FLDNUM " " TFF-SCRNODR       080806ma
+195300                 " " TFF-LEN " " TFF-ROW " " TFF-COL              080806ma
+195400        END-PERFORM                                               080729ma
+195500       END-IF                                                     080729ma
+195600      END-IF                                                      080729ma
+195700     END-PERFORM.                                                 080729ma
+195800*---------------------------------------------------------------- 080729ma
+195900 GET-D-RECORDS.                                                   080729ma
+196000     DISPLAY "GET-D-RECORDS".                                     080729ma
+196100*                                                                 080729ma
+196200* L O A D    "D"    R E C O R D S                                 080729ma
+196300*                                                                 080729ma
+196400     INITIALIZE D-RECORD DIDX D-LEN D-STRT D-END.                 080806ma
+196500     MOVE "0" TO VALID-D-SW.                                      080729ma
+196600     Perform Varying Frdidx From 1 By 1                           080729ma
+196700       Until ( Frdidx > Frdcnt )                                  080729ma
+196800      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080729ma
+196900      If (Frdstr(Frdidx)(3:1) = "D") AND (Ascii-Value > 0)        080806ma
+197000       Compute D-STRT = ((Frdidx * 256) - 255 ) End-compute       080729ma
+197100       Compute D-END  = D-STRT + (Ascii-Value - 1) End-Compute    080729ma
+197200       Move Ascii-Value To D-LEN                                  080729ma
+197300       ADD 1 TO DIDX                                              080729ma
+197400       Move frd-table(D-STRT:D-LEN) to D-RECORD-ENTRIES(DIDX)     080729ma
+197500       MOVE D-HEADER(DIDX) TO D-HEADER-FORMAT                     080729ma
+197600       IF DHF-LENGTH = 102                                        080729ma
+197700        MOVE "1" TO VALID-D-SW                                    080729ma
+197800        MOVE D-FIELD(DIDX) TO D-FIELD-FORMAT                      080729ma
+197900        INITIALIZE NUM1 NUM2 NUMDEC NUMERR                        080729ma
+198000        MOVE DFF-LEN TO NUM1                                      080729ma
+198100        CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR               080729ma
+198200        DISPLAY "S A V E    F I E L D:  "                         080729ma
+198300          DFF-FLD1 " " DFF-LEN " " DFF-DTYPE                      080729ma
+198400          " Init [" DFF-INIT(1:NUM2) "]"                          080729ma
+198500       END-IF                                                     080729ma
+198600      END-IF                                                      080729ma
+198700     END-PERFORM.                                                 080729ma
+198800*---------------------------------------------------------------- 080806ma
+198900 GET-G-RECORDS.                                                   080806ma
+199000     DISPLAY "GET-G-RECORDS".                                     080806ma
+199100*                                                                 080806ma
+199200* L O A D    "G"    R E C O R D S                                 080806ma
+199300*                                                                 080806ma
+199400     INITIALIZE G-RECORD.                                         080806ma
+199500     MOVE "0" TO VALID-G-SW.                                      080806ma
+199600     Perform Varying Frdidx From 1 By 1                           080806ma
+199700       Until ( Frdidx > Frdcnt )                                  080806ma
+199800      Move Frdstr(Frdidx)(1:2) To Ascii-Character                 080806ma
+199900      If (Frdstr(Frdidx)(3:1) = "G")                              080806ma
+200000       Compute G-STRT = ((Frdidx * 256) - 255 ) End-compute       080806ma
+200100       Compute G-END  = G-STRT + (Ascii-Value - 1) End-Compute    080806ma
+200200       Move Ascii-Value To G-LEN                                  080806ma
+200300       ADD 1 TO GIDX                                              080806ma
+200400       Move frd-table(G-STRT:G-LEN) to G-RECORD-ENTRIES(GIDX)     080806ma
+200500       MOVE G-HEADER(GIDX) TO G-HEADER-FORMAT                     080806ma
+200600       IF GHF-LENGTH < 1536                                       080806ma
+200700        MOVE "1" TO VALID-G-SW                                    080806ma
+200800        MOVE G-FIELD(GIDX) TO G-FIELD-FORMAT                      080806ma
+200900        INITIALIZE NUM1 NUM2 NUMDEC NUMERR                        080806ma
+201000        MOVE GFF-LEN TO NUM1                                      080806ma
+201100        CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR               080806ma
+201200        IF NUM2 < 1                                               080806ma
+201300         MOVE 1 TO NUM2                                           080806ma
+201400        END-IF                                                    080806ma
+201500        IF NUM2 > 62                                              080806ma
+201600         MOVE 62 TO NUM2                                          080806ma
+201700        END-IF                                                    080806ma
+201800        DISPLAY "DATA FIELD:  "                                   080806ma
+201900          GFF-FORM " " GFF-FIELD " " GFF-NUM GFF-LEN              080806ma
+202000          GFF-ENH " " GFF-FTYPE " " GFF-DTYPE                     080806ma
+202100*         " Init [" GFF-INIT(1:NUM2) "]"                          080806ma
+202200*       Move "0" to nonblank-sw                                   080806ma
+202300*       Initialize SPECLEN xidx                                   080806ma
+202400*       Perform Varying xidx from 1280 by -1                      080806ma
+202500*         Until ( xidx < 2 ) OR (nonblank-sw =  "1")              080806ma
+202600*        If ( GFF-PROCSPECS(xidx:1) > Spaces )                    080806ma
+202700*         move "1" to nonblank-sw                                 080806ma
+202800*         MOVE XIDX TO SPECLEN                                    080806ma
+202900*        End-If                                                   080806ma
+203000*       End-Perform                                               080806ma
+203100*       IF NONBLANK                                               080806ma
+203200*        DISPLAY                                                  080806ma
+203300*   "*** P R O C E S S I N G    S P E C I F I C A T I O N S ***"  080806ma
+203400*        DISPLAY GFF-PROCSPECS(1:SPECLEN)                         080806ma
+203500*       END-IF                                                    080806ma
+203600       END-IF                                                     080806ma
+203700      END-IF                                                      080806ma
+203800     END-PERFORM.                                                 080806ma
+203900     MOVE GIDX TO GCNT.                                           080806ma
+204000*----------------------------------------------------             080806ma
+204100 CHKALL-G-STRINGS.                                                080806ma
+204200     DISPLAY "CHKALL-G-STRINGS".                                  080806ma
+204300     MOVE "0" TO MATCH-SW.                                        080806ma
+204400     PERFORM VARYING GIDX FROM 1 BY 1                             080806ma
+204500       UNTIL MATCH-FOUND OR GIDX > GCNT                           080806ma
+204600      MOVE G-HEADER(GIDX) TO G-HEADER-FORMAT                      080806ma
+204700      MOVE G-FIELD(GIDX)  TO G-FIELD-FORMAT                       080806ma
+204800      INITIALIZE NUM1 NUM2 NUMDEC NUMERR                          080806ma
+204900      MOVE GFF-LEN TO NUM1                                        080806ma
+205000      CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR                 080806ma
+205100      MOVE FUNCTION UPPER-CASE(FDF-NAME(FDFCNT)) TO NEXT-STRING   080806ma
+205200      MOVE FUNCTION UPPER-CASE(GFF-FIELD) TO PARSED-STRING        080806ma
+205300      IF  NEXT-STRING = PARSED-STRING AND                         080806ma
+205400          FDF-LEN(FDFCNT)  = NUM2     AND                         080806ma
+205500          FDF-ENH(FDFCNT)  = GFF-ENH                              080806ma
+205600       DISPLAY "MATCH FOUND:  "                                   080806ma
+205700          GFF-FORM " " GFF-FIELD " " GFF-NUM GFF-LEN              080806ma
+205800          GFF-ENH " " GFF-FTYPE " " GFF-DTYPE                     080806ma
+205900       MOVE "1" TO MATCH-SW                                       080806ma
+206000      END-IF                                                      080806ma
+206100     END-PERFORM.                                                 080806ma

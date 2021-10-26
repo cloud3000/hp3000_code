@@ -1,0 +1,143 @@
+000100$CONTROL LIST,DYNAMIC,BOUNDS, POST85, RLFILE                              
+001110 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. MIG010.                                                      
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400 DATE-COMPILED.                                                           
+001500*                     COPYRIGHT 2007                                      
+001600*            J3K Solutions All rights reserved.                           
+001700*            Turbo Image Migration PREP System                            
+001800*                                                                         
+001900*                  IMAGE ERROR SCREEN                                     
+002000*                                                                         
+002100 ENVIRONMENT DIVISION.                                                    
+002300 CONFIGURATION SECTION.                                                   
+002400 SOURCE-COMPUTER. HP3000.                                                 
+002500 OBJECT-COMPUTER. HP3000.                                                 
+002600 SPECIAL-NAMES.                                                           
+002700     CONDITION-CODE IS CC.                                                
+002800                                                                          
+002900 INPUT-OUTPUT SECTION.                                                    
+003000 FILE-CONTROL.                                                            
+003100     SELECT FSCREEN    ASSIGN TO "FSCREEN".                               
+003200                                                                          
+003300$PAGE "FILE SECTION SECTION"                                              
+003400 DATA DIVISION.                                                           
+003500*****************************************************************         
+003600 FILE SECTION.                                                            
+003700*****************************************************************         
+003800                                                                          
+003900 FD  FSCREEN.                                                             
+004000 01  SCREEN-LINE       PIC X(80).                                         
+004100                                                                          
+004200                                                                          
+004300$PAGE "WORKING STORAGE SECTION"                                           
+004400*****************************************************************         
+004500 WORKING-STORAGE SECTION.                                                 
+004600*****************************************************************         
+004700                                                                          
+004800     COPY SWITCHES OF J3KLIB.                                             
+004900 01  I                     PIC S9(4) COMP.                                
+005000 01  N                     PIC S9(4) COMP.                                
+005100 01  ANSWER                PIC X.                                         
+005200                                                                          
+005300 01  X80                   PIC X(80) VALUE SPACES.                        
+005400 01  CLEAR-SCREEN.                                                        
+005500     02  FILLER            PIC X    VALUE %33.                            
+005600     02  FILLER            PIC X    VALUE "X".                            
+005700     02  FILLER            PIC X    VALUE %33.                            
+005800     02  FILLER            PIC X    VALUE "h".                            
+005900     02  FILLER            PIC X    VALUE %33.                            
+006000     02  FILLER            PIC X    VALUE "J".                            
+006100     02  FILLER            PIC X    VALUE %33.                            
+006200     02  FILLER            PIC X(3) VALUE "&j@".                          
+006300     02  FILLER            PIC X    VALUE %15.                            
+006400     02  FILLER            PIC X    VALUE %12.                            
+006500     02  FILLER            PIC X    VALUE %33.                            
+006600     02  FILLER            PIC X    VALUE "h".                            
+006700                                                                          
+006800*****************************************************************         
+006900$PAGE "EXTERNAL WORKING STORAGE"                                          
+007000                                                                          
+007100     COPY SWITCHES OF J3KLIB.                                             
+007210     COPY FLOWEX   OF J3KLIB.                                             
+007230     COPY APPCOM   OF J3KLIB.                                             
+007240     COPY AMSLINK OF J3KLIB.                                              
+007250$PAGE "ENTRY SECTION"                                                     
+007400  COPY AMSPROC OF J3KLIB.                                                 
+007410        .                                                                 
+007500*****************************************************************         
+007600 0000-ENTRY SECTION.                                                      
+007700*****************************************************************         
+007800                                                                          
+007900 0000-BEGIN.                                                              
+008100     CALL "VSTERMOFF" USING SCREEN-COMMON.                                
+008200     MOVE SPACES TO X80.                                                  
+008300     STRING "FILE FSCREEN=*SCREENX" %15                                   
+008400     DELIMITED BY SIZE INTO X80.                                          
+008500     CALL INTRINSIC "COMMAND" USING X80 N I.                              
+008600     OPEN OUTPUT FSCREEN.                                                 
+008700     MOVE CLEAR-SCREEN TO SCREEN-LINE.                                    
+008800     WRITE SCREEN-LINE.                                                   
+008900     IF LAST-SCREEN = "SECURITY"                                          
+009000        MOVE "INITIAL OPENS" TO LAST-SCREEN.                              
+009100     IF THIS-SCREEN = "IMAGEERROR     "                                   
+009200         PERFORM 1000-IMAGE-ERRORS.                                       
+009300     IF THIS-SCREEN = "PROGERROR      "                                   
+009400         DISPLAY "*** PROGRAM ERROR OCCURRED IN " LAST-SCREEN.            
+009500     IF THIS-SCREEN = "FILEERROR      "                                   
+009600         DISPLAY "*** FILE ERROR OCCURRED IN " LAST-SCREEN.               
+009700     IF THIS-SCREEN = "VIEWERROR      "                                   
+009800         DISPLAY "*** VIEW ERROR OCCURRED IN " LAST-SCREEN.               
+009900     MOVE SPACES TO SCREEN-LINE.                                          
+010000     WRITE SCREEN-LINE.                                                   
+010100     WRITE SCREEN-LINE.                                                   
+010200     WRITE SCREEN-LINE.                                                   
+010300     WRITE SCREEN-LINE.                                                   
+010400     WRITE SCREEN-LINE.                                                   
+010500     MOVE LOW-VALUES TO SCREEN-LINE.                                      
+010600     STRING " PRESS  " QUOTE "RETURN" QUOTE "  TO CONTINUE."              
+010700      DELIMITED BY SIZE INTO SCREEN-LINE.                                 
+010800     WRITE SCREEN-LINE.                                                   
+010900     CLOSE FSCREEN.                                                       
+011000     OPEN INPUT FSCREEN.                                                  
+011100     READ FSCREEN INTO ANSWER                                             
+011200      AT END DISPLAY "EOF ON SCREEN FILE".                                
+011300     MOVE "TERMINATE" TO NEXT-SCREEN.                                     
+011400     CLOSE FSCREEN.                                                       
+011500                                                                          
+011600 0999-EXIT.                                                               
+011700     GO TO 9900-RETURN.                                                   
+011800                                                                          
+011900*---------------------------------------------------------------          
+012000 1000-IMAGE-ERRORS.                                                       
+012100                                                                          
+012200     MOVE SPACES TO SCREEN-LINE.                                          
+012300     STRING "*** IMAGE ERROR OCCURRED IN "                                
+012400            QUOTE LAST-SCREEN QUOTE  " ***"                               
+012500     DELIMITED BY SIZE INTO SCREEN-LINE.                                  
+012600     WRITE SCREEN-LINE.                                                   
+012700*------>> Call DBERROR to retrieve the image error text.                  
+012800     INITIALIZE X80 N.                                                    
+012900     CALL "DBEXPLAIN"   USING STATUS-AREA.                                
+013000     CALL "DBERROR"   USING STATUS-AREA X80 N.                            
+013100     MOVE SPACES TO SCREEN-LINE.                                          
+013200     MOVE X80 TO SCREEN-LINE(2:78).                                       
+013300     WRITE SCREEN-LINE AFTER ADVANCING 2.                                 
+013400*------>> From time to time the call to "DBCALL" will cause a             
+013500*         PROCESS ABORT by reason of a BOUNDS VIOLATION.                  
+013600*         Why is not yet known,                                           
+013700*                                                                         
+013800*         Hewlett Packard DOES NOT SUPPORT THE DBCALL INTRINSIC.          
+013900*                                                                         
+014000     INITIALIZE X80 N.                                                    
+014100     CALL "DBCALL"    USING STATUS-AREA X80 N.                            
+014200     MOVE SPACES TO SCREEN-LINE.                                          
+014300     MOVE X80 TO SCREEN-LINE(2:78).                                       
+014400     WRITE SCREEN-LINE.                                                   
+014600$PAGE "END OF PROGRAM"                                                    
+014700*****************************************************************         
+014800 9900-END-PROGRAM SECTION.                                                
+014900*****************************************************************         
+015000                                                                          
+015100 9900-RETURN.                                                             
+015300     GOBACK.                                                              

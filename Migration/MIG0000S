@@ -1,0 +1,486 @@
+001000$TITLE "MIG0000 - MAIN DRIVER PROGRAM"                                    
+001100$CONTROL LIST,BOUNDS                                                      
+001200 IDENTIFICATION DIVISION.                                                 
+001300 PROGRAM-ID. MIG0000.                                                     
+001400 AUTHOR.     MICHAEL ANDERSON.                                            
+001500 DATE-COMPILED.                                                           
+001600*                     COPYRIGHT 2007                                      
+001700*            J3K Solutions All rights reserved.                           
+001800*            Turbo Image Migration PREP System                            
+001900*                                                                         
+002000*                   MAIN DRIVER PROGRAM                                   
+002100*                                                                         
+002200 ENVIRONMENT DIVISION.                                                    
+002300 CONFIGURATION SECTION.                                                   
+002400 SOURCE-COMPUTER. HP3000.                                                 
+002500*SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+002600 OBJECT-COMPUTER. HP3000.                                                 
+002700 SPECIAL-NAMES.                                                           
+002800     CONDITION-CODE IS CC.                                                
+002900$PAGE "MAIN DRIVER - WORKING STORAGE SECTION"                             
+003000 DATA DIVISION.                                                           
+003100*****************************************************************         
+003200 WORKING-STORAGE SECTION.                                                 
+003300*****************************************************************         
+003400     COPY APPCOM    OF J3KLIB.                                            
+003500     COPY FLOWEX    OF J3KLIB.                                            
+003600     COPY AMSCOMM   OF J3KLIB.                                            
+003700*----------------------------------------------------------------*        
+003800 01  THIS-PROG           PIC X(36) VALUE "MIG0000.PUB.J3K".               
+003900 01  FORMS-FILE          PIC X(36) VALUE "MIGFORMF.PUB.J3K".              
+004000 01  FIRST-ENTRY        PIC X(15) VALUE "J3K_SECURITY  ".                 
+004100*----------------------------------------------------------------*        
+004200                                                                          
+004300 01 WHO-INTRINSIC-PARMS.                                                  
+004400    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                            
+004500    15  WHO-MODE               PIC S9999 COMP.                            
+004600    15  WHO-CAPABILITY         PIC S9(6) COMP.                            
+004700    15  WHO-LATTR              PIC S9(6) COMP.                            
+004800    15  WHO-USERN.                                                        
+004900        20 BYTE1-6             PIC X(6).                                  
+005000        20 SCHOOL-NUMBER       PIC XX.                                    
+005100    15  WHO-GROUPN             PIC X(8).                                  
+005200    15  WHO-ACCTN              PIC X(8).                                  
+005300    15  WHO-HOMEN              PIC X(8).                                  
+005400 01  TDAY                PIC X(8)  VALUE SPACES.                          
+005500 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                          
+005600 01  TDOW                PIC S9(4) COMP VALUE 0.                          
+005700 01  DDAY                PIC X(8)  VALUE SPACES.                          
+005800 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                          
+005900 01  DDOW                PIC S9(4) COMP VALUE 0.                          
+006000 01  DCNT                PIC S9(4) COMP VALUE 0.                          
+006100                                                                          
+006200 01  COMMAND-ERR-FLG             PIC S9(4) COMP VALUE ZERO.               
+006300 01  COMMAND-PARM-ERROR          PIC S9(4) COMP VALUE ZERO.               
+006400 01  FORM-REC                    PIC X(80) VALUE SPACES.                  
+006500 01  I                     PIC S9(4) COMP Value 0.                        
+006600 01  N                     PIC S9(4) COMP Value 0.                        
+006700 01  DB                    PIC S9(4) COMP VALUE 0.                        
+006800 01  e1                    PIC S9(4) COMP Value 0.                        
+006900 01  e2                    PIC S9(4) COMP Value 0.                        
+007000 01  e3                    PIC S9(4) COMP Value 0.                        
+007100 01  e4                    PIC S9(4) COMP Value 0.                        
+007200 01  Z2                    PIC S9(4) COMP Value 0.                        
+007300 01  COMMAND-LINE          PIC X(72).                                     
+007400 01  VSCMD                 PIC X(72).                                     
+007500 01  CR                    PIC X VALUE %15.                               
+007600 01  OLD-FLOW-COMMON       PIC X(48) VALUE SPACES.                        
+007700 01  OLD-RETURN-INFO       PIC X(84) VALUE SPACES.                        
+007800 01  FLOWJCW               PIC X(8) VALUE "FLOWTEST".                     
+007900 01  FLOWJCW-VALUE         PIC S9(4) COMP VALUE 0.                        
+008000     88  FLOWTEST          VALUE 1.                                       
+008100 01  DECIMAL-VALUE         PIC S9(4) COMP VALUE ZERO.                     
+008200 01  BINARY-VALUE          VALUE ZERO.                                    
+008300     05 BIT-ZERO           PIC  9.                                        
+008400     05 BIT OCCURS 15 TIMES PIC 9.                                        
+008500$PAGE "MAIN SECTION"                                                      
+008600 PROCEDURE DIVISION.                                                      
+008700******************************************************************        
+008800 MIG0000-MAIN SECTION 00.                                                 
+008900******************************************************************        
+009000 0000-BEGIN.                                                              
+009100     INITIALIZE                                                           
+009200     COPY AMSITEMS OF J3KLIB.                                             
+009300     APPL-COMMON.                                                         
+009400     CALL INTRINSIC "FINDJCW" USING FLOWJCW FLOWJCW-VALUE I.              
+009500     MOVE SPACES TO LAST-SCREEN THIS-SCREEN.                              
+009600     MOVE SPACES TO SCREEN-COMAREA.                                       
+009700     MOVE "STARTUP" TO NEXT-SCREEN.                                       
+009800     MOVE "LAST-DBN-ENTRY" TO DBNAME(1).                                  
+009900     Display "Turbo Image/SQL Meta Data Mapper c.7.3".                    
+010000     DISPLAY "-------------------------------------------------".         
+010100     DISPLAY "***              (TIMDM)                      ***".         
+010200     DISPLAY "***    Turbo Image/SQL Meta Data Mapper       ***".         
+010300     DISPLAY "***                                           ***".         
+010400     DISPLAY "-------------------------------------------------".         
+010500     Display "Copyright 2007 J3K Solutions".                              
+010600     CALL   INTRINSIC "WHO"                                               
+010700     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN                   
+010800            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.               
+010900     IF WHO-ACCTN(1:3) <> "J3K" OR                                        
+011000        WHO-USERN(1:7) <> "MANAGER" OR                                    
+011100        WHO-GROUPN(1:3) <> "PUB"                                          
+011200       DISPLAY "PLEASE LOGON AS MANAGER.J3K,PUB"                          
+011300       DISPLAY "This program will not run as "                            
+011400               WHO-USERN "." WHO-ACCTN "," WHO-GROUPN                     
+011500       CALL INTRINSIC "QUIT" USING \1\.                                   
+011600     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                           
+014000     MOVE 1 TO MIGDB.                                                     
+014100     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                                
+014200     MOVE "J3K" TO DATA-BASE-PASS(MIGDB).                                 
+014300     CALL "DBOPEN" USING                                                  
+014400            DATA-BASE-NAME(MIGDB) DATA-BASE-PASS(MIGDB)                   
+014500            MODE-1 STATUS-AREA.                                           
+014600     IF IMAGE-ERRORS                                                      
+014700      CALL "DBEXPLAIN" USING STATUS-AREA                                  
+014800      STOP RUN.                                                           
+014900                                                                          
+015000 0100-LOOP.                                                               
+015100     IF FLOWTEST PERFORM 7800-DISPLAY-BEGIN.                              
+015200*     IF NEXT-SCREEN NOT = "INVALIDSCREEN  "                              
+015300         MOVE FLOW-COMMON TO OLD-FLOW-COMMON.                             
+015400     MOVE THIS-SCREEN TO LAST-SCREEN.                                     
+015500     MOVE NEXT-SCREEN TO THIS-SCREEN.                                     
+015600     MOVE SPACES TO NEXT-SCREEN.                                          
+015700     EVALUATE THIS-SCREEN                                                 
+015800       WHEN "STARTUP        " PERFORM MIG0000-TYPE-1-CALL                 
+015900       WHEN "SHUTDOWN       " PERFORM MIG0000-TYPE-1-CALL                 
+016000       WHEN "SECURITY       " PERFORM MIG0000-TYPE-1-CALL                 
+016100       WHEN "J3K_SECURITY   " PERFORM MIG0000-TYPE-2-CALL                 
+016200       WHEN "IMAGEERROR     " PERFORM MIG0000-TYPE-2-CALL                 
+016300       WHEN "MAINMENU       " PERFORM MIG0000-TYPE-2-CALL                 
+016400       WHEN "BASEDATA       " PERFORM MIG0000-TYPE-2-CALL                 
+016500       WHEN "SETDATA        " PERFORM MIG0000-TYPE-2-CALL                 
+016600       WHEN "FLDDATA        " PERFORM MIG0000-TYPE-2-CALL                 
+016700       WHEN "FLDMAINT       " PERFORM MIG0000-TYPE-2-CALL                 
+016720       WHEN "INVALIDSCREEN  " PERFORM MIG0000-TYPE-1-CALL                 
+016800       WHEN "VIEWERROR      " PERFORM MIG0000-TYPE-2-CALL                 
+016900       WHEN "EXIT          "                                              
+017000         MOVE "TERMINATE" TO THIS-SCREEN                                  
+017100         PERFORM MIG0000-TYPE-9-CALL                                      
+017200       WHEN "INTERRUPTRETURN" PERFORM MIG0000-TYPE-7-CALL                 
+017300       WHEN "RETURN         " PERFORM MIG0000-TYPE-7-CALL                 
+017400       WHEN "ABORT          " PERFORM MIG0000-TYPE-8-CALL                 
+017500       WHEN "TERMINATE      " PERFORM MIG0000-TYPE-9-CALL                 
+017600       WHEN "BYE            " PERFORM MIG0000-TYPE-9-CALL                 
+017700       WHEN "TIMEOUT        " PERFORM MIG0000-TYPE-9-CALL                 
+017800       WHEN OTHER MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                    
+017900     IF FLOWTEST PERFORM 7810-DISPLAY-END.                                
+018000     GO TO 0100-LOOP.                                                     
+018100 0999-EXIT.                                                               
+018200     STOP RUN.                                                            
+018300$PAGE "TYPE 1 CALLS"                                                      
+018400*****************************************************************         
+018500 MIG0000-TYPE-1-CALL SECTION 10.                                          
+018600*****************************************************************         
+018700 1000-BEGIN.                                                              
+018800     MOVE "01" TO DRIVE-TYPE.                                             
+018900     PERFORM 7000-PUSH-INFO.                                              
+019000     EVALUATE THIS-SCREEN                                                 
+019100      WHEN "STARTUP        " PERFORM 1100-STARTUP                         
+019200      WHEN "SHUTDOWN       " PERFORM 1200-SHUTDOWN                        
+019300      WHEN "SECURITY       " PERFORM 1300-SECURITY                        
+019400      WHEN "INVALIDSCREEN  " PERFORM 1400-INVALIDSCREEN                   
+019500      WHEN OTHER                                                          
+019600       PERFORM 7010-PULL-INFO                                             
+019700       MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                               
+019800     GO TO 1999-EXIT.                                                     
+019900*------------------------------*                                          
+020000 1100-STARTUP.                                                            
+020100     MOVE FORMS-FILE TO SCREEN-FORMS-FILE.                                
+020200     CALL "PROCNAME" USING THIS-PROG.                                     
+020300     MOVE "02" TO TOPTYPE.                                                
+020400     MOVE FIRST-ENTRY TO TOPSCREEN.                                       
+020500     MOVE THIS-PROG TO TOPMAIN.                                           
+020600     MOVE SPACES TO TOPSUB.                                               
+020700     MOVE "SECURITY" TO NEXT-SCREEN.                                      
+020800*------------------------------*                                          
+020900 1200-SHUTDOWN.                                                           
+021000      COPY AMSCALL OF J3KLIB                                              
+021100     REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.                   
+021200     .                                                                    
+021300     STOP RUN.                                                            
+021400*------------------------------*                                          
+021500 1300-SECURITY.                                                           
+021600     PERFORM 7110-BACK-FROM-DRIVER.                                       
+021700     MOVE SD-USER-NAME TO SCREEN-USER.                                    
+021800     MOVE "J3K_SECURITY      " TO NEXT-SCREEN.                            
+021900                                                                          
+022000*------------------------------*                                          
+022100 1400-INVALIDSCREEN.                                                      
+022200     MOVE SPACES TO SCREEN-MESSAGE.                                       
+022300     STRING "Screen " LAST-SCREEN " not valid in this system"             
+022400         DELIMITED BY SIZE INTO SCREEN-MESSAGE.                           
+022500     MOVE OLD-FLOW-COMMON TO FLOW-COMMON.                                 
+022600     MOVE LAST-SCREEN TO NEXT-SCREEN.                                     
+022700*------------------------------*                                          
+022800 1999-EXIT.                                                               
+022900     EXIT.                                                                
+023000$PAGE "TYPE 2 CALLS"                                                      
+023100******************************************************************        
+023200 MIG0000-TYPE-2-CALL SECTION 20.                                          
+023300******************************************************************        
+023400 2000-BEGIN.                                                              
+023500     MOVE "02" TO DRIVE-TYPE.                                             
+023600     PERFORM 7000-PUSH-INFO.                                              
+023700     MOVE THIS-SCREEN TO SCREEN-NAME.                                     
+023800     IF THIS-SCREEN = "J3K_SECURITY      "                                
+023900      COPY AMSCALL OF J3KLIB                                              
+024000      REPLACING ==VALUE OF PROCEDURE== BY =="MIG001"==.                   
+024100      END-CALL                                                            
+024200        GO TO 2999-EXIT.                                                  
+024300                                                                          
+024400     IF THIS-SCREEN = "MAINMENU      "                                    
+024500      COPY AMSCALL OF J3KLIB                                              
+024600      REPLACING ==VALUE OF PROCEDURE== BY =="MIG002"==.                   
+024700      END-CALL                                                            
+024800        GO TO 2999-EXIT.                                                  
+024900                                                                          
+025000*     IF THIS-SCREEN = "SRVRDATA      "                                   
+025100*      COPY AMSCALL OF J3KLIB                                             
+025200*      REPLACING ==VALUE OF PROCEDURE== BY =="MIG100"==.                  
+025300*      END-CALL                                                           
+025400*                                                                         
+025500      IF THIS-SCREEN = "BASEDATA      "                                   
+025600      COPY AMSCALL OF J3KLIB                                              
+025700      REPLACING ==VALUE OF PROCEDURE== BY =="MIG200"==.                   
+025800      END-CALL                                                            
+025900        GO TO 2999-EXIT.                                                  
+026000                                                                          
+026100      IF THIS-SCREEN = "SETDATA      "                                    
+026200       COPY AMSCALL OF J3KLIB                                             
+026300       REPLACING ==VALUE OF PROCEDURE== BY =="MIG300"==.                  
+026400       END-CALL                                                           
+026500        GO TO 2999-EXIT.                                                  
+026510                                                                          
+026610                                                                          
+027620      IF THIS-SCREEN = "FLDDATA      "                                    
+027630       COPY AMSCALL OF J3KLIB                                             
+027640       REPLACING ==VALUE OF PROCEDURE== BY =="MIG400"==.                  
+027650       END-CALL                                                           
+027660        GO TO 2999-EXIT.                                                  
+027661                                                                          
+027671      IF THIS-SCREEN = "FLDMAINT     "                                    
+027672       COPY AMSCALL OF J3KLIB                                             
+027673       REPLACING ==VALUE OF PROCEDURE== BY =="MIG500"==.                  
+027674       END-CALL                                                           
+027675        GO TO 2999-EXIT.                                                  
+027676*                                                                         
+027700*     IF THIS-SCREEN = "REPORTS      "                                    
+027800*      COPY AMSCALL OF J3KLIB                                             
+027900*      REPLACING ==VALUE OF PROCEDURE== BY =="MIG700"==.                  
+028000*      END-CALL                                                           
+028100*        GO TO 2999-EXIT.                                                 
+028200      GO TO 2999-EXIT.                                                    
+028300*--------------------------------------------------- MIG010? ----*        
+028400     IF THIS-SCREEN = "PROGERROR      "                                   
+028500                   OR "FILEERROR      "                                   
+028600                   OR "IMAGEERROR     "                                   
+028700                   OR "VIEWERROR      "                                   
+028800      COPY AMSCALL OF J3KLIB                                              
+028900      REPLACING ==VALUE OF PROCEDURE== BY =="MIG010"==.                   
+029000      END-CALL                                                            
+029100        GO TO 2999-EXIT.                                                  
+029200*--------------------------------------------------- INVALID ----*        
+029300     PERFORM 7010-PULL-INFO.                                              
+029400     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+029500 2999-EXIT.                                                               
+029600     EXIT.                                                                
+029700$PAGE "TYPE 3 CALLS"                                                      
+029800******************************************************************        
+029900 MIG0000-TYPE-3-CALL SECTION 30.                                          
+030000******************************************************************        
+030100 3000-BEGIN.                                                              
+030200     MOVE "03" TO DRIVE-TYPE.                                             
+030300     PERFORM 7000-PUSH-INFO.                                              
+030400*----------------------------------------------- NOT USED -------*        
+030500*    IF THIS-SCREEN = "               "                                   
+030600*        MOVE "               " TO CURRENT-SCREEN                         
+030700*        MOVE "                         " TO CURRENT-MAIN                 
+030800*        MOVE "                              " TO CURRENT-SUB             
+030900*        PERFORM 7100-DRIVER-CALL                                         
+031000*        GO TO 3099-EXIT.                                                 
+031100*----------------------------------------------- INVALID --------*        
+031200     PERFORM 7010-PULL-INFO.                                              
+031300     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+031400 3099-EXIT.                                                               
+031500     EXIT.                                                                
+031600$PAGE "TYPE 4 CALLS"                                                      
+031700******************************************************************        
+031800 MIG0000-TYPE-4-CALL SECTION 31.                                          
+031900******************************************************************        
+032000 3100-BEGIN.                                                              
+032100     MOVE "04" TO DRIVE-TYPE.                                             
+032200     PERFORM 7000-PUSH-INFO.                                              
+032300*----------------------------------------------- EXIT -----------*        
+032400     IF THIS-SCREEN = "EXIT           "                                   
+032500         MOVE SPACES TO CURRENT-SCREEN                                    
+032600         PERFORM 7100-DRIVER-CALL                                         
+032700         GO TO 3199-EXIT.                                                 
+032800*----------------------------------------------- NOT USED -------*        
+032900*    IF THIS-SCREEN = "               "                                   
+033000*        MOVE "               " TO CURRENT-SCREEN                         
+033100*        MOVE "                             " TO CURRENT-MAIN             
+033200*        PERFORM 7100-DRIVER-CALL                                         
+033300*        GO TO 3199-EXIT.                                                 
+033400*----------------------------------------------- INVALID --------*        
+033500     PERFORM 7010-PULL-INFO.                                              
+033600     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+033700 3199-EXIT.                                                               
+033800     EXIT.                                                                
+033900$PAGE "TYPE 6 CALLS"                                                      
+034000******************************************************************        
+034100 MIG0000-TYPE-6-CALL SECTION 40.                                          
+034200******************************************************************        
+034300 4000-BEGIN.                                                              
+034400     MOVE "06" TO DRIVE-TYPE.                                             
+034500     PERFORM 7000-PUSH-INFO.                                              
+034600*----------------------------------------------- MEMOENTRY ------*        
+034700     IF THIS-SCREEN = "MEMOENTRY      "                                   
+034800         MOVE "MEMOENTRY      " TO CURRENT-ENTRY                          
+034900         MOVE "MES0000.SECURE.SYS            " TO CURRENT-MAIN            
+035000         PERFORM 7100-DRIVER-CALL                                         
+035100         GO TO 4099-EXIT.                                                 
+035200*----------------------------------------------- INVALID --------*        
+035300     PERFORM 7010-PULL-INFO.                                              
+035400     MOVE "INVALIDSCREEN" TO NEXT-ENTRY.                                  
+035500 4099-EXIT.                                                               
+035600     EXIT.                                                                
+035700$PAGE "TYPE 7 CALLS"                                                      
+035800******************************************************************        
+035900 MIG0000-TYPE-7-CALL SECTION 47.                                          
+036000******************************************************************        
+036100 4700-BEGIN.                                                              
+036200     MOVE "07" TO DRIVE-TYPE.                                             
+036300     PERFORM 7000-PUSH-INFO.                                              
+036400*-------------------------------------------- INTERRUPTRETURN ---*        
+036500     IF THIS-SCREEN = "INTERRUPTRETURN"                                   
+036600                   OR "RETURN         "                                   
+036700         MOVE OWNER-INFO TO CALL-INFO                                     
+036800         MOVE SPACES TO R-ENTRY                                           
+036900         PERFORM 7100-DRIVER-CALL                                         
+037000         GO TO 4799-EXIT.                                                 
+037100*-------------------------------------------- INVALID -----------*        
+037200     PERFORM 7010-PULL-INFO.                                              
+037300     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+037400 4799-EXIT.                                                               
+037500     EXIT.                                                                
+037600$PAGE "TYPE 8 CALLS"                                                      
+037700******************************************************************        
+037800 MIG0000-TYPE-8-CALL SECTION 48.                                          
+037900******************************************************************        
+038000 4800-BEGIN.                                                              
+038100     MOVE "08" TO DRIVE-TYPE.                                             
+038200     PERFORM 7000-PUSH-INFO.                                              
+038300     MOVE SPACES TO CURRENT-MAIN.                                         
+038400*----------------------------------------------- ABORT ----------*        
+038500     IF THIS-SCREEN = "ABORT          "                                   
+038600         MOVE "ABORT          " TO CURRENT-ENTRY                          
+038700         PERFORM 7100-DRIVER-CALL                                         
+038800         GO TO 4899-EXIT.                                                 
+038900*----------------------------------------------- INVALID --------*        
+039000     PERFORM 7010-PULL-INFO.                                              
+039100     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+039200 4899-EXIT.                                                               
+039300     EXIT.                                                                
+039400$PAGE "TYPE 9 CALLS"                                                      
+039500******************************************************************        
+039600 MIG0000-TYPE-9-CALL SECTION 49.                                          
+039700******************************************************************        
+039800 4900-BEGIN.                                                              
+039900     MOVE "09" TO DRIVE-TYPE.                                             
+040000     PERFORM 7000-PUSH-INFO.                                              
+040100     MOVE SPACES TO CURRENT-MAIN.                                         
+040200*----------------------------------------------- BYE ------------*        
+040300     IF THIS-SCREEN = "BYE            "                                   
+040400                   OR "TIMEOUT        "                                   
+040500         MOVE "BYE            " TO CURRENT-ENTRY                          
+040600         PERFORM 7100-DRIVER-CALL                                         
+040700         GO TO 4999-EXIT.                                                 
+040800*----------------------------------------------- TERMINATE ------*        
+040900     IF THIS-SCREEN = "TERMINATE      "                                   
+041000         MOVE "TERMINATE      " TO CURRENT-ENTRY                          
+041100         PERFORM 7100-DRIVER-CALL                                         
+041200         GO TO 4999-EXIT.                                                 
+041300*----------------------------------------------- INVALID --------*        
+041400     PERFORM 7010-PULL-INFO.                                              
+041500     MOVE "INVALIDSCREEN" TO NEXT-SCREEN.                                 
+041600 4999-EXIT.                                                               
+041700     EXIT.                                                                
+041800$PAGE "FREQUENTLY USED SUBROUTINES"                                       
+041900******************************************************************        
+042000 MIG0000-FREQ-SUBROUTINES SECTION 70.                                     
+042100******************************************************************        
+042200*------------------------------*                                          
+042300 7000-PUSH-INFO.                                                          
+042400     MOVE RETURN-INFO TO OLD-RETURN-INFO.                                 
+042500     MOVE CALL-INFO TO RETURN-INFO.                                       
+042600     MOVE DRIVE-TYPE TO CURRENT-TYPE.                                     
+042700     MOVE THIS-PROG TO CURRENT-MAIN.                                      
+042800     MOVE SPACES TO CURRENT-SUB.                                          
+042900     MOVE THIS-SCREEN TO CURRENT-ENTRY.                                   
+043000*------------------------------*                                          
+043100 7010-PULL-INFO.                                                          
+043200     MOVE RETURN-INFO TO CALL-INFO.                                       
+043300     MOVE OLD-RETURN-INFO TO RETURN-INFO.                                 
+043400     MOVE SPACES TO OLD-RETURN-INFO.                                      
+043500*------------------------------*                                          
+043600 7100-DRIVER-CALL.                                                        
+043700     IF FLOWTEST PERFORM 7830-DISPLAY-CALL.                               
+043800*                                                                         
+043900* /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\        
+044000* \      WHEN LEAVING THE MIG0000 APPLICATION                    /        
+044100* /                                                              \        
+044200      COPY AMSCALL OF J3KLIB                                              
+044300     REPLACING ==VALUE OF PROCEDURE== BY =="VSTERMOFF"==.                 
+044400     END-CALL.                                                            
+044500*     CALL "J3KIPC" USING USER-AREA.                                      
+044600     PERFORM 7110-BACK-FROM-DRIVER.                                       
+044700*------------------------------*                                          
+044800 7110-BACK-FROM-DRIVER.                                                   
+044900     IF DRIVE-TYPE = "09" AND CURRENT-ENTRY = "TERMINATE"                 
+045000         MOVE "SHUTDOWN" TO NEXT-SCREEN                                   
+045100     ELSE                                                                 
+045200         MOVE CURRENT-ENTRY TO NEXT-SCREEN.                               
+045300     IF DRIVE-TYPE = "09" AND CURRENT-ENTRY = "BYE"                       
+045400         MOVE "SECURITY" TO NEXT-SCREEN.                                  
+045500     IF FLOWTEST PERFORM 7840-DISPLAY-BACK.                               
+045600     IF NEXT-SCREEN = SPACES MOVE TOPSCREEN TO NEXT-SCREEN.               
+045700     MOVE XDS-APPL-MSG TO SCREEN-MESSAGE.                                 
+045800*     MOVE CALL-DATA (1:8) TO LINK-CLIENT-GROUP.                          
+045900*     MOVE CALL-DATA (9:6) TO LINK-PERIOD.                                
+046000$PAGE "INFREQUENTLY USED SUBROUTINES"                                     
+046100******************************************************************        
+046200 MIG0000-INFREQ-SUBROUTINES SECTION 78.                                   
+046300******************************************************************        
+046400*------------------------------*                                          
+046500 7800-DISPLAY-BEGIN.                                                      
+046600     DISPLAY "===================================="                       
+046700             "====================================".                      
+046800     DISPLAY "-MIG0000- BEGIN MAIN LOOP".                                 
+046900     DISPLAY " LAST=[" LAST-SCREEN "]  THIS=["                            
+047000         THIS-SCREEN "]  NEXT=[" NEXT-SCREEN "] <---".                    
+047100*------------------------------*                                          
+047200 7810-DISPLAY-END.                                                        
+047300     DISPLAY " LAST=[" LAST-SCREEN "]  THIS=["                            
+047400         THIS-SCREEN "]  NEXT=[" NEXT-SCREEN "]".                         
+047500     DISPLAY "-MIG0000- END MAIN LOOP".                                   
+047600     DISPLAY "===================================="                       
+047700             "====================================".                      
+047800*------------------------------*                                          
+047900 7830-DISPLAY-CALL.                                                       
+048000     DISPLAY "  .............................."                           
+048100             "....................".                                      
+048200     DISPLAY "  . CALLING TIWIPC".                                        
+048300     PERFORM 7850-DISPLAY-DRIVER-INFO.                                    
+048400     DISPLAY "  .............................."                           
+048500             "....................".                                      
+048600*------------------------------*                                          
+048700 7840-DISPLAY-BACK.                                                       
+048800     DISPLAY "  .............................."                           
+048900             "....................".                                      
+049000     DISPLAY "  . BACK FROM DRIVER".                                      
+049100     PERFORM 7850-DISPLAY-DRIVER-INFO.                                    
+049200     DISPLAY "  .............................."                           
+049300             "....................".                                      
+049400*------------------------------*                                          
+049500 7850-DISPLAY-DRIVER-INFO.                                                
+049600     DISPLAY "  .............................."                           
+049700             "DRIVE TYPE [" DRIVE-TYPE "].....".                          
+049800     DISPLAY "  . O-TYPE   [" O-TYPE "]".                                 
+049900     DISPLAY "  . O-MAIN   [" O-MAIN "]".                                 
+050000     DISPLAY "  . O-SUB    [" O-SUB "]".                                  
+050100     DISPLAY "  . O-ENTRY [" O-ENTRY "]".                                 
+050200     DISPLAY "  .............................."                           
+050300             "....................".                                      
+050400     DISPLAY "  . R-TYPE   [" R-TYPE "]".                                 
+050500     DISPLAY "  . R-MAIN   [" R-MAIN "]".                                 
+050600     DISPLAY "  . R-SUB    [" R-SUB "]".                                  
+050700     DISPLAY "  . R-ENTRY [" R-ENTRY "]".                                 
+050800     DISPLAY "  .............................."                           
+050900             "....................".                                      
+051000     DISPLAY "  . CURRENT-TYPE   [" CURRENT-TYPE "]".                     
+051100     DISPLAY "  . CURRENT-MAIN   [" CURRENT-MAIN "]".                     
+051200     DISPLAY "  . CURRENT-SUB    [" CURRENT-SUB "]".                      
+051300     DISPLAY "  . CURRENT-ENTRY [" CURRENT-ENTRY "]".                     
+051400*------------------------------*                                          

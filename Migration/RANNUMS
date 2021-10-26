@@ -1,0 +1,111 @@
+001000$CONTROL LIST                                                             
+001100 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. RANNUM.                                                      
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400****************************************************************          
+001500* - RANNUM - is a program developed to test and display the    *          
+001600*            unbiased selection of numbers, that the HP random *          
+001700*            number generator will produce.                    *          
+001800*            The original need for this was the random employee*          
+001900*            list.                                             *          
+002000****************************************************************          
+002100                                                                          
+002200 DATE-COMPILED.                                                           
+002300 ENVIRONMENT DIVISION.                                                    
+002400 CONFIGURATION SECTION.                                                   
+002500 SOURCE-COMPUTER. HP3000.                                                 
+002600 OBJECT-COMPUTER. HP3000.                                                 
+002700 SPECIAL-NAMES.                                                           
+002800     CONDITION-CODE IS CC.                                                
+002900 DATA DIVISION.                                                           
+003000 WORKING-STORAGE SECTION.                                                 
+003100 01 RANDOM-SEED            PIC S9(9) COMP VALUE 0.                        
+003200 01 RANDOM-RETURN          PIC S9(9) COMP VALUE 0.                        
+003400 01 DISP-N                 PIC 9(9) VALUE ZERO.                           
+003500 01 FILLER REDEFINES DISP-N.                                              
+003600    02 FILLER              PIC 9.                                         
+003700    02 FILLER              PIC 99.                                        
+003800    02 FILLER              PIC 99.                                        
+003900    02 FILLER              PIC 99.                                        
+004000    02 RANDOM-PICK         PIC 99.                                        
+004100                                                                          
+004200 01 DISP-N18               PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.                   
+004300 01 TBL-IDX                PIC S9(4) COMP VALUE 0.                        
+004400 01 IDX                    PIC S9(4) COMP VALUE 0.                        
+004500 01 X                      PIC S9(18) COMP VALUE 0.                       
+004600 01 DOLLARS                PIC S9(18) COMP VALUE 0.                       
+004700 01 SIXFLAGS               PIC S9(4)  COMP VALUE 0.                       
+004800 01 PLAYS                  PIC 99    VALUE 0.                             
+004900 01 F                      PIC S9(4) COMP VALUE 0.                        
+005000 01 T                      PIC S9(4) COMP VALUE 0.                        
+005100 01 NUMF                   PIC 99    VALUE 0.                             
+005200 01 NUMT                   PIC 99    VALUE 0.                             
+005300                                                                          
+005400 01 FROM-NUM-TABLE.                                                       
+005500    02 FROM-NUMBERS.                                                      
+005600       03 FROM-NUM         OCCURS 6 TIMES PIC 99.                         
+005800                                                                          
+005900 01 TO-NUM-TABLE.                                                         
+006000    02 TO-NUMBERS.                                                        
+006100       03 TO-NUM           OCCURS 6 TIMES PIC 99.                         
+006200                                                                          
+006300 01 NUMBER-TABLE.                                                         
+006400    02 RANDOM-NUMBERS.                                                    
+006500       03 RANDOM-NUMBER    OCCURS 6 TIMES PIC 99.                         
+006600                                                                          
+006700$PAGE "PROCEDURE CODE"                                                    
+006800 PROCEDURE DIVISION.                                                      
+006900 0000-RANNUM.                                                             
+007400     DISPLAY "RANDOM NUMBERS.".                                           
+007500     DISPLAY "--------------------".                                      
+007600     MOVE ZERO TO PLAYS SIXFLAGS DOLLARS.                                 
+007700     PERFORM PLAY-LIST UNTIL DOLLARS > 10.                                
+007800     GOBACK.                                                              
+007900                                                                          
+008200 PLAY-LIST.                                                               
+008300     INITIALIZE RANDOM-NUMBERS.                                           
+008400     MOVE ZERO TO TBL-IDX.                                                
+008500     CALL INTRINSIC "RAND1" GIVING RANDOM-SEED.                           
+008600     PERFORM VARYING X FROM 1 BY 1                                        
+008700       UNTIL TBL-IDX IS EQUAL TO 6                                        
+008710      IF DISP-N > 0                                               100915ma
+008720       MOVE DISP-N TO RANDOM-SEED                                 100915ma
+008730      END-IF                                                      100915ma
+008800      CALL INTRINSIC "RAND" USING RANDOM-SEED                             
+008900                            GIVING RANDOM-RETURN                          
+009000      MOVE RANDOM-RETURN TO DISP-N                                        
+009100                                                                          
+009200      IF ( RANDOM-PICK > 0 AND < 55 ) AND                                 
+009300          ( RANDOM-PICK <> RANDOM-NUMBER(1) AND RANDOM-NUMBER(2)          
+009400                    AND RANDOM-NUMBER(3) AND RANDOM-NUMBER(4)             
+009500                    AND RANDOM-NUMBER(5) AND RANDOM-NUMBER(6) )           
+009600       ADD 1 TO TBL-IDX                                                   
+009700       MOVE RANDOM-PICK TO RANDOM-NUMBER(TBL-IDX)                         
+009800      END-IF                                                              
+010000     END-PERFORM.                                                         
+010100*                                                                         
+010101* SORT NUMBERS                                                            
+010104     IF RANDOM-NUMBERS <> TO-NUMBERS                              100915ma
+010110      ADD 1 TO DOLLARS                                            100915ma
+010210      MOVE RANDOM-NUMBERS TO FROM-NUMBERS                         100915ma
+010300      INITIALIZE NUMF NUMT TO-NUMBERS X T F                       100915ma
+010400      PERFORM VARYING X FROM 1 BY 1 UNTIL X > 54                  100915ma
+010600       PERFORM VARYING F FROM 1 BY 1 UNTIL F > 6                  100915ma
+010700        MOVE FROM-NUM(F) TO NUMF                                  100915ma
+010800        IF NUMF = X                                               100915ma
+010900         ADD 1 TO T                                               100915ma
+011000         MOVE FROM-NUM(F) TO TO-NUM(T)                            100915ma
+011100        END-IF                                                    100915ma
+011200       END-PERFORM                                                100915ma
+011300      END-PERFORM                                                 100915ma
+011400*                                                                         
+011410* DISPLAY NUMBERS                                                         
+011500      MOVE TO-NUMBERS TO RANDOM-NUMBERS                           100915ma
+011800      DISPLAY   RANDOM-NUMBER(1)                                  100915ma
+011900      ", "       RANDOM-NUMBER(2)                                         
+012000      ", "       RANDOM-NUMBER(3)                                         
+012100      ", "       RANDOM-NUMBER(4)                                         
+012200      ", "       RANDOM-NUMBER(5)                                         
+012300      ", "       RANDOM-NUMBER(6).                                        
+012400                                                                          
+013600                                                                  100915ma

@@ -1,0 +1,439 @@
+001000$CONTROL LIST,DYNAMIC,RLFILE,BOUNDS                                       
+001100 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. GLS700.                                                      
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400 DATE-COMPILED.                                                           
+001500***********************************************************               
+001600*                                                                         
+001700*  Financial G/L System                                                   
+001800*                                                                         
+001900*  Report Request, Son Process Creator.                                   
+002000*                                                                         
+002100* Reports must be run as son processes to support SLAVE printing          
+002200* through the terminals printer port. The same conditions exist           
+002300* for all terminal emulators running on PC's using printer port.          
+002400*                                                                         
+002500* Access to this port is NOT possible from batchjobs.                     
+002600*                                                                         
+002700*  SCREENS: FINRPTS                                                       
+002800*                                                                         
+002900***********************************************************               
+003000*  SCREEN: REPORTS                                           *            
+003100*                                                            *            
+003200**************************************************************            
+003300*   DATE   AUTHOR  MODIFICATION                               *           
+003400* 03/03/05  A.V.  Added GLS709 as report 7 on REPORTS screen *            
+003500*                                                            *            
+003600*                                                            *            
+003700*                                                            *            
+003800**************************************************************            
+003900 ENVIRONMENT DIVISION.                                                    
+004000 CONFIGURATION SECTION.                                                   
+004100 SOURCE-COMPUTER. HP3000.                                                 
+004200*SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+004300 OBJECT-COMPUTER. HP3000.                                                 
+004400 SPECIAL-NAMES.                                                           
+004500     CONDITION-CODE IS CC.                                                
+004600 INPUT-OUTPUT SECTION.                                                    
+004700 FILE-CONTROL.                                                            
+004800     SELECT GLSBAT ASSIGN TO "GLSBAT,,,DISC"                              
+004900                     FILE STATUS IS GLSBAT-STATUS.                        
+005000$PAGE "DATA DIVISION"                                                     
+005100 DATA DIVISION.                                                           
+005200 FILE SECTION.                                                            
+005300 FD  GLSBAT RECORD CONTAINS 80 CHARACTERS                                 
+005400              DATA RECORD IS STREAM-RECORD.                               
+005500 01 STREAM-RECORD.                                                        
+005600    05 SREC                PIC X(80).                                     
+005700*****************************************************************         
+005800 WORKING-STORAGE SECTION.                                                 
+005900*****************************************************************         
+006000 01 WRK-FIELDS.                                                           
+006100    02  INPUT-PERIOD.                                                     
+006200        05 INPUT-MO           PIC 99.                                     
+006300        05 INPUT-YR           PIC 99.                                     
+006400    02  NEW-PRINTFLAG-STATUS  PIC XX.                                     
+006500    02  REPORT-COUNT          PIC S9(4) COMP.                             
+006600    02  WORK80                PIC X(80).                                  
+006700    02  FNAME                 PIC X(8).                                   
+006800    02  GLSBAT-STATUS         PIC XX.                                     
+006900    02  COMMAND-STRING        PIC X(256).                                 
+007000    02  NUMDATE               PIC S9(9) COMP.                             
+007100    02  DAYNUM                PIC S9(9) COMP.                             
+007200    02  CALDATE.                                                          
+007300       05 CAL-YR              PIC 9999.                                   
+007400       05 CAL-MO              PIC 99.                                     
+007500       05 CAL-DA              PIC 99.                                     
+007600    02  X                     PIC S9(4) COMP.                             
+007700    02  I                     PIC S9(4) COMP.                             
+007800    02  N                     PIC S9(4) COMP.                             
+007900    02  Y                     PIC S9(4) COMP.                             
+008000    02  ILDEV                 PIC S9(4) COMP.                             
+008100    02  DISP-N                PIC 9999.                                   
+008200    02  NUM-ZZ                PIC 99.                                     
+008300    02  NUM1                  PIC X(14) VALUE SPACES.                     
+008400    02  NUM2                  PIC S9(14) VALUE ZERO.                      
+008500    02  NUMDEC                PIC S9(4) COMP VALUE 0.                     
+008600    02  NUMERR                PIC S9(4) COMP VALUE 0.                     
+008700    02  WHO-USER              PIC X(8).                                   
+008800    02  WHO-ACCOUNT           PIC X(8).                                   
+008900 COPY     SWITCHES OF COMLIB.                                             
+009000 01  GLSBAT-FLAG         PIC X VALUE "0".                                 
+009100     88 GLSBAT-OPENED          VALUE "1".                                 
+009200     88 GLSBAT-CLOSED          VALUE "0".                                 
+009300 01 STDIN-DATA.                                                           
+009400    05 STDIN1              PIC X(80) VALUE SPACES.                        
+009500    05 STDIN2              PIC X(80) VALUE SPACES.                        
+009600    05 STDIN3              PIC X(80) VALUE SPACES.                        
+009700    05 STDIN4              PIC X(80) VALUE SPACES.                        
+009800    05 STDIN5              PIC X(80) VALUE SPACES.                        
+009900    05 STDIN6              PIC X(80) VALUE SPACES.                        
+010000    05 STDIN7              PIC X(80) VALUE SPACES.                        
+010100 01 STDIN-TABLE REDEFINES STDIN-DATA.                                     
+010200    05 STDIN-RECORD        PIC X(80) OCCURS 7 TIMES.                      
+010300 01 SAVE-PRINTER           PIC X(4)   VALUE SPACES.                       
+010400 01 SAVE-HOMEDESCR         PIC X(46)  VALUE SPACES.                       
+010500 01 HOME-DESCR             PIC X(46)  VALUE SPACES.                       
+010600 01  PRT-POSITION          PIC S9(4) COMP VALUE 0.                        
+010700 01  DISP-N3               PIC 999   VALUE ZERO.                          
+010800 01  REPORT-TITLE          PIC X(28) VALUE SPACES.                        
+010900 01 DEVINFO-BUFFER.                                                       
+011000     03  LINK-LDEV               PIC X(4).                                
+011100     03  LINK-ASSODEV            PIC X(4).                                
+011200     03  LINK-LDEV-CLASS         PIC X(8).                                
+011300     03  LINK-LOCCODE            PIC X(2).                                
+011400     03  LINK-INSTALLSITE        PIC X(32).                               
+011500     03  LINK-RESPUSER           PIC X(16).                               
+011600     03  LINK-DEVTYPE.                                                    
+011700          04 DEVTYPE1         PIC X.                                      
+011800             88 LASER-PRINTER            VALUE "L".                       
+011900             88 HP-DOTMATRIX             VALUE "H".                       
+012000             88 EPSON-DOTMATRIX          VALUE "E".                       
+012100             88 INTERACTIVE-TERMINAL     VALUE "T".                       
+012200          04 DEVTYPE2-4       PIC XXX.                                    
+012300     03  LINK-DEVACTDATE         PIC X(6).                                
+012400     03  LINK-MPEACDFLAG         PIC X(2).                                
+012500     03  LINK-LOGONID            PIC X(18).                               
+012600     03  LINK-TIMEOUT            PIC X(2).                                
+012700     COPY GETPROC  OF COMLIB.                                             
+012800*****************************************************************         
+012900*                                                                         
+013000     COPY LINKFIN  OF FINLIB.                                             
+013100     COPY EXTERNAL OF FINLIB.                                             
+013200     02 FIN-SCR-BUF        REDEFINES SCREEN-BUFFER.                       
+013210        03 SC1-HEADING-AREA.                                      060714MA
+013310            10 SC1-NAME          PIC X(046).                      060714MA
+013320            10 SC1-GROUP         PIC X(016).                      060714MA
+013330            10 SC1-PERIOD        PIC X(016).                      060714MA
+013600        03 RPT-SCR-MESSAGE PIC X(160).                                    
+013700        03 RPT1-SCR-FIELDS.                                               
+013800           04 SC1-SELECT1            PIC X.                               
+013900        03 RPT2-SCR-FIELDS.                                               
+014000           04 SC1-SELECT2            PIC X.                               
+014100        03 RPT3-SCR-FIELDS.                                               
+014200           04 SC1-SELECT3            PIC X.                               
+014300        03 RPT4-SCR-FIELDS.                                               
+014400           04 SC1-SELECT4            PIC X.                               
+014500        03 FILLER          PIC X(1658).                                   
+014600$PAGE "ENTRY SECTION"                                                     
+014700 PROCEDURE DIVISION.                                                      
+014800*****************************************************************         
+014900 0000-ENTRY.                                                              
+015000*****************************************************************         
+015100 0000-BEGIN.                                                              
+015200     CALL INTRINSIC "FINDJCW" USING FLOWTEST-JCW                          
+015300                                    FLOWTEST-VALUE I.                     
+015400     IF FLOWTEST                                                          
+015500         DISPLAY "----------------------------------------"               
+015600         DISPLAY "-GLS700- BEGIN".                                        
+015700     INITIALIZE WRK-FIELDS.                                               
+015800     PERFORM 7803-INIT-SCREEN.                                            
+015900 0000-LOOP.                                                               
+016000     MOVE SAVE-PRINTER TO SD-ASSOCIATED-DEVICE.                           
+016100     MOVE SAVE-HOMEDESCR TO HOME-DESCR.                                   
+016210     PERFORM 7800-READ-SCREEN.                                            
+016300     IF TIMEOUT                                                           
+016400        GO TO 9900-RETURN.                                                
+016500     IF SCREEN-KEY-PRESSED = 1                                            
+016600        MOVE "SELECTPRT"      TO NEXT-SCREEN                              
+016700        GO TO 9900-RETURN.                                                
+016800     IF SCREEN-KEY-PRESSED = 8                                            
+016900        MOVE "GLS_MENU"        TO NEXT-SCREEN                     060714MA
+017000        GO TO 9900-RETURN.                                                
+017100     IF BAD-KEY OR SCREEN-KEY-PRESSED <> 0                                
+017200        PERFORM 7801-BAD-FUNCTION-KEY                                     
+017300        GO TO 0000-LOOP.                                                  
+017400     IF  EDIT-ERRORS                                                      
+017500        CALL "VSSHOWERR" USING SCREEN-COMMON                              
+017600        GO TO 0000-LOOP.                                                  
+017700*------>> Fall through into the report selection area.                    
+017800     MOVE 0 TO REPORT-COUNT.                                              
+017900     IF ( SC1-SELECT1 = "X" ) OR ( SC1-SELECT2 = "X" )                    
+018000        PERFORM 0002-REPORT THRU 0002-EXIT.                               
+018100     IF SC1-SELECT3 = "X"                                                 
+018200        PERFORM 0003-REPORT THRU 0003-EXIT.                               
+018300     IF SC1-SELECT4 = "X"                                                 
+018400        PERFORM 0004-REPORT THRU 0004-EXIT.                               
+018500     IF X = ZERO                                                          
+018600        STRING "Use " QUOTE "X" QUOTE " to select a report."              
+018700         DELIMITED BY SIZE INTO SCREEN-MESSAGE.                           
+018800     GO TO 0000-LOOP.                                                     
+018900$PAGE "REPORT No. #1"                                                     
+019000*---------------------------------------------------------------          
+019100 0001-REPORT.                                                             
+019200     IF FLOWTEST                                                          
+019300        DISPLAY "0001-REPORT".                                            
+019400     INITIALIZE GETPROC-LINKAGE STDIN-DATA.                               
+019500*------>> Edit data from screen                                           
+019600*------>> SETUP NEW PROCESS.                                              
+019700     MOVE SD-ASSOCIATED-DEVICE       TO STDIN1.                           
+019800     MOVE SPACES                     TO STDIN2.                           
+019900     MOVE SPACES                     TO STDIN3.                           
+020000     MOVE SPACES                     TO STDIN4.                           
+020100     MOVE SPACES                     TO STDIN5.                           
+020200     MOVE SPACES                     TO STDIN6, STDIN7.                   
+020300     PERFORM 7819-SETUP-STD-IO.                                           
+020400     MOVE "DS"                       TO GETPROC-PRIORITY.                 
+020500     MOVE "P"                        TO GETPROC-LIB.                      
+020600     MOVE "N"                        TO GETPROC-NOCB.                     
+020700     MOVE "GLS701R.PUB.FINPAC"          TO GETPROC-NAME.                  
+020800     MOVE "Budget Worksheet         "  TO REPORT-TITLE.                   
+020900     PERFORM 7820-RUN-TIME.                                               
+021000     IF ERRORS GO TO 0001-EXIT.                                           
+021100     INITIALIZE RPT1-SCR-FIELDS                                           
+021200                RPT-SCR-MESSAGE.                                          
+021300     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+021400     GO TO 0001-EXIT.                                                     
+021500 0001-REPORT-ERROR.                                                       
+021600     MOVE "1" TO ERRORS-SW.                                               
+021700     MOVE 2 TO SCREEN-FIELD.                                              
+021800     CALL "VSFLAG" USING SCREEN-COMMON.                                   
+021900 0001-EXIT.   EXIT.                                                       
+022000$PAGE "REPORT No. #2"                                                     
+022100*---------------------------------------------------------------          
+022200 0002-REPORT.                                                             
+022300     IF FLOWTEST                                                          
+022400        DISPLAY "0002-REPORT".                                            
+022500     INITIALIZE GETPROC-LINKAGE STDIN-DATA.                               
+022600*------>> Edit data from screen                                           
+022700*------>> SETUP NEW PROCESS.                                              
+022800     MOVE SD-ASSOCIATED-DEVICE       TO STDIN1.                           
+022900     MOVE SPACES                     TO STDIN2.                           
+023000     MOVE SPACES                     TO STDIN3.                           
+023100     MOVE SPACES                     TO STDIN4.                           
+023200     MOVE SPACES                     TO STDIN5.                           
+023300     MOVE SPACES                     TO STDIN6, STDIN7.                   
+023400     PERFORM 7819-SETUP-STD-IO.                                           
+023500     MOVE "DS"                       TO GETPROC-PRIORITY.                 
+023600     MOVE "P"                        TO GETPROC-LIB.                      
+023700     MOVE "N"                        TO GETPROC-NOCB.                     
+023800     MOVE "GLS702R.PUB.FINPAC"          TO GETPROC-NAME.                  
+023900     MOVE "Excel Budget Worksheet     " TO REPORT-TITLE.                  
+024000     IF SC1-SELECT2 NOT = "X"  MOVE 1 TO GETPROC-PARMVAL.                 
+024100     PERFORM 7820-RUN-TIME.                                               
+024200     IF ERRORS GO TO 0002-EXIT.                                           
+024300     INITIALIZE RPT2-SCR-FIELDS                                           
+024400                RPT-SCR-MESSAGE.                                          
+024500     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+024600     GO TO 0002-EXIT.                                                     
+024700 0002-REPORT-ERROR.                                                       
+024800     MOVE "1" TO ERRORS-SW.                                               
+024900     MOVE 3 TO SCREEN-FIELD.                                              
+025000     CALL "VSFLAG" USING SCREEN-COMMON.                                   
+025100 0002-EXIT.   EXIT.                                                       
+025200$PAGE "REPORT No. #3"                                                     
+025300*---------------------------------------------------------------          
+025400 0003-REPORT.                                                             
+025500     IF FLOWTEST                                                          
+025600        DISPLAY "0003-REPORT".                                            
+025700     INITIALIZE GETPROC-LINKAGE STDIN-DATA.                               
+025800*------>> Edit data from screen                                           
+025900*------>> SETUP NEW PROCESS.                                              
+026000     MOVE SD-ASSOCIATED-DEVICE       TO STDIN1.                           
+026100     MOVE SPACES                     TO STDIN2.                           
+026200     MOVE SPACES                     TO STDIN3.                           
+026300     MOVE SPACES                     TO STDIN4.                           
+026400     MOVE SPACES                     TO STDIN5.                           
+026500     MOVE SPACES                     TO STDIN6, STDIN7.                   
+026600     PERFORM 7819-SETUP-STD-IO.                                           
+026700     MOVE "DS"                       TO GETPROC-PRIORITY.                 
+026800     MOVE "P"                        TO GETPROC-LIB.                      
+026900     MOVE "N"                        TO GETPROC-NOCB.                     
+027000     MOVE "GLS703R.PUB.FINPAC"          TO GETPROC-NAME.                  
+027100     MOVE "12 MONTH MCOMP            " TO REPORT-TITLE.                   
+027200     PERFORM 7820-RUN-TIME.                                               
+027300     IF ERRORS GO TO 0003-EXIT.                                           
+027400     INITIALIZE RPT3-SCR-FIELDS                                           
+027500                RPT-SCR-MESSAGE.                                          
+027600     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+027700     GO TO 0003-EXIT.                                                     
+027800 0003-REPORT-ERROR.                                                       
+027900     MOVE "1" TO ERRORS-SW.                                               
+028000     MOVE 4 TO SCREEN-FIELD.                                              
+028100     CALL "VSFLAG" USING SCREEN-COMMON.                                   
+028200 0003-EXIT.   EXIT.                                                       
+028300*---------------------------------------------------------------          
+028400 0004-REPORT.                                                             
+028500     IF FLOWTEST                                                          
+028600        DISPLAY "0004-REPORT".                                            
+028700     INITIALIZE GETPROC-LINKAGE STDIN-DATA.                               
+028800*------>> Edit data from screen                                           
+028900*------>> SETUP NEW PROCESS.                                              
+029000     MOVE SD-ASSOCIATED-DEVICE       TO STDIN1.                           
+029100     MOVE SPACES                     TO STDIN2.                           
+029200     MOVE SPACES                     TO STDIN3.                           
+029300     MOVE SPACES                     TO STDIN4.                           
+029400     MOVE SPACES                     TO STDIN5.                           
+029500     MOVE SPACES                     TO STDIN6, STDIN7.                   
+029600     PERFORM 7819-SETUP-STD-IO.                                           
+029700     MOVE "DS"                       TO GETPROC-PRIORITY.                 
+029800     MOVE "P"                        TO GETPROC-LIB.                      
+029900     MOVE "N"                        TO GETPROC-NOCB.                     
+030000     MOVE "GLS704R.PUB.FINPAC"          TO GETPROC-NAME.                  
+030100     MOVE "Chart of accounts          " TO REPORT-TITLE.                  
+030200     PERFORM 7820-RUN-TIME.                                               
+030300     IF ERRORS GO TO 0004-EXIT.                                           
+030400     INITIALIZE RPT4-SCR-FIELDS                                           
+030500                RPT-SCR-MESSAGE.                                          
+030600     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+030700     GO TO 0004-EXIT.                                                     
+030800 0004-REPORT-ERROR.                                                       
+030900     MOVE "1" TO ERRORS-SW.                                               
+031000     MOVE 5 TO SCREEN-FIELD.                                              
+031100     CALL "VSFLAG" USING SCREEN-COMMON.                                   
+031200 0004-EXIT.   EXIT.                                                       
+031300$PAGE "MISC SUBROUTINES"                                                  
+031400*---------------------------------------------------------------          
+031500     COPY READSCR  OF COMLIB.                                             
+031600 7803-INIT-SCREEN.                                                        
+031700     IF FLOWTEST DISPLAY "7803-INIT-SCREEN".                              
+031800     MOVE "REPORTS" TO SCREEN-NAME.                                       
+031900     MOVE "Financial G/L Report Menu           "                          
+032000       TO SCREEN-TITLE.                                                   
+032100     CALL "VSINIT" USING SCREEN-COMMON.                                   
+032200     MOVE     "HU  D CHAR" TO SCREEN-FIELD-SPEC(1)                        
+032300                              SCREEN-FIELD-SPEC(2)                        
+032400                              SCREEN-FIELD-SPEC(3).                       
+032500     MOVE "  EXIT  "    TO SCREEN-FUNC-KEY(8).                            
+032600     MOVE SPACES TO SCREEN-BUFFER.                                        
+032700     MOVE SPACES TO RPT-SCR-MESSAGE.                                      
+032800     PERFORM 7806-SD-ASSODEV-DESCR.                                       
+032900     IF ERRORS MOVE WORK80 TO SCREEN-MESSAGE.                             
+033000     INSPECT LINK-INSTALLSITE REPLACING ALL "PRINTER" BY SPACES.          
+033100     STRING LINK-INSTALLSITE DELIMITED BY "   "                           
+033200            " PRINTER" DELIMITED BY SIZE INTO HOME-DESCR.                 
+033300     MOVE SD-ASSOCIATED-DEVICE TO SAVE-PRINTER.                           
+033400     MOVE HOME-DESCR TO SAVE-HOMEDESCR.                                   
+033500     STRING "SELECTED REPORTS WILL BE PRINTED ON THE "                    
+033600            QUOTE HOME-DESCR DELIMITED BY "  " QUOTE                      
+033700            DELIMITED BY SIZE INTO RPT-SCR-MESSAGE.                       
+033710     MOVE LINK-CLIENT-NAME  TO SC1-NAME.                          060714MA
+033810     MOVE LINK-CLIENT-GROUP TO SC1-GROUP.                         060714MA
+033820     MOVE LINK-PERIOD(3:2)       TO SC1-PERIOD.                   060714MA
+033830     MOVE "/"                    TO SC1-PERIOD(3:).               060714MA
+033840     MOVE LINK-PERIOD(5:2)       TO SC1-PERIOD(4:).               060714MA
+033850     MOVE "/"                    TO SC1-PERIOD(6:).               060714MA
+033860     MOVE LINK-PERIOD(1:2)       TO SC1-PERIOD(7:).               060714MA
+033870                                                                  060714MA
+033880*---------------------------------------------------------------          
+033900 7806-SD-ASSODEV-DESCR.                                                   
+034000     IF FLOWTEST DISPLAY "7806-SD-ASSODEV-DESCR".                         
+034100     MOVE "0" TO ERRORS-SW.                                               
+034200     MOVE SPACES TO DEVINFO-BUFFER WORK80.                                
+034300     MOVE SD-ASSOCIATED-DEVICE TO LINK-LDEV.                              
+034400     MOVE LINK-LDEV TO NUM1.                                              
+034500     MOVE ZERO TO NUM2 NUMDEC NUMERR.                                     
+034600     CALL "GETNUM" USING NUM1 NUM2 NUMDEC NUMERR.                         
+034700     IF NUMERR = 0                                                        
+034800        MOVE NUM2 TO DISP-N                                               
+034900        MOVE DISP-N TO LINK-LDEV                                          
+035000     ELSE                                                                 
+035100        MOVE "1" TO ERRORS-SW                                             
+035200        STRING "PRINTER IN LINKAGE " SD-ASSOCIATED-DEVICE                 
+035300               ",  MUST BE NUMERIC."                                      
+035400        DELIMITED BY SIZE INTO WORK80.                                    
+035500     IF NUMERR = 0                                                        
+035600        CALL "DEVINFO" USING DEVINFO-BUFFER WORK80 NUMERR.                
+035700     IF NUMERR <> 0 MOVE "1" TO ERRORS-SW.                                
+035800     CALL INTRINSIC "WHO" USING \\ \\ \\ \\ \\ \\ \\ ILDEV.               
+035900     IF NUM2 = ILDEV                                                      
+036000       MOVE "This Terminals, Slaved Priniter" TO LINK-INSTALLSITE.        
+036100$PAGE "PROCESS HANDLING"                                                  
+036200*---------------------------------------------------------------          
+036300 7819-SETUP-STD-IO.                                                       
+036400     IF FLOWTEST DISPLAY "7819-SETUP-STD-IO".                             
+036500     ACCEPT FNAME FROM TIME.                                              
+036600     MOVE "PD" TO FNAME(1:2).                                             
+036700     STRING "FILE GLSBAT=" FNAME ";DISC=6,6,1;REC=-80,1,F,ASCII"          
+036800      %15 DELIMITED BY SIZE INTO COMMAND-STRING.                          
+036900     CALL INTRINSIC "COMMAND" USING COMMAND-STRING N X.                   
+037000     IF GLSBAT-OPENED CLOSE GLSBAT.                                       
+037100     OPEN OUTPUT GLSBAT.                                                  
+037200     MOVE "1" TO GLSBAT-FLAG.                                             
+037300     PERFORM VARYING X FROM 1 BY 1 UNTIL X > 7                            
+037400       INITIALIZE STREAM-RECORD                                           
+037500       MOVE STDIN-RECORD(X) TO SREC                                       
+037600       WRITE STREAM-RECORD                                                
+037700     END-PERFORM.                                                         
+037800     CLOSE GLSBAT.                                                        
+037900     MOVE "0" TO GLSBAT-FLAG.                                             
+038000     STRING FNAME ",OLDTEMP" %15                                          
+038100      DELIMITED BY SIZE              INTO GETPROC-STDIN.                  
+038200     STRING "$NULL" %15                                                   
+038300      DELIMITED BY SIZE              INTO GETPROC-STDLIST.                
+038400     IF FLOWTEST MOVE SPACES         TO GETPROC-STDLIST.                  
+038500*---------------------------------------------------------------          
+038600 7820-RUN-TIME.                                                           
+038700     IF FLOWTEST DISPLAY "7820-RUN-TIME".                                 
+038800*------>> When activating a process, the second parameter "\2\"           
+038900*         causes the parent process to wait until the son process         
+039000*         has finished processing.                                        
+039100*         If the second parameter is omitted, control will be             
+039200*         returned to the parent and both processes will run              
+039300*         at the same time.                                               
+039400     MOVE "0" TO ERRORS-SW.                                               
+039500     CALL "GETPROC" USING GETPROC-LINKAGE.                                
+039600     IF GETPROC-MESSAGE = SPACES                                          
+039700        PERFORM 7821-ACTIVATE-N-WAIT                                      
+039800     ELSE                                                                 
+039900        MOVE "1" TO ERRORS-SW                                             
+040000        MOVE GETPROC-MESSAGE TO SCREEN-MESSAGE.                           
+040100*---------------------------------------------------------------          
+040200 7821-ACTIVATE-N-WAIT.                                                    
+040300     MOVE GETPROC-PIN TO DISP-N3.                                         
+040400     PERFORM VARYING X FROM 28 BY -1                                      
+040500       UNTIL ( REPORT-TITLE(X:1) NOT = SPACE )                            
+040600          OR ( X < 2 )                                                    
+040700      CONTINUE                                                            
+040800     END-PERFORM.                                                         
+040900     MOVE SPACES TO RPT-SCR-MESSAGE.                                      
+041000     STRING "#P" DISP-N3 DELIMITED BY SIZE INTO RPT-SCR-MESSAGE.          
+041100     MOVE 7 TO PRT-POSITION.                                              
+041200     MOVE REPORT-TITLE(1:X) TO RPT-SCR-MESSAGE(PRT-POSITION:X).           
+041300     COMPUTE PRT-POSITION = ( X + 8 ).                                    
+041400     MOVE "in progress." TO RPT-SCR-MESSAGE(PRT-POSITION:12).             
+041500     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+041600     CALL INTRINSIC "ACTIVATE" USING GETPROC-PIN .                        
+041700     MOVE "is complete." TO RPT-SCR-MESSAGE(PRT-POSITION:).               
+041800     COMPUTE PRT-POSITION = ( X + 8 + 13 ).                               
+041900     MOVE %7 TO RPT-SCR-MESSAGE(PRT-POSITION:1).                          
+042000     CALL "VSWRITE" USING SCREEN-COMMON.                                  
+042100*---------------------------------------------------------------          
+042200$PAGE "IMAGE SUBROUTINES"                                                 
+042300******************************************************************        
+042400 8000-IMAGE-SUBROUTINES.                                                  
+042500******************************************************************        
+042600*-------------------------------*                                         
+042700 9000-IMAGE-ERROR.                                                        
+042800     IF FLOWTEST DISPLAY "9000-IMAGE-ERROR".                              
+042900     CALL "VSCLOSE" USING SCREEN-COMMON.                                  
+043000     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+043100     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+043200     GO TO 9900-RETURN.                                                   
+043300*---------------------------------------------------------------          
+043400$PAGE "END OF PROGRAM"                                                    
+043500 9900-RETURN.                                                             
+043600     IF FLOWTEST                                                          
+043700         DISPLAY "-GLS700- END"                                           
+043800         DISPLAY "--------------------------------------------".          
+043900     GOBACK.                                                              

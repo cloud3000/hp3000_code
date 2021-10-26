@@ -1,0 +1,181 @@
+000100$CONTROL LIST,DYNAMIC,BOUNDS, POST85                                      
+000200 IDENTIFICATION DIVISION.                                                 
+000300 PROGRAM-ID. MIG002.                                                      
+000400 AUTHOR.     MICHAEL ANDERSON.                                            
+000500 DATE-COMPILED.                                                           
+000600*                     COPYRIGHT 2007                                      
+000700*            J3K Solutions All rights reserved.                           
+000800*            Turbo Image Migration PREP System                            
+000900*                                                                         
+001000*                      MAIN MENU                                          
+001100*                                                                         
+001200 ENVIRONMENT DIVISION.                                                    
+001300 CONFIGURATION SECTION.                                                   
+001400 SOURCE-COMPUTER. HP3000.                                                 
+001500 OBJECT-COMPUTER. HP3000.                                                 
+001600 SPECIAL-NAMES.                                                           
+001700     CONDITION-CODE IS CC.                                                
+001800$PAGE "WORKING STORAGE SECTION"                                           
+001900 DATA DIVISION.                                                           
+002000*****************************************************************         
+002100 WORKING-STORAGE SECTION.                                                 
+002200*****************************************************************         
+002300 01 COMMAND-INTRINSIC.                                                    
+002400    02 CMD                PIC X(256) VALUE SPACES.                        
+002500    02 CMDSTR             PIC X(256) VALUE SPACES.                        
+002600    02 CMDERR             PIC S9(4) COMP VALUE 0.                         
+002700    02 CMDPTR             PIC S9(4) COMP VALUE 0.                         
+002800    02 CMDPARM            PIC S9(4) COMP VALUE 0.                         
+002900    02 CMDMSG             PIC S9(4) COMP VALUE 0.                         
+003000                                                                          
+003100 01  LINK-MONTH            PIC X(2).                                      
+003200 01  LINK-YEAR             PIC X(2).                                      
+003300 01  I                     PIC S9(4) COMP.                                
+003400 01  N                     PIC S9(4) COMP.                                
+003600 01  NUM1                  PIC X(14).                                     
+003700 01  NUM2                  PIC S9(14).                                    
+003800 01  NUMDEC                PIC S9(4) COMP.                                
+003900 01  NUMERR                PIC S9(4) COMP.                                
+004000 01  DISP-N                PIC ---9.                                      
+004100 01  DISP-DEV              PIC 999.                                       
+004200 01  WHO-LDEV              PIC S9(4) COMP.                                
+004300     COPY SRVMST   OF J3KLIB.                                             
+004400     COPY IMAGEEX  OF J3KLIB.                                             
+004420     COPY SWITCHES OF J3KLIB.                                             
+004500     COPY FLOWEX   OF J3KLIB.                                             
+004600     COPY APPCOM   OF J3KLIB.                                             
+004700     COPY AMSLINK  OF J3KLIB.                                             
+004800     02 SC1-BUFFER REDEFINES SCREEN-BUFFER.                               
+004900        05 SC1-SVR-NAME       PIC X(024).                                 
+005000        05 SC1-SVR-IPADDR     PIC X(016).                                 
+005100        05 SC1-SRV-DBCNT      PIC ZZ,ZZZ.                                 
+005200        05 SC1-SVR-SUSAN      PIC Z(16).                                  
+005300        05 SC1-SVR-MPEVERSION PIC X(008).                                 
+005400        05 FILLER             PIC X(1830).                                
+005500*****************************************************************         
+005600 COPY AMSPROC OF J3KLIB.                                                  
+005700           .                                                              
+005800*****************************************************************         
+005900 0000-ENTRY.                                                              
+006000*****************************************************************         
+006100                                                                          
+006200 0000-BEGIN.                                                              
+006300                                                                          
+006400     IF THIS-SCREEN = "MAINMENU"                                          
+006500        PERFORM 2000-ENTRY-MENU    THRU 2999-EXIT                         
+006600        GO TO 0999-EXIT.                                                  
+006700                                                                          
+006800     MOVE "WRONGPROG        " TO NEXT-SCREEN.                             
+006900 0999-EXIT.                                                               
+007000     GO TO 9900-RETURN.                                                   
+007100/                                                                         
+007200******************************************************************        
+007300 2000-ENTRY-MENU.                                                         
+007400******************************************************************        
+007500                                                                          
+007600 2000-BEGIN.                                                              
+007700     MOVE "MAINMENU" TO NEXT-SCREEN SCREEN-NAME.                          
+007800     PERFORM 7802-MENUSCRN.                                               
+007900     PERFORM LOAD-SERVER-DATA.                                            
+008000                                                                          
+008100     MOVE "1" TO DATA-CHANGED-SW.                                         
+008200      COPY AMSCALL OF J3KLIB                                              
+008300     REPLACING ==VALUE OF PROCEDURE== BY =="VSWRITE"==.                   
+008400     END-CALL.                                                            
+008500 2010-LOOP.                                                               
+008600     IF NEXT-SCREEN <> "MAINMENU"                                         
+008700        GO TO 2999-EXIT.                                                  
+008800     PERFORM 7800-READ-SCREEN.                                            
+008900                                                                          
+009000     IF TIMEOUT GO TO 2999-EXIT.                                          
+009100     IF SCREEN-KEY-PRESSED = 8                                            
+009200        MOVE "SECURITY" TO NEXT-SCREEN                                    
+009300        GO TO 2999-EXIT.                                                  
+009400                                                                          
+009500     IF SCREEN-KEY-PRESSED = 1                                            
+009600        MOVE "SRVRDATA   "   TO NEXT-SCREEN                               
+009700        GO TO 2999-EXIT.                                                  
+009800                                                                          
+009824     IF SCREEN-KEY-PRESSED = 2                                            
+009834        MOVE "BASEDATA   "   TO NEXT-SCREEN                               
+009844        GO TO 2999-EXIT.                                                  
+009845                                                                          
+009854     IF EDIT-ERRORS AND SCREEN-KEY-PRESSED = 0                            
+009900         COPY AMSCALL OF J3KLIB                                           
+010000         REPLACING ==VALUE OF PROCEDURE== BY =="VSSHOWERR"==.             
+010100         END-CALL                                                         
+010200         GO TO 2010-LOOP.                                                 
+010300     IF BAD-KEY    OR SCREEN-KEY-PRESSED <> 0                             
+010400        PERFORM 7801-BAD-FUNCTION-KEY                                     
+010500        GO TO 2010-LOOP.                                                  
+010700     GO TO 2010-LOOP.                                                     
+010800 2999-EXIT.                                                               
+010900     EXIT.                                                                
+011000$PAGE "MISC. SUBROUTINES"                                                 
+011100*****************************************************************         
+011200 7800-MISC-SUBROUTINES.                                                   
+011300*****************************************************************         
+011400     COPY READSCR  OF J3KLIB.                                             
+011500/                                                                         
+011600*---------------------------------------------------------------          
+011700 7802-MENUSCRN.                                                           
+011800     MOVE "Main Menu Demo version 7.3"                                    
+011900     TO SCREEN-TITLE.                                                     
+012000     COPY AMSCALL OF J3KLIB                                               
+012100      REPLACING ==VALUE OF PROCEDURE== BY =="VSINIT"==.                   
+012200      END-CALL.                                                           
+012300     MOVE "  EXIT      " TO SCREEN-FUNC-KEY(8).                           
+012400     MOVE SPACES TO SCREEN-BUFFER.                                        
+012500*---------------------------------------------------------------          
+012600$PAGE "END OF PROGRAM"                                                    
+012700*****************************************************************         
+012800 9900-END-PROGRAM.                                                        
+012900*****************************************************************         
+013000*------------------------------*                                          
+013100 9000-IMAGE-ERROR.                                                        
+013200     CALL "VSCLOSE" USING SCREEN-COMMON.                                  
+013300     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+013400     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+013500     GO TO 9900-RETURN.                                                   
+013600 9900-RETURN.                                                             
+013700     GOBACK.                                                              
+013800*----------------------------------------------------------               
+013900 MPECMD.                                                                  
+014000     INITIALIZE CMDSTR.                                                   
+014100     PERFORM VARYING CMDPTR FROM 255 BY -1                                
+014200       UNTIL ( CMD(CMDPTR:1) <> " " )                                     
+014300          OR ( CMDPTR < 2 )                                               
+014400      CONTINUE                                                            
+014500     END-PERFORM.                                                         
+014600     MOVE CMD(1:CMDPTR) TO CMDSTR.                                        
+014700     ADD 1 TO CMDPTR.                                                     
+014800     MOVE %15 TO CMDSTR(CMDPTR:1).                                        
+014900     INITIALIZE CMDERR CMDPARM CMDMSG.                                    
+015000     CALL INTRINSIC "HPCICOMMAND"                                         
+015100          USING CMDSTR CMDERR CMDPARM CMDMSG.                             
+015200     INITIALIZE CMD.                                                      
+015300     COPY SRVMST0   OF J3KLIB.                                            
+015400     COPY SRVMST1   OF J3KLIB.                                            
+015500     COPY SRVMST2   OF J3KLIB.                                            
+015600     COPY SRVMST3   OF J3KLIB.                                            
+015700     COPY SRVMST4   OF J3KLIB.                                            
+015800     COPY SRVMST5   OF J3KLIB.                                            
+015900     COPY SRVMST6   OF J3KLIB.                                            
+016000     COPY SRVMST7   OF J3KLIB.                                            
+016100     COPY SRVMST8   OF J3KLIB.                                            
+016200*---------------------------------------------------                      
+016300 LOAD-SERVER-DATA.                                                        
+016310     DISPLAY "LOAD-SERVER-DATA".                                          
+016400     MOVE 1 TO SEARCH-KEY-I2.                                             
+016500     PERFORM GET-SRVMST-KEYED.                                            
+016600     IF NO-ENTRY                                                          
+016700      MOVE "THERE IS NO RECORD FOR THIS SERVER"                           
+016800        TO SCREEN-MESSAGE                                                 
+016900     ELSE                                                                 
+017100      MOVE SRVMST-SVR-NAME       TO SC1-SVR-NAME                          
+017200      MOVE SRVMST-SVR-IPADDR     TO SC1-SVR-IPADDR                        
+017300      MOVE SRVMST-SVR-DBCNT      TO SC1-SRV-DBCNT                         
+017400      MOVE SRVMST-SVR-SUSAN      TO SC1-SVR-SUSAN                         
+017500      MOVE SRVMST-SVR-MPEVERSION TO SC1-SVR-MPEVERSION.                   
+017510     DISPLAY SRVMST-BUFFER.                                               
+017600                                                                          

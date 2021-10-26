@@ -1,0 +1,57 @@
+001000$CONTROL OPTIMIZE=1,VALIDATE,BOUNDS,CROSSREF,SYNC32,POST85                
+001100$CONTROL ERRORS=5                                                         
+001200 IDENTIFICATION DIVISION.                                                 
+001300 PROGRAM-ID. NEWSESS.                                                     
+001400 AUTHOR. MICHAEL ANDERSON.                                                
+001500 ENVIRONMENT DIVISION.                                                    
+001600 DATA DIVISION.                                                           
+001700 WORKING-STORAGE SECTION.                                                 
+001710 01 CMD                     PIC X(255)      VALUE SPACES.                 
+001810 01 CSTR                     PIC X(255)      VALUE SPACES.                
+001820 01 CERR                     PIC S9(4) COMP  VALUE 0.                     
+001830 01 CPARM                    PIC S9(4) COMP  VALUE 0.                     
+001840 01 CMSG                     PIC S9(4) COMP  VALUE 2.                     
+001850 01  WS-LOGON-DESC                       VALUE SPACES.                    
+001900     05  WS-LD-JOB-NAME      PIC  X(16).                                  
+002000     05  WS-LD-ACCT-NAME     PIC  X(16).                                  
+002100     05  WS-LD-ACCT-PASS     PIC  X(16).                                  
+002200     05  WS-LD-USER-NAME     PIC  X(16).                                  
+002300     05  WS-LD-USER-PASS     PIC  X(16).                                  
+002400     05  WS-LD-GROUP-NAME    PIC  X(16).                                  
+002500     05  WS-LD-GROUP-PASS    PIC  X(16).                                  
+002600 01  WS-ERR PIC S9(4) COMP VALUE 0.                                       
+002700 01  WS-ERR-MSG PIC X(80) VALUE SPACES.                                   
+002800                                                                          
+002900 PROCEDURE DIVISION.                                                      
+003000 A100-MAINLINE.                                                           
+003100                                                                          
+003200     DISPLAY "Enter Job/Session Name:=>" WITH NO ADVANCING.               
+003300     MOVE SPACES TO WS-LD-JOB-NAME.                                       
+003400     ACCEPT WS-LD-JOB-NAME.                                               
+003500                                                                          
+003600     DISPLAY "Enter MPEiX User  Name:=>" WITH NO ADVANCING.               
+003700     MOVE SPACES TO WS-LD-USER-NAME.                                      
+003800     ACCEPT WS-LD-USER-NAME.                                              
+003900                                                                          
+004000     DISPLAY "Enter MPEiX Acct  Name:=>" WITH NO ADVANCING.               
+004100     MOVE SPACES TO WS-LD-ACCT-NAME.                                      
+004200     ACCEPT WS-LD-ACCT-NAME.                                              
+004300                                                                          
+004400     DISPLAY "Enter MPEiX Group Name:=>" WITH NO ADVANCING.               
+004500     MOVE SPACES TO WS-LD-GROUP-NAME.                                     
+004600     ACCEPT WS-LD-GROUP-NAME.                                             
+004700                                                                          
+004800     CALL "CHGLOGON" USING WS-LOGON-DESC WS-ERR WS-ERR-MSG.               
+004810     MOVE "SHOWME" TO CMD.                                                
+004820     PERFORM MPE-COMMAND.                                                 
+004830     STOP RUN.                                                            
+004900*---------------------------------------------------------                
+005000 MPE-COMMAND.                                                             
+005100D    DISPLAY "MPE-COMMAND".                                               
+005200     INITIALIZE CSTR.                                                     
+005300     STRING CMD DELIMITED BY "  " %15 DELIMITED BY SIZE INTO CSTR.        
+005400     Move 2 To CMSG.                                                      
+005500     CALL INTRINSIC "HPCICOMMAND" USING                                   
+005600          CSTR CERR CPARM CMSG.                                           
+005700     INITIALIZE CMD.                                                      
+005800                                                                          

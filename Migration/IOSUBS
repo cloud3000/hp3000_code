@@ -1,0 +1,2232 @@
+001000****************************************************************          
+001200*                                                              *          
+001700*                                                              *          
+001800*   TABLE OF CONTENTS.                                         *          
+002000*                                                              *          
+002100*                                                              *          
+002200*  PROGRAM NAME   Description                                  *          
+002300*  ------------- --------------------------------------------- *          
+002400*  UIINIT        Initializes User Interface environment.       *          
+002500*                                                              *          
+002600*  UIREAD        User Interface terminal read.                 *          
+002700*                                                              *          
+002800*  UISHOWERR     Sets User Interface/Formspec edit error       *          
+002900*                                                              *          
+003000*  UIFLAG        Flags a User Interface field with an error    *          
+003100*                                                              *          
+003200*  UIMESG        Displays a message for 2 seconds (not used).  *          
+003300*                                                              *          
+003400*  UIWRITE       Writes to a User Interface terminal.          *          
+003500*                                                              *          
+003600*  UIPRINT       Prints the User Interface terminal screen     *          
+003700*                                                              *          
+003800*  UICLOSE       TERMINATES the User Interface session.        *          
+003900*                                                              *          
+004000*  UIRESET       Reinitialize the current screen.              *          
+004100*                                                              *          
+004200*  UITERMOFF     Returns to character mode,                    *          
+004300*                without terminating the User Interface session*          
+005400*                                                              *          
+006500*                                                              *          
+006600****************************************************************          
+006700*                                                                         
+006800*     |           |           |           |           |                   
+006900*     |           |           |           |           |                   
+007000*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<              
+007100* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<               
+007200*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<                
+007300*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<                 
+007400*    \|/         \|/         \|/         \|/         \|/                  
+007500*     Y           Y           Y           Y           Y                   
+007600*                                                                         
+007700$TITLE "UINTSUBS - UINT SUBROUTINES"                                      
+007800$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                                
+007910 IDENTIFICATION DIVISION.                                                 
+008000 PROGRAM-ID. UINTSUB.                                                     
+008100 AUTHOR.     MICHAEL ANDERSON.                                            
+008200 DATE-COMPILED.                                                           
+008300                                                                          
+008400******************************************************************        
+008500*                                                                *        
+008600*  UINT SUBROUTINES                                              *        
+008700*                                                                *        
+008800******************************************************************        
+008900*  MODIFICATIONS:                                                *        
+009000*                                                                *        
+009100*    DATE     BY                 MODIFICATION                    *        
+009200*  --------  ----  --------------------------------------------  *        
+009300******************************************************************        
+009400/                                                                         
+009500 ENVIRONMENT DIVISION.                                                    
+009600                                                                          
+009700 CONFIGURATION SECTION.                                                   
+009800 SOURCE-COMPUTER. HP3000.                                                 
+009900*SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+010000 OBJECT-COMPUTER. HP3000.                                                 
+010100 SPECIAL-NAMES.                                                           
+010200     CONDITION-CODE IS CC.                                                
+010300                                                                          
+010400$PAGE "UINTSUBS - WORKING STORAGE SECTION"                                
+010500 DATA DIVISION.                                                           
+010600*****************************************************************         
+010700 WORKING-STORAGE SECTION.                                                 
+010800*****************************************************************         
+010900                                                                          
+011000 01  PRINT-ADDRESS         PIC S9(4) COMP VALUE 0.                        
+011100 01  PRINT-BITMAP          PIC X(16) VALUE SPACES.                        
+011200 01  PRINT-LDEV            PIC S9(4) COMP VALUE 0.                        
+011300 01  TERM-LDEV             PIC S9(4) COMP VALUE 0.                        
+011400 01  FORMLIST              PIC X(10) VALUE "*FORMLIST~".                  
+011500 01  SLAVE-SW              PIC X     VALUE SPACE.                         
+011600     88 SLAVE-ON      VALUE "1".                                          
+011700                                                                          
+011800 01  FINISHFORM-SW         PIC X    VALUE "0".                            
+011900     88 FINISHED-FORM      VALUE "1".                                     
+012000 01  VPF-PRT               PIC S9(04) COMP VALUE +0.                      
+012100 01  VPF-PG                PIC S9(04) COMP VALUE +49.                     
+012200 01  X                     PIC S9(4) COMP.                                
+012300 01  Y                     PIC S9(4) COMP.                                
+012400 01  DISP-N1               PIC ----9.                                     
+012500 01  E1                    PIC S9(4) COMP.                                
+012600 01  E2                    PIC S9(4) COMP.                                
+012700 01  UICMD                 PIC X(80).                                     
+012800 01  DISP-N2               PIC ----9.                                     
+012900 01  UI-CALL               PIC X(16).                                     
+013000 01  UINT-CALL             PIC X(16).                                     
+013100 01  HALF-SECOND           PIC S9(4) COMP VALUE 50.                       
+013200 01  1-SECOND              PIC S9(4) COMP VALUE 100.                      
+013300 01  1-AND-HALF-SECOND     PIC S9(4) COMP VALUE 150.                      
+013400 01  2-SECONDS             PIC S9(4) COMP VALUE 200.                      
+013500 01  5-SECONDS             PIC S9(4) COMP VALUE 500.                      
+013600 01  TERM-X                PIC S9(4) COMP.                                
+013700                                                                          
+013800 01  RS                    PIC X VALUE %36.                               
+013900 01  TRY-NO                PIC S9(4) COMP VALUE ZERO.                     
+014000                                                                          
+014100 01  KEYS-OFF.                                                            
+014200     02  FILLER            PIC X VALUE %320.                              
+014300     02  FILLER            PIC X VALUE %33.                               
+014400     02  FILLER            PIC XXX VALUE "&j@".                           
+014500                                                                          
+014600 01  TESTJCW               PIC X(8) VALUE "UINTTEST".                     
+014700 01  TESTJCW-VALUE         PIC S9(4) COMP VALUE ZERO.                     
+014800                                                                          
+014900 01  XDSEG-JCW.                                                           
+015000     02  FILLER            PIC X(4) VALUE "UIDS".                         
+015100     02  XDSEG-PIN         PIC 9999.                                      
+015200 01  XDSEG-ID              PIC S9(4) COMP VALUE ZERO.                     
+015300                                                                          
+015400 01  PIN-NO-X.                                                            
+015500     02  PIN-NO            PIC S9(4) COMP VALUE ZERO.                     
+015600                                                                          
+015700 01  UNDERLINE-SW          PIC X.                                         
+015800     88  UNDERLINE         VALUE "1".                                     
+015900                                                                          
+016000 01  UINTTEST-SW             PIC X.                                       
+016100     88  UINTTEST            VALUE "1".                                   
+016200                                                                          
+016300 01  FIRST-TIME-SW         PIC X VALUE "0".                               
+016400     88  FIRST-TIME        VALUE "1".                                     
+016500                                                                          
+016600 01  NUM-WORK              PIC 9999.                                      
+016700 01  FILLER REDEFINES NUM-WORK.                                           
+016800     02  FILLER            PIC XXX.                                       
+016900     02  LAST-DIGIT        PIC 9.                                         
+017000                                                                          
+017100 01  DATE-WORK.                                                           
+017200     02  MO                PIC XX.                                        
+017300     02  FILLER            PIC X.                                         
+017400     02  DA                PIC XX.                                        
+017500     02  FILLER            PIC X.                                         
+017600     02  YR                PIC XX.                                        
+017700                                                                          
+017800 01  OLD-FIELD-ENH         PIC X(4).                                      
+017900 01  OLD-FIELD-TYPE        PIC XX.                                        
+018000 01  OLD-DATA-TYPE         PIC X(4).                                      
+018100                                                                          
+018200 01  ENH-NONE.                                                            
+018300     02  FILLER            PIC X VALUE %33.                               
+018400     02  FILLER            PIC XXX VALUE "&d@".                           
+018500                                                                          
+018600 01  ENH-HI.                                                              
+018700     02  FILLER            PIC X VALUE %33.                               
+018800     02  FILLER            PIC XXX VALUE "&dL".                           
+018900                                                                          
+019000 01  ENH-HIB.                                                             
+019100     02  FILLER            PIC X VALUE %33.                               
+019200     02  FILLER            PIC XXX VALUE "&dA".                           
+019300                                                                          
+019400 01  ENABLE-KEYBOARD.                                                     
+019500     02  FILLER            PIC X VALUE %320.                              
+019600     02  FILLER            PIC X VALUE %33.                               
+019700     02  FILLER            PIC X VALUE "b".                               
+019800                                                                          
+019900 01  PROC.                                                                
+020000     02  FILLER            PIC X VALUE %320.                              
+020100     02  FILLER            PIC X VALUE %33.                               
+020200     02  FILLER            PIC X VALUE "X".                               
+020300     02  FILLER            PIC X VALUE %33.                               
+020400     02  FILLER            PIC X(8) VALUE "&a47c23R".                     
+020500     02  PROC-ENH          PIC X(4).                                      
+020600     02  PROC-DISP         PIC X(16).                                     
+020700     02  FILLER            PIC X VALUE %33.                               
+020800     02  FILLER            PIC X VALUE "W".                               
+020900                                                                          
+021000 01  OLD-COMAREA.                                                         
+021100     02  OLD-CSTATUS        PIC S9(4) COMP.                               
+021200     02  OLD-LANGUAGE       PIC S9(4) COMP.                               
+021300     02  OLD-COMAREALEN     PIC S9(4) COMP.                               
+021400     02  OLD-USERBUFLEN     PIC S9(4) COMP.                               
+021500     02  OLD-CMODE          PIC S9(4) COMP.                               
+021600     02  OLD-LASTKEY        PIC S9(4) COMP.                               
+021700     02  OLD-NUMERRS        PIC S9(4) COMP.                               
+021800     02  OLD-WINDOWENH      PIC XX.                                       
+021900     02  OLD-MULTIUSAGE     PIC S9(4) COMP.                               
+022000     02  OLD-LABELOPTION    PIC S9(4) COMP.                               
+022100     02  OLD-CFNAME         PIC X(16).                                    
+022200     02  OLD-NFNAME         PIC X(16).                                    
+022300     02  OLD-REPEATAPP      PIC S9(4) COMP.                               
+022400     02  OLD-FREEZAPP       PIC S9(4) COMP.                               
+022500     02  OLD-CFNUMLINES     PIC S9(4) COMP.                               
+022600     02  OLD-DBUFLEN        PIC S9(4) COMP.                               
+022700     02  FILLER             PIC S9(4) COMP.                               
+022800     02  OLD-LOOKAHEAD      PIC S9(4) COMP.                               
+022900     02  OLD-DELETEFLAG     PIC S9(4) COMP.                               
+023000     02  OLD-SHOWCONTROL    PIC S9(4) COMP.                               
+023100     02  FILLER             PIC S9(4) COMP.                               
+023200     02  OLD-PRINTFILNUM    PIC S9(4) COMP.                               
+023300     02  OLD-FILERRNUM      PIC S9(4) COMP.                               
+023400     02  OLD-ERRFILENUM     PIC S9(4) COMP.                               
+023500     02  OLD-FORMSTORESIZE  PIC S9(4) COMP.                               
+023600     02  FILLER             PIC S9(4) COMP.                               
+023700     02  FILLER             PIC S9(4) COMP.                               
+023800     02  FILLER             PIC S9(4) COMP.                               
+023900     02  OLD-NUMRECS        PIC S9(6) COMP.                               
+024000     02  OLD-RECNUM         PIC S9(6) COMP.                               
+024100     02  FILLER             PIC S9(4) COMP.                               
+024200     02  FILLER             PIC S9(4) COMP.                               
+024300     02  OLD-FILEN          PIC S9(4) COMP.                               
+024400     02  FILLER             PIC S9(4) COMP.                               
+024500     02  FILLER             PIC S9(4) COMP.                               
+024600     02  FILLER             PIC S9(4) COMP.                               
+024700     02  FILLER             PIC S9(4) COMP.                               
+024800     02  FILLER             PIC S9(4) COMP.                               
+024900     02  OLD-RETRIES        PIC S9(4) COMP.                               
+025000     02  OLD-TERMOPTIONS    PIC S9(4) COMP.                               
+025100     02  OLD-ENVIRON        PIC S9(4) COMP.                               
+025200     02  OLD-USERTIME       PIC S9(4) COMP.                               
+025300     02  OLD-IDENTIFIER     PIC S9(4) COMP.                               
+025400     02  OLD-LABINFO        PIC S9(4) COMP.                               
+025500                                                                          
+025600*------------------------------*                                          
+025700                                                                          
+025800 01  VERRLOG               PIC S9(4) COMP VALUE ZERO.                     
+025900 01  VERRLOG-FNAME         PIC X(30) VALUE "UIERRLOG.PUB ".               
+026000                                                                          
+026100 01  VERRLOG-RECORD.                                                      
+026200     02  VERRLOG-LDEV      PIC 9(4).                                      
+026300     02  VERRLOG-DATE.                                                    
+026400         03  YR            PIC XX.                                        
+026500         03  MO            PIC XX.                                        
+026600         03  DA            PIC XX.                                        
+026700     02  VERRLOG-TIME      PIC X(6).                                      
+026800     02  VERRLOG-TRY       PIC 99.                                        
+026900     02  VERRLOG-SCREEN    PIC X(16).                                     
+027000     02  VERRLOG-USER      PIC X(16).                                     
+027100     02  VERRLOG-MSG       PIC X(30).                                     
+027200                                                                          
+027300*------------------------------*                                          
+027400                                                                          
+027500$PAGE                                                                     
+027600*****************************************************************         
+027700*                           UINT DATA                           *         
+027800*****************************************************************         
+027900                                                                          
+028000 01  UINT-BUFFER-LENGTH    PIC 9(4) COMP VALUE 1900.                      
+028100                                                                          
+028200 01  PREV-BUFFER           PIC X(1900) VALUE SPACES.                      
+028300                                                                          
+028400 01  MESSAGE-LENGTH        PIC 9(4) COMP VALUE 79.                        
+028500                                                                          
+028600 01  FUNCTION-KEY-CODE     PIC 9(4) COMP VALUE 1.                         
+028700 01  FUNCTION-KEY-COUNT    PIC 9(4) COMP.                                 
+028800 01  FUNCTION-KEY-NUMBER   PIC 9(4) COMP.                                 
+028900                                                                          
+029000 01  FIELD-NUMBER          PIC S9(4) COMP.                                
+029100                                                                          
+029200 01  INFOBUF1.                                                            
+029300     02  FILLER              PIC S9(4) COMP VALUE 1.                      
+029400     02  FILLER              PIC S9(4) COMP VALUE 10.                     
+029500     02  INFOBUF1-TABLE.                                                  
+029600         03  INFOBUF1-FORM       PIC X(16).                               
+029700         03  FILLER              PIC S9(4) COMP.                          
+029800         03  INFOBUF1-NUM-FIELDS PIC S9(4) COMP.                          
+029900                                                                          
+030000 01  INFOBUF1-LEN          PIC S9(4) COMP VALUE 12.                       
+030100                                                                          
+030200 01  INFOBUF2.                                                            
+030300     02  INFOBUF2-NUMOFENTRIES  PIC S9(4) COMP VALUE 1.                   
+030400     02  INFOBUF2-ENTRYLENGTH   PIC S9(4) COMP VALUE 17.                  
+030500     02  INFOBUF2-FORM          PIC X(16).                                
+030600     02  INFOBUF2-TABLE.                                                  
+030700         03  INFOBUF2-FIELDNAME PIC X(16) VALUE SPACES.                   
+030800         03  INFOBUF2-FIELD     PIC S9(4) COMP.                           
+030900         03  INFOBUF2-ORDER     PIC S9(4) COMP VALUE ZERO.                
+031000         03  INFOBUF2-FIELD-LEN PIC S9(4) COMP.                           
+031100         03  INFOBUF2-OFFSET    PIC S9(4) COMP.                           
+031200         03  INFOBUF2-ENH       PIC X(4).                                 
+031300         03  INFOBUF2-DATA-TYPE PIC X(4).                                 
+031400         03  INFOBUF2-TYPE      PIC XX.                                   
+031500                                                                          
+031600 01  INFOBUF2-LEN           PIC S9(4) COMP VALUE 27.                      
+031700                                                                          
+031800 01  SPECBUF.                                                             
+031900     02  SPECBUF-ENTRY OCCURS 384.                                        
+032000         03  SPECBUF-FIELD    PIC S9(4) COMP.                             
+032100         03  SPECBUF-TYPE     PIC S9(4) COMP.                             
+032200         03  SPECBUF-SPEC     PIC X(4).                                   
+032300                                                                          
+032400 01  SPECBUF-ENTRIES       PIC S9(4) COMP VALUE 2.                        
+032500                                                                          
+032600 01  END-DSEG              PIC X(10) VALUE "END DSEG  ".                  
+032700$PAGE "EXTRA DATA SEGMENT"                                                
+032800**********************************************************                
+032900*                   EXTRA DATA SEGMENT                   *                
+033000**********************************************************                
+033100                                                                          
+033200 01  XDSEG-LEN                   PIC S9(4) COMP VALUE 1730.               
+033300                                                                          
+033400 01  EXTRA-DATA-SEG.                                                      
+033500     02  SHOW-ERRS-SW            PIC X.                                   
+033600         88  SHOW-ERRS           VALUE "1".                               
+033700     02  FLAGGED-SW              PIC X.                                   
+033800         88  FLAGGED             VALUE "1".                               
+033900     02  NUM-FIELDS              PIC S9(4) COMP.                          
+034000     02  FORMS-FILE              PIC X(36) VALUE SPACES.                  
+034100     02  TERM-FILE               PIC X(36) VALUE "UITERM ".               
+034200     02  LAST-FORM               PIC X(16).                               
+034300     02  LAST-SHOWFORM           PIC X(16) VALUE HIGH-VALUES.             
+034400     02  TERM-OFF-SW             PIC X.                                   
+034500         88  TERM-OFF            VALUE "1".                               
+034600     02  FILLER                  PIC X.                                   
+034700     02  FORCE-SHOW              PIC S9(4) COMP VALUE ZERO.               
+034800     02  TERM-TYPE               PIC S9(4) COMP VALUE ZERO.               
+034900     02  FIELD-SPECS.                                                     
+035000         03  FIELD-SPEC OCCURS 128.                                       
+035100             04  FIELD-ENH       PIC X(4).                                
+035200             04  FIELD-TYPE      PIC XX.                                  
+035300             04  DATA-TYPE       PIC X(4).                                
+035400     02  INITIAL-FUNC-KEYS       PIC X(128).                              
+035500     02  INIT-FIELD-SPECS.                                                
+035600         03  INIT-FIELD-SPEC OCCURS 128.                                  
+035700             04  INIT-FIELD-ENH  PIC X(4).                                
+035800             04  INIT-FIELD-TYPE PIC XX.                                  
+035900             04  INIT-DATA-TYPE  PIC X(4).                                
+036000     02  FUNCTION-KEY-LABELS.                                             
+036100         03  FUNCTION-KEY-LABEL  PIC X(16) OCCURS 8 TIMES.                
+036200     02  BANNER.                                                          
+036300         03  FILLER              PIC X VALUE %33.                         
+036400         03  FILLER              PIC X(3) VALUE "&dL".                    
+036500         03  BANNER-TITLE        PIC X(46).                               
+036600         03  FILLER              PIC X VALUE %33.                         
+036700         03  FILLER              PIC X(3) VALUE "&dL".                    
+036800         03  FILLER              PIC X VALUE SPACE.                       
+036900         03  BANNER-USER-FIELD.                                           
+037000             04  BANNER-USER-ENH PIC X(4).                                
+037100             04  BANNER-USER     PIC X(16).                               
+037200         03  FILLER              PIC X VALUE %33.                         
+037300         03  FILLER              PIC X(3) VALUE "&dL".                    
+037400         03  FILLER              PIC X VALUE SPACE.                       
+037500         03  FILLER              PIC X VALUE %33.                         
+037600         03  FILLER              PIC X(3) VALUE "&dL".                    
+037700         03  BANNER-NAME.                                                 
+037800             04  BN              PIC X OCCURS 16.                         
+037900     02  MESSAGE-BUFFER.                                                  
+038000         03  MESSAGE-A           PIC X(79).                               
+038100         03  MESSAGE-B           PIC X(21).                               
+038200     02  FLAG-MESSAGE            PIC X(80).                               
+038300     02  FIELD-FLAGS.                                                     
+038400         03  FIELD-FLAG          PIC X OCCURS 128.                        
+038500     02  XDSEG-VERRLOG            PIC S9(4) COMP VALUE ZERO.              
+038600     02  XDSEG-COMAREA.                                                   
+038700         03  XDSEG-CSTATUS        PIC S9(4) COMP VALUE ZERO.              
+038800         03  XDSEG-LANGUAGE       PIC S9(4) COMP VALUE ZERO.              
+038900         03  XDSEG-COMAREALEN     PIC S9(4) COMP VALUE 60.                
+039000         03  XDSEG-USERBUFLEN     PIC S9(4) COMP VALUE ZERO.              
+039100         03  XDSEG-CMODE          PIC S9(4) COMP VALUE ZERO.              
+039200         03  XDSEG-LASTKEY        PIC S9(4) COMP VALUE ZERO.              
+039300         03  XDSEG-NUMERRS        PIC S9(4) COMP VALUE ZERO.              
+039400         03  XDSEG-WINDOWENH      PIC XX         VALUE " B".              
+039500         03  XDSEG-MULTIUSAGE     PIC S9(4) COMP VALUE ZERO.              
+039600         03  XDSEG-LABELOPTION    PIC S9(4) COMP VALUE 1.                 
+039700         03  XDSEG-CFNAME         PIC X(16)      VALUE SPACES.            
+039800         03  XDSEG-NFNAME         PIC X(16)      VALUE SPACES.            
+039900         03  XDSEG-REPEATAPP      PIC S9(4) COMP VALUE ZERO.              
+040000         03  XDSEG-FREEZAPP       PIC S9(4) COMP VALUE ZERO.              
+040100         03  XDSEG-CFNUMLINES     PIC S9(4) COMP VALUE ZERO.              
+040200         03  XDSEG-DBUFLEN        PIC S9(4) COMP VALUE ZERO.              
+040300         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+040400         03  XDSEG-LOOKAHEAD      PIC S9(4) COMP VALUE ZERO.              
+040500         03  XDSEG-DELETEFLAG     PIC S9(4) COMP VALUE ZERO.              
+040600         03  XDSEG-SHOWCONTROL    PIC S9(4) COMP VALUE ZERO.              
+040700         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+040800         03  XDSEG-PRINTFILNUM    PIC S9(4) COMP VALUE ZERO.              
+040900         03  XDSEG-FILERRNUM      PIC S9(4) COMP VALUE ZERO.              
+041000         03  XDSEG-ERRFILENUM     PIC S9(4) COMP VALUE ZERO.              
+041100         03  XDSEG-FORMSTORESIZE  PIC S9(4) COMP VALUE ZERO.              
+041200         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+041300         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+041400         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+041500         03  XDSEG-NUMRECS        PIC S9(6) COMP VALUE ZERO.              
+041600         03  XDSEG-RECNUM         PIC S9(6) COMP VALUE ZERO.              
+041700         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+041800         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+041900         03  XDSEG-FILEN          PIC S9(4) COMP VALUE -1.                
+042000         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+042100         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+042200         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+042300         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+042400         03  FILLER               PIC S9(4) COMP VALUE ZERO.              
+042500         03  XDSEG-RETRIES        PIC S9(4) COMP VALUE ZERO.              
+042600         03  XDSEG-TERMOPTIONS    PIC S9(4) COMP VALUE 1.                 
+042700         03  XDSEG-ENVIRON        PIC S9(4) COMP VALUE ZERO.              
+042800         03  XDSEG-USERTIME       PIC S9(4) COMP VALUE ZERO.              
+042900         03  XDSEG-IDENTIFIER     PIC S9(4) COMP VALUE ZERO.              
+043000         03  XDSEG-LABINFO        PIC S9(4) COMP VALUE ZERO.              
+043100                                                                          
+043200$PAGE "UINT SUBROUTINES - LINKAGE SECTION"                                
+043300 COPY AMSLINK OF J3KLIB.                                                  
+043800     02  FILLER REDEFINES SCREEN-BUFFER.                                  
+043900         03  BUFFER-50     PIC X(50) OCCURS 38.                           
+044000$PAGE "UINTSUBS - MAIN LOOP"                                              
+044100 PROCEDURE DIVISION.                                                      
+044200*****************************************************************         
+044300 1000-OPEN SECTION.                                                       
+044400*****************************************************************         
+044500                                                                          
+044600*------------------------------*                                          
+044700     COPY AMSENTRY OF J3KLIB                                              
+044710     REPLACING ==VALUE OF PROCEDURE== BY =="UIINIT"==.                    
+044810     .                                                                    
+045000 1020-INIT-SCREEN.                                                        
+045100     MOVE "UIINIT" TO UI-CALL LINKPROG-NAME.                              
+045110     COPY PSTAMP1 OF J3KLIB.                                              
+045220     PERFORM 7850-GET-UINTTEST.                                           
+045300     IF UINTTEST DISPLAY ">>---UIINIT".                                   
+045400     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+045500     MOVE ZERO TO SCREEN-ERROR.                                           
+045600     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+045700     IF SCREEN-NAME NOT = SPACES                                          
+045800         PERFORM 7010-FORM THRU 7010-EXIT                                 
+045900         PERFORM 7020-INIT.                                               
+046000     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+046010     COPY PSTAMP2 OF J3KLIB.                                              
+046110     GOBACK.                                                              
+046200                                                                          
+046300*------------------------------*                                          
+046610     COPY AMSENTRY OF J3KLIB                                              
+046620     REPLACING ==VALUE OF PROCEDURE== BY =="UIREAD"==.                    
+046630     .                                                                    
+046700 1100-READ-SCREEN.                                                        
+046701     MOVE "UIREAD" TO UI-CALL LINKPROG-NAME.                              
+046810     COPY PSTAMP1 OF J3KLIB.                                              
+046900     PERFORM 7850-GET-UINTTEST.                                           
+047000     IF UINTTEST DISPLAY ">>---UIREAD".                                   
+047100     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+047200     MOVE ZERO TO SCREEN-ERROR.                                           
+047300     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+047400     PERFORM 7010-FORM THRU 7010-EXIT.                                    
+047500     PERFORM 7030-SETUP-SCREEN.                                           
+047600     PERFORM 7100-READ.                                                   
+047700     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+047710     COPY PSTAMP2 OF J3KLIB.                                              
+047810     GOBACK.                                                              
+047900                                                                          
+048100*------------------------------*                                          
+048210     COPY AMSENTRY OF J3KLIB                                              
+048220     REPLACING ==VALUE OF PROCEDURE== BY =="UISHOWERR"==.                 
+048320     .                                                                    
+048400 1110-EDIT-FIELDS.                                                        
+048401     MOVE "UISHOWERR" TO UI-CALL LINKPROG-NAME.                           
+048510     COPY PSTAMP1 OF J3KLIB.                                              
+048600     PERFORM 7850-GET-UINTTEST.                                           
+048700     IF UINTTEST DISPLAY ">>---UISHOWERR".                                
+048800     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+048900     MOVE "1" TO SHOW-ERRS-SW.                                            
+049000     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+049010     COPY PSTAMP2 OF J3KLIB.                                              
+049110     GOBACK.                                                              
+049200                                                                          
+049400*------------------------------*                                          
+049510     COPY AMSENTRY OF J3KLIB                                              
+049520     REPLACING ==VALUE OF PROCEDURE== BY =="UIFLAG"==.                    
+049620     .                                                                    
+049700 1300-FLAG-ERROR.                                                         
+049701     MOVE "UIFLAG" TO UI-CALL LINKPROG-NAME.                              
+049810     COPY PSTAMP1 OF J3KLIB.                                              
+049900     PERFORM 7850-GET-UINTTEST.                                           
+050000     IF UINTTEST DISPLAY ">>---UIFLAG " SCREEN-FIELD.                     
+050100     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+050200     MOVE ZERO TO SCREEN-ERROR.                                           
+050300     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+050400     PERFORM 7010-FORM THRU 7010-EXIT.                                    
+050500     IF SCREEN-FIELD GREATER THAN 0                                       
+050600         AND NOT GREATER THAN NUM-FIELDS                                  
+050700             MOVE "1" TO FIELD-FLAG (SCREEN-FIELD)                        
+050800             IF NOT FLAGGED                                               
+050900                 MOVE SCREEN-MESSAGE TO FLAG-MESSAGE                      
+051000                 MOVE "1" TO FLAGGED-SW.                                  
+051100     MOVE SPACES TO SCREEN-MESSAGE.                                       
+051200     MOVE 0 TO SCREEN-FIELD.                                              
+051300     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+051310     COPY PSTAMP2 OF J3KLIB.                                              
+051410     GOBACK.                                                              
+051500                                                                          
+051700*------------------------------*                                          
+051810     COPY AMSENTRY OF J3KLIB                                              
+051820     REPLACING ==VALUE OF PROCEDURE== BY =="UIMESG"==.                    
+051920     .                                                                    
+052000 1400-SCREEN-MESSAGE.                                                     
+052100     MOVE "UIMESG" TO UI-CALL LINKPROG-NAME.                              
+052110     COPY PSTAMP1 OF J3KLIB.                                              
+052220     PERFORM 7850-GET-UINTTEST.                                           
+052300     IF UINTTEST DISPLAY ">>---UIMESG".                                   
+052400     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+052500     MOVE ZERO TO SCREEN-ERROR.                                           
+052600     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+052700     PERFORM 7010-FORM THRU 7010-EXIT.                                    
+052800     PERFORM 7040-SHOW-ONLY.                                              
+052900     PERFORM 8796-UIPAUSE.                                                
+053000     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+053010     COPY PSTAMP2 OF J3KLIB.                                              
+053110     GOBACK.                                                              
+053200                                                                          
+053400*------------------------------*                                          
+053510     COPY AMSENTRY OF J3KLIB                                              
+053520     REPLACING ==VALUE OF PROCEDURE== BY =="UIWRITE"==.                   
+053620     .                                                                    
+053700 1600-WRITE-SCREEN.                                                       
+053800     MOVE "UIWRITE" TO UI-CALL LINKPROG-NAME.                             
+053810     COPY PSTAMP1 OF J3KLIB.                                              
+053910     PERFORM 7850-GET-UINTTEST.                                           
+054000     IF UINTTEST DISPLAY ">>---UIWRITE".                                  
+054100     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+054200     MOVE ZERO TO SCREEN-ERROR.                                           
+054300     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+054400     PERFORM 7010-FORM THRU 7010-EXIT.                                    
+054500     PERFORM 7040-SHOW-ONLY.                                              
+054600     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+054610     COPY PSTAMP2 OF J3KLIB.                                              
+054710     GOBACK.                                                              
+054800                                                                          
+055200*------------------------------*                                          
+055310     COPY AMSENTRY OF J3KLIB                                              
+055320     REPLACING ==VALUE OF PROCEDURE== BY =="UIPRINT"==.                   
+055321     .                                                                    
+055330 1700-PRINT-SCREEN.                                                       
+055400     MOVE "UIPRINT" TO UI-CALL LINKPROG-NAME.                             
+055410     COPY PSTAMP1 OF J3KLIB.                                              
+055510     PERFORM 7850-GET-UINTTEST.                                           
+055600     IF UINTTEST DISPLAY ">>---UIPRINT".                                  
+055700     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+055800     MOVE ZERO TO SCREEN-ERROR.                                           
+055900     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+056000     PERFORM 7010-FORM THRU 7010-EXIT.                                    
+056100     PERFORM 8781-UINT-VPRINTFORM.                                        
+056200     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+056210     COPY PSTAMP2 OF J3KLIB.                                              
+056310     GOBACK.                                                              
+056400                                                                          
+056800*------------------------------*                                          
+056910     COPY AMSENTRY OF J3KLIB                                              
+056920     REPLACING ==VALUE OF PROCEDURE== BY =="UICLOSE"==.                   
+056921     .                                                                    
+056930 1900-CLOSE-SCREEN.                                                       
+057000     MOVE "UICLOSE" TO UI-CALL LINKPROG-NAME.                             
+057010     COPY PSTAMP1 OF J3KLIB.                                              
+057110     PERFORM 7850-GET-UINTTEST.                                           
+057200     IF UINTTEST DISPLAY ">>---UIVCLOSE".                                 
+057300     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+057400     IF FIRST-TIME GO TO 1909-EXIT.                                       
+057500     MOVE ZERO TO SCREEN-ERROR.                                           
+057600     CALL INTRINSIC "FATHER".                                             
+057700     IF CC GREATER THAN ZERO PERFORM 8795-UINT-CLOSETERM.                 
+057800     PERFORM 8790-UINT-CLOSEFORMF.                                        
+057900     MOVE HIGH-VALUES TO MESSAGE-BUFFER.                                  
+058000     PERFORM 7820-REL-EXTRA-DATA-SEG.                                     
+058100                                                                          
+058200 1909-EXIT.                                                               
+058210     COPY PSTAMP2 OF J3KLIB.                                              
+058310     GOBACK.                                                              
+058400                                                                          
+058800*------------------------------*                                          
+058910     COPY AMSENTRY OF J3KLIB                                              
+058920     REPLACING ==VALUE OF PROCEDURE== BY =="UIRESET"==.                   
+058921     .                                                                    
+058930 1950-RESET-SCREEN.                                                       
+059000     MOVE "UIRESET" TO UI-CALL LINKPROG-NAME.                             
+059010     COPY PSTAMP1 OF J3KLIB.                                              
+059110     PERFORM 7850-GET-UINTTEST.                                           
+059200     IF UINTTEST DISPLAY ">>---UIRESET".                                  
+059300     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+059400     MOVE ZERO TO SCREEN-ERROR.                                           
+059500     MOVE "$REFRESH" TO SCREEN-NFNAME.                                    
+059600     PERFORM 8510-UINT-GETNEXTFORM.                                       
+059700     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+059710     COPY PSTAMP2 OF J3KLIB.                                              
+059810     GOBACK.                                                              
+059900                                                                          
+060300*------------------------------*                                          
+060410     COPY AMSENTRY OF J3KLIB                                              
+060420     REPLACING ==VALUE OF PROCEDURE== BY =="UITERMOFF"==.                 
+060421     .                                                                    
+060430 1960-TERMINAL-OFF.                                                       
+060500     MOVE "UITERMOFF" TO UI-CALL LINKPROG-NAME.                           
+060510     COPY PSTAMP1 OF J3KLIB.                                              
+060610     PERFORM 7850-GET-UINTTEST.                                           
+060700     IF UINTTEST DISPLAY ">>---UITERMOFF".                                
+060800     PERFORM 7800-GET-EXTRA-DATA-SEG THRU 7800-EXIT.                      
+060900     MOVE ZERO TO SCREEN-ERROR.                                           
+061000     PERFORM 7000-FORMS-FILE THRU 7000-EXIT.                              
+061100     PERFORM 8600-UINT-VTURNOFF.                                          
+061200     CALL INTRINSIC "FWRITE" USING SCREEN-FILEN                           
+061300         ENABLE-KEYBOARD \-3\ \1\.                                        
+061400     MOVE "1" TO TERM-OFF-SW.                                             
+061500     MOVE 7 TO FORCE-SHOW.                                                
+061600     MOVE HIGH-VALUES TO FUNCTION-KEY-LABELS.                             
+061700     PERFORM 8736-UINT-SETKEYLABELS.                                      
+061800     PERFORM 7810-PUT-EXTRA-DATA-SEG.                                     
+061810     COPY PSTAMP2 OF J3KLIB.                                              
+061910     GOBACK.                                                              
+062000$PAGE "UINTSUBS - MISC. SUBROUTINES"                                      
+062100*****************************************************************         
+062200 7000-MISC-SUBROUTINES SECTION.                                           
+062300*****************************************************************         
+062400                                                                          
+062500*------------------------------*                                          
+062600                                                                          
+062700 7000-FORMS-FILE.                                                         
+062800     IF SCREEN-FORMS-FILE = FORMS-FILE GO TO 7000-EXIT.                   
+062900     IF UINTTEST DISPLAY ">>-FORM-FILE [" SCREEN-FORMS-FILE "]".          
+063000     IF FORMS-FILE NOT = SPACES                                           
+063100         PERFORM 8790-UINT-CLOSEFORMF.                                    
+063110     COPY AMSCALL OF J3KLIB                                               
+063111     REPLACING ==VALUE OF PROCEDURE== BY =="TIMEOUT"==.                   
+063121          OLD-USERTIME.                                                   
+063130     MOVE OLD-USERTIME TO SCREEN-USERTIME.                                
+063300     IF SCREEN-USERTIME NOT = ZERO AND XDSEG-USERTIME = ZERO              
+063400         ADD 32 TO SCREEN-TERMOPTIONS.                                    
+063500     IF SCREEN-USERTIME = ZERO AND XDSEG-USERTIME NOT = ZERO              
+063600         SUBTRACT 32 FROM SCREEN-TERMOPTIONS.                             
+063700     MOVE SCREEN-FORMS-FILE TO FORMS-FILE.                                
+063800     PERFORM 8505-UINT-OPENFORMF.                                         
+063900D    DISPLAY "FILEN = [" SCREEN-FILEN "]".                                
+064000     CALL INTRINSIC "FFILEINFO" USING SCREEN-FILEN \60\ TERM-X.           
+064100D    DISPLAY "----- TERMX -----".                                         
+064200D    DISPLAY "TERMX=[" TERM-X "]".                                        
+064300D    DISPLAY "-----------------".                                         
+064400     IF CC NOT = ZERO OR TERM-X LESS THAN 1 OR GREATER THAN 6             
+064500         PERFORM 8500-UINT-OPENTERM                                       
+064600         MOVE "0" TO TERM-OFF-SW.                                         
+064700     IF TERM-TYPE = ZERO CALL INTRINSIC "FCONTROL"                        
+064800         USING SCREEN-FILEN \39\ TERM-TYPE.                               
+064900 7000-EXIT.                                                               
+065000     EXIT.                                                                
+065100                                                                          
+065200*------------------------------*                                          
+065300                                                                          
+065400 7010-FORM.                                                               
+065500     IF NOT TERM-OFF AND SCREEN-NAME = OLD-CFNAME AND LAST-FORM           
+065600         GO TO 7010-EXIT.                                                 
+065700     IF TERM-OFF                                                          
+065800         MOVE "0" TO TERM-OFF-SW                                          
+065900         PERFORM 8610-UINT-VTURNON                                        
+066000         IF SCREEN-NAME = SCREEN-CFNAME AND LAST-FORM                     
+066100             GO TO 7010-EXIT.                                             
+066200     IF UINTTEST DISPLAY ">>-FORM [" SCREEN-NAME "]".                     
+066300     MOVE SCREEN-NAME TO SCREEN-NFNAME LAST-FORM.                         
+066400     MOVE " H" TO SCREEN-WINDOWENH.                                       
+066500     PERFORM 8510-UINT-GETNEXTFORM.                                       
+066600     PERFORM 8515-UINT-INITFORM.                                          
+066700     PERFORM 8733-UINT-GETKEYLABELS.                                      
+066800     MOVE FUNCTION-KEY-LABELS TO INITIAL-FUNC-KEYS.                       
+066900     MOVE HIGH-VALUES TO FUNCTION-KEY-LABELS.                             
+067000     PERFORM 7011-GET-INFO.                                               
+067100     MOVE NUM-FIELDS TO SCREEN-NUM-FIELDS.                                
+067200     IF SCREEN-FUNC-KEYS = SPACES                                         
+067300         MOVE INITIAL-FUNC-KEYS TO SCREEN-FUNC-KEYS.                      
+067400     MOVE INIT-FIELD-SPECS TO FIELD-SPECS.                                
+067500     MOVE SPACES TO MESSAGE-BUFFER.                                       
+067600     MOVE ALL "0" TO FIELD-FLAGS.                                         
+067700     MOVE "0" TO SHOW-ERRS-SW FLAGGED-SW.                                 
+067800 7010-EXIT.                                                               
+067900     EXIT.                                                                
+068000                                                                          
+068100*------------------------------*                                          
+068200                                                                          
+068300 7011-GET-INFO.                                                           
+068400     IF UINTTEST DISPLAY ">>-GET-INFO".                                   
+068500     MOVE SPACES TO INFOBUF1-TABLE.                                       
+068600     MOVE SCREEN-NAME TO INFOBUF1-FORM.                                   
+068700     PERFORM 8764-UINT-GETFORMINFO.                                       
+068800     PERFORM 7012-GET-FIELD-INFO VARYING X FROM 1 BY 1                    
+068900         UNTIL X GREATER THAN INFOBUF1-NUM-FIELDS.                        
+069000     MOVE INFOBUF1-NUM-FIELDS TO NUM-FIELDS.                              
+069100                                                                          
+069200*------------------------------*                                          
+069300                                                                          
+069400 7012-GET-FIELD-INFO.                                                     
+069500     IF UINTTEST DISPLAY ">>-GET-FIELD-INFO " X.                          
+069600     MOVE SPACES TO INFOBUF2-TABLE.                                       
+069700     COMPUTE FIELD-NUMBER = - X.                                          
+069800     PERFORM 8765-UINT-GETFIELDINFO.                                      
+069900     MOVE INFOBUF2-ENH TO INIT-FIELD-ENH (X).                             
+070000     MOVE INFOBUF2-TYPE TO INIT-FIELD-TYPE (X).                           
+070100     MOVE INFOBUF2-DATA-TYPE TO INIT-DATA-TYPE (X).                       
+070200                                                                          
+070300*------------------------------*                                          
+070400                                                                          
+070500 7020-INIT.                                                               
+070600     IF UINTTEST DISPLAY ">>-INIT".                                       
+070700     MOVE SPACES TO SCREEN-BUFFER.                                        
+070800     PERFORM 8515-UINT-INITFORM.                                          
+070900     PERFORM 8725-UINT-GETBUFFER.                                         
+071000     MOVE 0 TO SCREEN-KEY-PRESSED.                                        
+071100     MOVE INITIAL-FUNC-KEYS TO SCREEN-FUNC-KEYS.                          
+071200     MOVE INIT-FIELD-SPECS TO SCREEN-FIELD-SPECS.                         
+071300     MOVE "0" TO SHOW-ERRS-SW FLAGGED-SW.                                 
+071400                                                                          
+071500*------------------------------*                                          
+071600                                                                          
+071700 7030-SETUP-SCREEN.                                                       
+071800     IF UINTTEST DISPLAY ">>-SETUP-SCREEN".                               
+071900     PERFORM 7400-MESSAGE.                                                
+072000     IF SCREEN-FUNC-KEYS NOT = FUNCTION-KEY-LABELS                        
+072100         PERFORM 7410-FUNCTION-KEYS.                                      
+072200     PERFORM 8750-UINT-PUTBUFFER.                                         
+072300     PERFORM 8760-UINT-FIELDEDITS.                                        
+072400     PERFORM 8725-UINT-GETBUFFER.                                         
+072500     MOVE SCREEN-BUFFER TO PREV-BUFFER.                                   
+072600     IF SCREEN-NUMERRS NOT = ZERO                                         
+072700         IF SHOW-ERRS                                                     
+072800             PERFORM 8780-UINT-VERRMSG                                    
+072900             PERFORM 8730-UINT-PUTWINDOW                                  
+073000         ELSE                                                             
+073100             PERFORM 8750-UINT-PUTBUFFER                                  
+073200     ELSE                                                                 
+073300         MOVE "0" TO SHOW-ERRS-SW.                                        
+073400     IF NOT SHOW-ERRS                                                     
+073500         PERFORM 7430-FLAG-FIELD THRU 7430-EXIT                           
+073600         VARYING X FROM 1 BY 1 UNTIL X GREATER THAN NUM-FIELDS.           
+073700     PERFORM 7420-FIELD-ATTRIBUTES.                                       
+073800                                                                          
+073900*------------------------------*                                          
+074000                                                                          
+074100 7040-SHOW-ONLY.                                                          
+074200     IF UINTTEST DISPLAY ">>-SHOW-ONLY".                                  
+074300     PERFORM 7400-MESSAGE.                                                
+074400     IF SCREEN-FUNC-KEYS NOT = FUNCTION-KEY-LABELS                        
+074500         PERFORM 7410-FUNCTION-KEYS.                                      
+074600     PERFORM 8750-UINT-PUTBUFFER.                                         
+074700     PERFORM 8760-UINT-FIELDEDITS.                                        
+074800     PERFORM 8725-UINT-GETBUFFER.                                         
+074900     IF SCREEN-NUMERRS NOT = ZERO                                         
+075000         PERFORM 8750-UINT-PUTBUFFER.                                     
+075100     ADD 32 TO SCREEN-SHOWCONTROL.                                        
+075200     PERFORM 7420-FIELD-ATTRIBUTES.                                       
+075300     PERFORM 8740-UINT-SHOWFORM.                                          
+075400     SUBTRACT 32 FROM SCREEN-SHOWCONTROL.                                 
+075500     IF SCREEN-MESSAGE = SPACES PERFORM 7402-SHOW-PROCESSING.             
+075600     MOVE SPACES TO SCREEN-MESSAGE.                                       
+075700                                                                          
+075800*------------------------------*                                          
+075900                                                                          
+076000 7100-READ.                                                               
+076100     IF UINTTEST DISPLAY ">>-READ".                                       
+076200     PERFORM 8740-UINT-SHOWFORM.                                          
+076300     PERFORM 7403-CLEAR-PROCESSING.                                       
+076400     COMPUTE FIELD-NUMBER = - SCREEN-FIELD.                               
+076500     IF NOT SHOW-ERRS AND NOT FLAGGED                                     
+076600         PERFORM 7840-SEE-IF-VALID-FIELD                                  
+076700         IF SCREEN-FIELD NOT = 0                                          
+076800            PERFORM 8775-UINT-PLACECURSOR.                                
+076900     PERFORM 8720-UINT-READFIELDS.                                        
+077000     MOVE ZERO TO TRY-NO.                                                 
+077100     PERFORM 7120-CHECK-READ.                                             
+077200     IF SCREEN-BUFFER = PREV-BUFFER                                       
+077300         MOVE "0" TO SCREEN-CHANGE-SW                                     
+077400     ELSE                                                                 
+077500         MOVE "1" TO SCREEN-CHANGE-SW.                                    
+077600     MOVE "0" TO SHOW-ERRS-SW FLAGGED-SW.                                 
+077700     MOVE ALL "0" TO FIELD-FLAGS.                                         
+077800     MOVE ZERO TO SCREEN-FIELD.                                           
+077900     MOVE SPACES TO SCREEN-MESSAGE.                                       
+078000     PERFORM 7402-SHOW-PROCESSING.                                        
+078100     IF UINTTEST                                                          
+078200         MOVE SCREEN-ERROR TO DISP-N1                                     
+078300         DISPLAY ">>-KEY PRESSED=" SCREEN-KEY-PRESSED                     
+078400             "  CHANGE-SW=" SCREEN-CHANGE-SW                              
+078500             "  ERROR=" DISP-N1.                                          
+078600                                                                          
+078700*------------------------------*                                          
+078800                                                                          
+078900 7120-CHECK-READ.                                                         
+079000     ADD 1 TO TRY-NO.                                                     
+079100     IF UINTTEST DISPLAY ">>-CHECK READ - TRY=" TRY-NO.                   
+079200     PERFORM 8760-UINT-FIELDEDITS.                                        
+079300     PERFORM 8725-UINT-GETBUFFER.                                         
+079400     IF SCREEN-NUMERRS = ZERO                                             
+079500         MOVE 0 TO SCREEN-ERROR                                           
+079600     ELSE                                                                 
+079700         MOVE -1 TO SCREEN-ERROR                                          
+079800         PERFORM 8750-UINT-PUTBUFFER.                                     
+079900     MOVE ZERO TO X.                                                      
+080000     INSPECT SCREEN-BUFFER TALLYING X FOR ALL RS.                         
+080100     IF X NOT = ZERO                                                      
+080200         IF TRY-NO GREATER THAN 3                                         
+080300             INSPECT SCREEN-BUFFER REPLACING ALL RS BY SPACE              
+080400             PERFORM 8750-UINT-PUTBUFFER                                  
+080500             MOVE "Read RS - replaced with SPACE" TO VERRLOG-MSG          
+080600             PERFORM 7990-LOG-ERROR THRU 7990-EXIT                        
+080700         ELSE                                                             
+080800             MOVE "Read RS - trying again" TO VERRLOG-MSG                 
+080900             PERFORM 7990-LOG-ERROR THRU 7990-EXIT                        
+081000             ADD 2 TO SCREEN-TERMOPTIONS                                  
+081100             PERFORM 8722-UINT-READFIELDS                                 
+081200             SUBTRACT 2 FROM SCREEN-TERMOPTIONS                           
+081300             GO TO 7120-CHECK-READ.                                       
+081400     IF TRY-NO GREATER THAN 1 AND NOT GREATER THAN 3                      
+081500         MOVE "RS gone" TO VERRLOG-MSG                                    
+081600         PERFORM 7990-LOG-ERROR THRU 7990-EXIT.                           
+081700                                                                          
+081800*------------------------------*                                          
+081900                                                                          
+082000 7400-MESSAGE.                                                            
+082100     IF UINTTEST DISPLAY ">>-MESSAGE".                                    
+082200     PERFORM 7401-BANNER THRU 7401-EXIT.                                  
+082300     IF SCREEN-MESSAGE = SPACES AND MESSAGE-BUFFER NOT = BANNER           
+082400         MOVE BANNER TO MESSAGE-BUFFER                                    
+082500         PERFORM 8730-UINT-PUTWINDOW.                                     
+082600     IF SCREEN-MESSAGE NOT = SPACES AND MESSAGE-BUFFER                    
+082700         MOVE SCREEN-MESSAGE TO MESSAGE-BUFFER                            
+082800         PERFORM 8730-UINT-PUTWINDOW.                                     
+082900                                                                          
+083000*------------------------------*                                          
+083100                                                                          
+083200 7401-BANNER.                                                             
+083300     MOVE SCREEN-TITLE TO BANNER-TITLE.                                   
+083400     MOVE SCREEN-USER TO BANNER-USER.                                     
+083500     IF BANNER-USER = SPACES                                              
+083600         MOVE ENH-HI TO BANNER-USER-ENH                                   
+083700     ELSE                                                                 
+083800         MOVE ENH-HI TO BANNER-USER-ENH.                                  
+083900     MOVE SCREEN-NAME TO BANNER-NAME.                                     
+084000     IF BANNER-NAME = SPACES GO TO 7401-EXIT.                             
+084100     MOVE 17 TO X.                                                        
+084200     IF BN (1) NOT = SPACE GO TO 7401-LOOP-2.                             
+084300     INSPECT BANNER-NAME TALLYING X FOR LEADING SPACES.                   
+084400     MOVE ZERO TO Y.                                                      
+084500 7401-LOOP-1.                                                             
+084600     ADD 1 TO X.                                                          
+084700     ADD 1 TO Y.                                                          
+084800     IF X GREATER THAN 16 GO TO 7401-LOOP-2.                              
+084900     MOVE BN (X) TO BN (Y).                                               
+085000     MOVE SPACE TO BN (X).                                                
+085100     GO TO 7401-LOOP-1.                                                   
+085200 7401-LOOP-2.                                                             
+085300     SUBTRACT 1 FROM X.                                                   
+085400     IF BN (X) = SPACE GO TO 7401-LOOP-2.                                 
+085500     IF X = 16 GO TO 7401-EXIT.                                           
+085600     COMPUTE Y = X + 1.                                                   
+085700     IF X LESS THAN 13 COMPUTE Y = X + 4.                                 
+085800     IF X LESS THAN 7 COMPUTE Y = X + 3.                                  
+085900 7401-LOOP-3.                                                             
+086000     IF X = ZERO GO TO 7401-EXIT.                                         
+086100     MOVE BN (X) TO BN (Y).                                               
+086200     MOVE SPACE TO BN (X).                                                
+086300     SUBTRACT 1 FROM X.                                                   
+086400     SUBTRACT 1 FROM Y.                                                   
+086500     GO TO 7401-LOOP-3.                                                   
+086600 7401-EXIT.                                                               
+086700     EXIT.                                                                
+086800                                                                          
+086900*------------------------------*                                          
+087000                                                                          
+087100 7402-SHOW-PROCESSING.                                                    
+087200     IF MESSAGE-BUFFER NOT = BANNER                                       
+087300         MOVE ENH-HIB TO BANNER-USER-ENH                                  
+087400         MOVE SCREEN-PROCMSG TO BANNER-USER                               
+087500         MOVE BANNER TO MESSAGE-BUFFER                                    
+087600         PERFORM 8730-UINT-PUTWINDOW                                      
+087700         ADD 32 TO SCREEN-SHOWCONTROL                                     
+087800         PERFORM 8740-UINT-SHOWFORM                                       
+087900         SUBTRACT 32 FROM SCREEN-SHOWCONTROL                              
+088000     ELSE                                                                 
+088100         MOVE ENH-HIB TO PROC-ENH                                         
+088200         MOVE SCREEN-PROCMSG TO PROC-DISP                                 
+088300         CALL INTRINSIC "FWRITE" USING SCREEN-FILEN                       
+088400             PROC \-34\ \1\.                                              
+088500                                                                          
+088600*------------------------------*                                          
+088700                                                                          
+088800 7403-CLEAR-PROCESSING.                                                   
+088900     MOVE SCREEN-USER TO PROC-DISP.                                       
+089000     IF PROC-DISP = SPACES                                                
+089100         MOVE ENH-NONE TO PROC-ENH                                        
+089200     ELSE                                                                 
+089300         MOVE ENH-NONE TO PROC-ENH.                                       
+089400     IF MESSAGE-BUFFER = BANNER                                           
+089500         CALL INTRINSIC "FWRITE" USING SCREEN-FILEN                       
+089600             PROC \-34\ \1\                                               
+089700         IF TERM-TYPE = 13 PERFORM 8796-UIPAUSE.                          
+089800                                                                          
+089900*------------------------------*                                          
+090000                                                                          
+090100 7410-FUNCTION-KEYS.                                                      
+090200     IF UINTTEST DISPLAY ">>-FUNCTION-KEYS".                              
+090300     IF SCREEN-FUNC-KEYS = LOW-VALUES                                     
+090400         AND INITIAL-FUNC-KEYS = SPACES                                   
+090500            CALL INTRINSIC "FWRITE" USING SCREEN-FILEN                    
+090600                KEYS-OFF \-5\ \1\                                         
+090700     ELSE                                                                 
+090800         PERFORM 7411-FUNCTION-KEY VARYING X FROM 1 BY 1                  
+090900             UNTIL X GREATER THAN 8.                                      
+091000                                                                          
+091100*------------------------------*                                          
+091200                                                                          
+091300 7411-FUNCTION-KEY.                                                       
+091400     IF UINTTEST DISPLAY ">>-FUNCTION-KEY " X "=>"                        
+091500         SCREEN-FUNC-KEY (X) "<=>"                                        
+091600         FUNCTION-KEY-LABEL (X) "<=".                                     
+091700     IF SCREEN-FUNC-KEY (X) NOT = FUNCTION-KEY-LABEL (X)                  
+091800         AND SCREEN-FUNC-KEY (X) NOT = LOW-VALUES                         
+091900             MOVE SCREEN-FUNC-KEY (X) TO FUNCTION-KEY-LABEL (X)           
+092000             MOVE X TO FUNCTION-KEY-NUMBER                                
+092100             PERFORM 8735-UINT-SETKEYLABEL.                               
+092200                                                                          
+092300*------------------------------*                                          
+092400                                                                          
+092500 7420-FIELD-ATTRIBUTES.                                                   
+092600     IF UINTTEST DISPLAY ">>-FIELD-ATTRIBUTES ".                          
+092700     MOVE ZERO TO Y.                                                      
+092800     PERFORM 7421-FIELD-ATTRIBUTE VARYING X FROM 1 BY 1                   
+092900         UNTIL X GREATER THAN NUM-FIELDS.                                 
+093000     IF Y GREATER THAN ZERO                                               
+093100         MOVE Y TO SPECBUF-ENTRIES                                        
+093200         PERFORM 8766-UINT-CHANGEFIELD.                                   
+093300                                                                          
+093400*------------------------------*                                          
+093500                                                                          
+093600 7421-FIELD-ATTRIBUTE.                                                    
+093700     IF SCREEN-FIELD-ENH (X) = SPACES                                     
+093800         MOVE INIT-FIELD-ENH (X) TO SCREEN-FIELD-ENH (X).                 
+093900     MOVE FIELD-ENH (X) TO OLD-FIELD-ENH.                                 
+094000     IF SCREEN-FIELD-ENH (X) NOT = FIELD-ENH (X)                          
+094100         ADD 1 TO Y                                                       
+094200         COMPUTE SPECBUF-FIELD (Y) = - X                                  
+094300         MOVE 4 TO SPECBUF-TYPE (Y)                                       
+094400         MOVE SCREEN-FIELD-ENH (X) TO SPECBUF-SPEC (Y)                    
+094500             FIELD-ENH (X).                                               
+094600     IF SCREEN-FIELD-TYPE (X) = SPACES                                    
+094700         MOVE INIT-FIELD-TYPE (X) TO SCREEN-FIELD-TYPE (X).               
+094800     MOVE FIELD-TYPE (X) TO OLD-FIELD-TYPE.                               
+094900     IF SCREEN-FIELD-TYPE (X) NOT = FIELD-TYPE (X)                        
+095000         ADD 1 TO Y                                                       
+095100         COMPUTE SPECBUF-FIELD (Y) = - X                                  
+095200         MOVE 5 TO SPECBUF-TYPE (Y)                                       
+095300         MOVE SCREEN-FIELD-TYPE (X) TO SPECBUF-SPEC (Y)                   
+095400             FIELD-TYPE (X).                                              
+095500     IF SCREEN-DATA-TYPE (X) = SPACES                                     
+095600         MOVE INIT-DATA-TYPE (X) TO SCREEN-DATA-TYPE (X).                 
+095700     MOVE DATA-TYPE (X) TO OLD-DATA-TYPE.                                 
+095800     IF SCREEN-DATA-TYPE (X) NOT = DATA-TYPE (X)                          
+095900         ADD 1 TO Y                                                       
+096000         COMPUTE SPECBUF-FIELD (Y) = - X                                  
+096100         MOVE 6 TO SPECBUF-TYPE (Y)                                       
+096200         MOVE SCREEN-DATA-TYPE (X) TO SPECBUF-SPEC (Y)                    
+096300             DATA-TYPE (X).                                               
+096400     IF UINTTEST                                                          
+096500         AND (SCREEN-FIELD-ENH (X) NOT = OLD-FIELD-ENH                    
+096600             OR SCREEN-FIELD-TYPE (X) NOT = OLD-FIELD-TYPE                
+096700             OR SCREEN-DATA-TYPE (X) NOT = OLD-DATA-TYPE)                 
+096800         MOVE X TO DISP-N1                                                
+096900         DISPLAY DISP-N1                                                  
+097000             "     [" OLD-FIELD-ENH "]->[" FIELD-ENH (X)                  
+097100             "]    [" OLD-FIELD-TYPE "]->[" FIELD-TYPE (X)                
+097200             "]    [" OLD-DATA-TYPE "]->[" DATA-TYPE (X) "]".             
+097300                                                                          
+097400*------------------------------*                                          
+097500                                                                          
+097600 7430-FLAG-FIELD.                                                         
+097700     IF FIELD-FLAG (X) NOT = "1" GO TO 7430-EXIT.                         
+097800     IF UINTTEST DISPLAY ">>-FLAG FIELD " X.                              
+097900     COMPUTE FIELD-NUMBER = - X.                                          
+098000     MOVE FLAG-MESSAGE TO MESSAGE-BUFFER.                                 
+098100     PERFORM 8770-UINT-SETERROR.                                          
+098200 7430-EXIT.                                                               
+098300     EXIT.                                                                
+098400                                                                          
+098500*------------------------------*                                          
+098600                                                                          
+098700 7800-GET-EXTRA-DATA-SEG.                                                 
+098800     CALL INTRINSIC "PROCINFO" USING X Y \0\ \1\ PIN-NO-X.                
+098900     IF CC NOT = ZERO MOVE ZERO TO PIN-NO.                                
+099000     MOVE PIN-NO TO XDSEG-PIN.                                            
+099100     CALL INTRINSIC "FINDJCW" USING XDSEG-JCW XDSEG-ID X.                 
+099200     IF X NOT = ZERO MOVE ZERO TO XDSEG-ID.                               
+099300     IF UINTTEST                                                          
+099400         MOVE XDSEG-ID TO DISP-N1                                         
+099500         DISPLAY ">>DMOVIN" DISP-N1 " PIN=" XDSEG-PIN.                    
+099600     CALL INTRINSIC "DMOVIN" USING                                        
+099700         XDSEG-ID \0\ XDSEG-LEN EXTRA-DATA-SEG.                           
+099800     IF CC GREATER THAN ZERO GO TO 9051-DMOVIN-ERROR.                     
+099900     IF CC LESS THAN ZERO                                                 
+100000         MOVE "1" TO FIRST-TIME-SW                                        
+100100         IF UI-CALL = "UICLOSE"                                           
+100200             GO TO 7800-EXIT                                              
+100300         ELSE                                                             
+100400             PERFORM 7801-NEW-EXTRA-DATA-SEG.                             
+100500     MOVE SCREEN-COMAREA TO OLD-COMAREA.                                  
+100600     MOVE XDSEG-COMAREA TO SCREEN-COMAREA.                                
+100700     MOVE XDSEG-VERRLOG TO VERRLOG.                                       
+100800     MOVE OLD-USERTIME TO SCREEN-USERTIME.                                
+100900     IF SCREEN-USERTIME NOT = ZERO AND XDSEG-USERTIME = ZERO              
+101000         ADD 32 TO SCREEN-TERMOPTIONS.                                    
+101100     IF SCREEN-USERTIME = ZERO AND XDSEG-USERTIME NOT = ZERO              
+101200         SUBTRACT 32 FROM SCREEN-TERMOPTIONS.                             
+101300     CALL INTRINSIC "PUTJCW" USING XDSEG-JCW XDSEG-ID X.                  
+101400 7800-EXIT.                                                               
+101500     EXIT.                                                                
+101600                                                                          
+101700*------------------------------*                                          
+101800                                                                          
+101900 7801-NEW-EXTRA-DATA-SEG.                                                 
+102000     IF UINTTEST DISPLAY ">>GETDSEG ----"                                 
+102100              "   UINTSUBS version " WHEN-COMPILED.                       
+102200     CALL INTRINSIC "GETDSEG" USING XDSEG-ID XDSEG-LEN \0\.               
+102300     IF CC NOT = ZERO GO TO 9050-GETDSEG-ERROR.                           
+102400     MOVE XDSEG-COMAREA TO SCREEN-COMAREA.                                
+102500     IF UINTTEST                                                          
+102600         MOVE XDSEG-ID TO DISP-N1                                         
+102700         DISPLAY ">>GETDSEG" DISP-N1.                                     
+102800                                                                          
+102900*------------------------------*                                          
+103000                                                                          
+103100 7810-PUT-EXTRA-DATA-SEG.                                                 
+103200     IF UINTTEST                                                          
+103300         MOVE XDSEG-ID TO DISP-N1                                         
+103400         DISPLAY ">>DMOVOUT" DISP-N1 " PIN=" XDSEG-PIN.                   
+103500     MOVE SCREEN-COMAREA TO XDSEG-COMAREA.                                
+103600     MOVE VERRLOG TO XDSEG-VERRLOG.                                       
+103700     CALL INTRINSIC "DMOVOUT" USING                                       
+103800         XDSEG-ID \0\ XDSEG-LEN EXTRA-DATA-SEG.                           
+103900     IF CC NOT = ZERO GO TO 9052-DMOVOUT-ERROR.                           
+104000                                                                          
+104100*------------------------------*                                          
+104200                                                                          
+104300 7820-REL-EXTRA-DATA-SEG.                                                 
+104400     IF UINTTEST                                                          
+104500         MOVE XDSEG-ID TO DISP-N1                                         
+104600         DISPLAY ">>FREEDSEG" DISP-N1.                                    
+104700     CALL INTRINSIC "FREEDSEG" USING XDSEG-ID \0\.                        
+104800     MOVE ZERO TO XDSEG-ID.                                               
+104900     CALL INTRINSIC "PUTJCW" USING XDSEG-JCW XDSEG-ID X.                  
+105000     IF VERRLOG NOT = ZERO                                                
+105100         CALL INTRINSIC "FCLOSE" USING VERRLOG \1\ \0\                    
+105200         MOVE ZERO TO VERRLOG.                                            
+105300                                                                          
+105400*------------------------------*                                          
+105500                                                                          
+105600 7840-SEE-IF-VALID-FIELD.                                                 
+105700     IF SCREEN-FIELD LESS THAN 1 OR GREATER THAN SCREEN-NUM-FIELDS        
+105800         MOVE ZERO TO SCREEN-FIELD                                        
+105900     ELSE IF SCREEN-FIELD-TYPE (SCREEN-FIELD) NOT = "O" AND "R"           
+106000         ADD 1 TO SCREEN-FIELD                                            
+106100         GO TO 7840-SEE-IF-VALID-FIELD.                                   
+106200                                                                          
+106300*------------------------------*                                          
+106400                                                                          
+106500 7850-GET-UINTTEST.                                                       
+106600     CALL INTRINSIC "FINDJCW" USING TESTJCW TESTJCW-VALUE X.              
+106700     IF TESTJCW-VALUE = ZERO                                              
+106800         MOVE "0" TO UINTTEST-SW                                          
+106900     ELSE                                                                 
+107000         MOVE "1" TO UINTTEST-SW.                                         
+107100                                                                          
+107200*------------------------------*                                          
+107300                                                                          
+107400 7990-LOG-ERROR.                                                          
+107500     IF UINTTEST DISPLAY ">>>VERRLOG: " VERRLOG-MSG.                      
+107600     IF VERRLOG = ZERO                                                    
+107700         CALL INTRINSIC "FOPEN"                                           
+107800             USING VERRLOG-FNAME \%20005\ \%2303\ GIVING VERRLOG          
+107900         IF VERRLOG = ZERO                                                
+108000             CALL INTRINSIC "FCHECK" USING VERRLOG X                      
+108100             IF X = 52                                                    
+108200                 CALL INTRINSIC "FOPEN"                                   
+108300                     USING VERRLOG-FNAME \%20004\ \%2303\ \-80\           
+108400                     \\ \\ \\ \16\ \\ \640\ GIVING VERRLOG                
+108500                 IF VERRLOG = ZERO                                        
+108600                     GO TO 7990-EXIT.                                     
+108700     CALL INTRINSIC "FFILEINFO" USING SCREEN-FILEN \6\ X.                 
+108800     MOVE X TO VERRLOG-LDEV.                                              
+108900     MOVE CURRENT-DATE TO DATE-WORK.                                      
+109000     MOVE CORR DATE-WORK TO VERRLOG-DATE.                                 
+109100     MOVE TIME-OF-DAY TO VERRLOG-TIME.                                    
+109200     MOVE TRY-NO TO VERRLOG-TRY.                                          
+109300     MOVE SCREEN-NAME TO VERRLOG-SCREEN.                                  
+109400     MOVE SCREEN-USER TO VERRLOG-USER.                                    
+109500     CALL INTRINSIC "FWRITE"                                              
+109600         USING VERRLOG VERRLOG-RECORD \-80\ \0\.                          
+109700 7990-EXIT.                                                               
+109800     EXIT.                                                                
+109900                                                                          
+110000$PAGE "UINTSUBS - UINT SUBROUTINES"                                       
+110100*****************************************************************         
+110200 8500-UINT SECTION.                                                       
+110300*****************************************************************         
+110400                                                                          
+110500 8500-UINT-OPENTERM.                                                      
+110600     IF UINTTEST DISPLAY ">>OPENTERM".                                    
+110700     MOVE "VOPENTERM" TO UINT-CALL.                                       
+110800     MOVE ZERO TO SCREEN-CSTATUS.                                         
+110900     CALL "VOPENTERM" USING SCREEN-COMAREA TERM-FILE.                     
+111000     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+111100                                                                          
+111200 8505-UINT-OPENFORMF.                                                     
+111300     IF UINTTEST DISPLAY ">>OPENFORMF".                                   
+111400     MOVE "VOPENFORMF" TO UINT-CALL.                                      
+111500     MOVE ZERO TO SCREEN-CSTATUS.                                         
+111600     CALL "VOPENFORMF" USING SCREEN-COMAREA FORMS-FILE.                   
+111700     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+111800     MOVE SPACES TO SCREEN-NFNAME.                                        
+111900                                                                          
+112000 8510-UINT-GETNEXTFORM.                                                   
+112100     IF UINTTEST DISPLAY ">>GETNEXTFORM".                                 
+112200     MOVE "VGETNEXTFORM" TO UINT-CALL.                                    
+112300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+112400     CALL "VGETNEXTFORM" USING SCREEN-COMAREA.                            
+112500     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+112600                                                                          
+112700 8515-UINT-INITFORM.                                                      
+112800     IF UINTTEST DISPLAY ">>INITFORM".                                    
+112900     MOVE "VINITFORM" TO UINT-CALL.                                       
+113000     MOVE ZERO TO SCREEN-CSTATUS.                                         
+113100     CALL "VINITFORM" USING SCREEN-COMAREA.                               
+113200     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+113300                                                                          
+113400 8600-UINT-VTURNOFF.                                                      
+113500     IF UINTTEST DISPLAY ">>VTURNOFF".                                    
+113600     MOVE "VTURNOFF" TO UINT-CALL.                                        
+113700     MOVE ZERO TO SCREEN-CSTATUS.                                         
+113800     CALL "VTURNOFF" USING SCREEN-COMAREA.                                
+113900                                                                          
+114000 8610-UINT-VTURNON.                                                       
+114100     IF UINTTEST DISPLAY ">>VTURNON".                                     
+114200     MOVE "VTURNON" TO UINT-CALL.                                         
+114300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+114400     CALL "VTURNON" USING SCREEN-COMAREA TERM-FILE.                       
+114500                                                                          
+114600 8720-UINT-READFIELDS.                                                    
+114700     IF UINTTEST DISPLAY ">>READFIELDS(1)".                               
+114800     PERFORM 8722-UINT-READFIELDS.                                        
+114900     MOVE SCREEN-LASTKEY TO NUM-WORK.                                     
+115000     MOVE LAST-DIGIT TO SCREEN-KEY-PRESSED.                               
+115100     IF SCREEN-KEY-PRESSED NOT = ZERO                                     
+115200         ADD 2 TO SCREEN-TERMOPTIONS                                      
+115300         PERFORM 8722-UINT-READFIELDS                                     
+115400         SUBTRACT 2 FROM SCREEN-TERMOPTIONS.                              
+115500     IF SCREEN-CSTATUS = 160 MOVE 9 TO SCREEN-KEY-PRESSED.                
+115600                                                                          
+115700 8722-UINT-READFIELDS.                                                    
+115800     IF UINTTEST DISPLAY ">>READFIELDS(2)".                               
+115900     MOVE "VREADFIELDS" TO UINT-CALL.                                     
+116000     MOVE ZERO TO SCREEN-CSTATUS.                                         
+116100     CALL "VREADFIELDS" USING SCREEN-COMAREA.                             
+116200     IF SCREEN-CSTATUS = 154                                              
+116300         PERFORM 8728-UINT-REFRESH                                        
+116400         GO TO 8722-UINT-READFIELDS.                                      
+116500     IF SCREEN-CSTATUS NOT = ZERO AND 160                                 
+116600         GO TO 9040-UINT-ERROR.                                           
+116700                                                                          
+116800 8725-UINT-GETBUFFER.                                                     
+116900     IF UINTTEST DISPLAY ">>GETBUFFER".                                   
+117000     MOVE "VGETBUFFER" TO UINT-CALL.                                      
+117100     MOVE ZERO TO SCREEN-CSTATUS.                                         
+117200     CALL "VGETBUFFER" USING SCREEN-COMAREA SCREEN-BUFFER                 
+117300                                     UINT-BUFFER-LENGTH.                  
+117400     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+117500                                                                          
+117600 8728-UINT-REFRESH.                                                       
+117700     IF UINTTEST DISPLAY ">>REFRESH".                                     
+117800     MOVE "$REFRESH" TO SCREEN-NFNAME.                                    
+117900     PERFORM 8510-UINT-GETNEXTFORM.                                       
+118000     ADD 32 TO SCREEN-SHOWCONTROL.                                        
+118100     PERFORM 8740-UINT-SHOWFORM.                                          
+118200     SUBTRACT 32 FROM SCREEN-SHOWCONTROL.                                 
+118300                                                                          
+118400 8730-UINT-PUTWINDOW.                                                     
+118500     IF UINTTEST DISPLAY ">>PUTWINDOW".                                   
+118600     MOVE "VPUTWINDOW" TO UINT-CALL.                                      
+118700     IF MESSAGE-BUFFER = BANNER                                           
+118800         MOVE " H" TO SCREEN-WINDOWENH                                    
+118900         MOVE 100 TO MESSAGE-LENGTH                                       
+119000     ELSE                                                                 
+119100         MOVE " B" TO SCREEN-WINDOWENH                                    
+119200         MOVE 79 TO MESSAGE-LENGTH.                                       
+119300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+119400     CALL "VPUTWINDOW" USING SCREEN-COMAREA MESSAGE-BUFFER                
+119500                                     MESSAGE-LENGTH.                      
+119600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+119700                                                                          
+119800 8733-UINT-GETKEYLABELS.                                                  
+119900     IF UINTTEST DISPLAY ">>GETKEYLABELS".                                
+120000     MOVE "VGETKEYLABELS" TO UINT-CALL.                                   
+120100     MOVE 8 TO FUNCTION-KEY-COUNT.                                        
+120200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+120300     CALL "VGETKEYLABELS" USING SCREEN-COMAREA FUNCTION-KEY-CODE          
+120400                                        FUNCTION-KEY-COUNT                
+120500                                        FUNCTION-KEY-LABELS.              
+120600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+120700                                                                          
+120800 8735-UINT-SETKEYLABEL.                                                   
+120900     IF UINTTEST DISPLAY ">>SETKEYLABEL " FUNCTION-KEY-NUMBER             
+121000         " [" FUNCTION-KEY-LABEL (FUNCTION-KEY-NUMBER) "]".               
+121100     MOVE "VSETKEYLABEL" TO UINT-CALL.                                    
+121200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+121300     CALL "VSETKEYLABEL" USING SCREEN-COMAREA FUNCTION-KEY-CODE           
+121400                                       FUNCTION-KEY-NUMBER                
+121500                                       FUNCTION-KEY-LABEL                 
+121600                                        (FUNCTION-KEY-NUMBER).            
+121700     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+121800                                                                          
+121900 8736-UINT-SETKEYLABELS.                                                  
+122000     IF UINTTEST DISPLAY ">>SETKEYLABELS".                                
+122100     MOVE "VSETKEYLABELS" TO UINT-CALL.                                   
+122200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+122300     MOVE 8 TO FUNCTION-KEY-COUNT.                                        
+122400     CALL "VSETKEYLABELS" USING SCREEN-COMAREA FUNCTION-KEY-CODE          
+122500                          FUNCTION-KEY-COUNT FUNCTION-KEY-LABELS.         
+122600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+122700                                                                          
+122800 8738-UINT-RESETKEYLABELS.                                                
+122900     IF UINTTEST DISPLAY ">>RESETKEYLABELS".                              
+123000     MOVE "VSETKEYLABELS" TO UINT-CALL.                                   
+123100     MOVE 0 TO FUNCTION-KEY-COUNT.                                        
+123200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+123300     CALL "VSETKEYLABELS" USING SCREEN-COMAREA FUNCTION-KEY-CODE          
+123400                                        FUNCTION-KEY-COUNT                
+123500                                        FUNCTION-KEY-LABELS.              
+123600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+123700                                                                          
+123800 8740-UINT-SHOWFORM.                                                      
+123900     MOVE "0" TO FINISHFORM-SW.                                           
+124000     IF SCREEN-NUMERRS = ZERO                                             
+124100        IF SCREEN-BUFFER = PREV-BUFFER                                    
+124200           PERFORM 8761-UINT-FINISHFORM.                                  
+124300     IF UINTTEST DISPLAY ">>SHOWFORM - FORCE-SHOW=" FORCE-SHOW.           
+124400     MOVE "VSHOWFORM" TO UINT-CALL.                                       
+124500     MOVE ZERO TO SCREEN-CSTATUS.                                         
+124600     ADD FORCE-SHOW TO SCREEN-SHOWCONTROL.                                
+124700     CALL "VSHOWFORM" USING SCREEN-COMAREA.                               
+124800     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+124900     SUBTRACT FORCE-SHOW FROM SCREEN-SHOWCONTROL.                         
+125000     MOVE ZERO TO FORCE-SHOW.                                             
+125100     MOVE SCREEN-NAME TO LAST-SHOWFORM.                                   
+125200     IF FINISHED-FORM                                                     
+125300        MOVE PREV-BUFFER TO SCREEN-BUFFER.                                
+125400     MOVE "0" TO FINISHFORM-SW.                                           
+125500                                                                          
+125600 8750-UINT-PUTBUFFER.                                                     
+125700     IF UINTTEST DISPLAY ">>PUTBUFFER".                                   
+125800     MOVE "VPUTBUFFER" TO UINT-CALL.                                      
+125900     MOVE ZERO TO SCREEN-CSTATUS.                                         
+126000     CALL "VPUTBUFFER" USING SCREEN-COMAREA SCREEN-BUFFER                 
+126100                                     UINT-BUFFER-LENGTH.                  
+126200     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+126300                                                                          
+126400 8760-UINT-FIELDEDITS.                                                    
+126500     IF UINTTEST DISPLAY ">>FIELDEDITS".                                  
+126600     MOVE "VFIELDEDITS" TO UINT-CALL.                                     
+126700     MOVE ZERO TO SCREEN-CSTATUS.                                         
+126800     CALL "VFIELDEDITS" USING SCREEN-COMAREA.                             
+126900     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+127000                                                                          
+127100 8761-UINT-FINISHFORM.                                                    
+127200     IF UINTTEST DISPLAY ">>FINISHFORM".                                  
+127300     MOVE "1" TO FINISHFORM-SW.                                           
+127400     MOVE "VFINISHFORM" TO UINT-CALL.                                     
+127500     MOVE ZERO TO SCREEN-CSTATUS.                                         
+127600     CALL "VFINISHFORM" USING SCREEN-COMAREA.                             
+127700     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+127800                                                                          
+127900 8764-UINT-GETFORMINFO.                                                   
+128000     IF UINTTEST DISPLAY ">>GETFORMINFO".                                 
+128100     MOVE "VGETFORMINFO" TO UINT-CALL.                                    
+128200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+128300     CALL "VGETFORMINFO" USING SCREEN-COMAREA INFOBUF1                    
+128400         INFOBUF1-LEN.                                                    
+128500     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+128600                                                                          
+128700 8765-UINT-GETFIELDINFO.                                                  
+128800     IF UINTTEST DISPLAY ">>GETFIELDINFO".                                
+128900     MOVE "VGETFIELDINFO" TO UINT-CALL.                                   
+129000     MOVE SPACES TO INFOBUF2-TABLE.                                       
+129100     MOVE SCREEN-NAME TO INFOBUF2-FORM.                                   
+129200     COMPUTE INFOBUF2-FIELD = - FIELD-NUMBER.                             
+129300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+129400     CALL "VGETFIELDINFO" USING SCREEN-COMAREA INFOBUF2                   
+129500         INFOBUF2-LEN.                                                    
+129600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+129700                                                                          
+129800 8766-UINT-CHANGEFIELD.                                                   
+129900     IF SCREEN-NAME NOT = LAST-SHOWFORM                                   
+130000         PERFORM 8740-UINT-SHOWFORM.                                      
+130100     IF UINTTEST DISPLAY ">>CHANGEFIELD".                                 
+130200     MOVE "VCHANGEFIELD" TO UINT-CALL.                                    
+130300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+130400     CALL "VCHANGEFIELD" USING SCREEN-COMAREA SPECBUF                     
+130500         SPECBUF-ENTRIES.                                                 
+130600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+130700                                                                          
+130800 8770-UINT-SETERROR.                                                      
+130900     IF UINTTEST DISPLAY ">>SETERROR".                                    
+131000     MOVE "VSETERROR" TO UINT-CALL.                                       
+131100     MOVE " B" TO SCREEN-WINDOWENH.                                       
+131200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+131300     MOVE 79 TO MESSAGE-LENGTH.                                           
+131400     CALL "VSETERROR" USING SCREEN-COMAREA FIELD-NUMBER                   
+131500                                    MESSAGE-BUFFER                        
+131600                                    MESSAGE-LENGTH.                       
+131700     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+131800                                                                          
+131900 8775-UINT-PLACECURSOR.                                                   
+132000     MOVE FIELD-NUMBER TO DISP-N1.                                        
+132100     IF UINTTEST DISPLAY ">>PLACECURSOR" DISP-N1.                         
+132200     MOVE "VPLACECURSOR" TO UINT-CALL.                                    
+132300     COMPUTE FIELD-NUMBER = - SCREEN-FIELD.                               
+132400     MOVE ZERO TO SCREEN-CSTATUS.                                         
+132500     CALL "VPLACECURSOR" USING SCREEN-COMAREA FIELD-NUMBER.               
+132600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+132700                                                                          
+132800 8780-UINT-VERRMSG.                                                       
+132900     IF UINTTEST DISPLAY ">>VERRMSG".                                     
+133000     MOVE SPACES TO MESSAGE-BUFFER.                                       
+133100     MOVE "VERRMSG" TO UINT-CALL.                                         
+133200     MOVE ZERO TO SCREEN-CSTATUS.                                         
+133300     MOVE 79 TO MESSAGE-LENGTH.                                           
+133400     CALL "VERRMSG" USING SCREEN-COMAREA MESSAGE-BUFFER                   
+133500                          MESSAGE-LENGTH X.                               
+133600     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+133700                                                                          
+133800 8781-UINT-VPRINTFORM.                                                    
+133900     IF UINTTEST DISPLAY ">>VPRINTFORM".                                  
+134000     INITIALIZE SLAVE-SW  SCREEN-PRINTFILNUM.                             
+134100     CALL INTRINSIC "FOPEN" USING FORMLIST  \%404\ \%302\                 
+134200                           GIVING SCREEN-PRINTFILNUM.                     
+134300     CALL INTRINSIC "FGETINFO" USING SCREEN-PRINTFILNUM                   
+134400                    \\ \\ \\ \\ \\ PRINT-LDEV PRINT-ADDRESS.              
+134500     CALL INTRINSIC "FGETINFO" USING SCREEN-FILEN                         
+134600                    \\ \\ \\ \\ \\ TERM-LDEV.                             
+134700     CALL "GETBITS" USING PRINT-ADDRESS PRINT-BITMAP.                     
+135200     MOVE "VPRINTFORM" TO UINT-CALL.                                      
+135300     MOVE ZERO TO SCREEN-CSTATUS.                                         
+135400     MOVE 79 TO MESSAGE-LENGTH.                                           
+135500***  CALL "VPRINTFORM" USING SCREEN-COMAREA \0\ \%61\.                    
+135600     CALL "VPRINTFORM" USING SCREEN-COMAREA VPF-PRT VPF-PG.               
+135800     CALL INTRINSIC "FCLOSE" USING SCREEN-PRINTFILNUM \0\ \0\.            
+135900     MOVE 0 TO SCREEN-PRINTFILNUM.                                        
+136000     IF SCREEN-CSTATUS NOT = ZERO GO TO 9040-UINT-ERROR.                  
+136100                                                                          
+136200 8790-UINT-CLOSEFORMF.                                                    
+136300     IF UINTTEST DISPLAY ">>CLOSEFORMF".                                  
+136400     MOVE ZERO TO SCREEN-CSTATUS.                                         
+136500     CALL "VCLOSEFORMF" USING SCREEN-COMAREA.                             
+136600     MOVE SPACES TO SCREEN-CFNAME FORMS-FILE.                             
+136700                                                                          
+136800 8795-UINT-CLOSETERM.                                                     
+136900     IF UINTTEST DISPLAY ">>CLOSETERM".                                   
+137000     MOVE ZERO TO SCREEN-CSTATUS.                                         
+137100     CALL "VCLOSETERM" USING SCREEN-COMAREA.                              
+137200     MOVE ZERO TO SCREEN-FILEN.                                           
+137300                                                                          
+137400 8796-UIPAUSE.                                                            
+137500     IF UINTTEST DISPLAY ">>UIPAUSE".                                     
+137600     MOVE ZERO TO E1 E2.                                                  
+137700     MOVE SPACES TO UICMD.                                                
+137800     STRING "PAUSE 2" %15                                                 
+137900      DELIMITED BY SIZE INTO UICMD.                                       
+138000     CALL INTRINSIC "COMMAND" USING UICMD E1 E2.                          
+138100                                                                          
+138200$PAGE "UINTSUBS - ERROR ROUTINES"                                         
+138300*****************************************************************         
+138400 9000-ERROR-ROUTINES SECTION.                                             
+138500*****************************************************************         
+138600                                                                          
+138700*-----------------------------                                            
+138800                                                                          
+138900 9040-UINT-ERROR.                                                         
+139000     MOVE SCREEN-CSTATUS TO DISP-N1.                                      
+139100     MOVE FIELD-NUMBER TO SCREEN-FIELD.                                   
+139200     MOVE SCREEN-FIELD TO DISP-N2.                                        
+139300     MOVE SPACES TO MESSAGE-BUFFER.                                       
+139400     CALL "VERRMSG" USING SCREEN-COMAREA MESSAGE-BUFFER                   
+139500                                  MESSAGE-LENGTH                          
+139600                                  X.                                      
+139700     PERFORM 8795-UINT-CLOSETERM.                                         
+139800     DISPLAY "*** UINT ERROR " DISP-N1 " OCCURED ***".                    
+139900     DISPLAY " ".                                                         
+140000     DISPLAY MESSAGE-A.                                                   
+140100     IF MESSAGE-B NOT = SPACES DISPLAY MESSAGE-B.                         
+140200     DISPLAY " ".                                                         
+140300     DISPLAY "UI-CALL=" UI-CALL " UINT-CALL=" UINT-CALL.                  
+140400     DISPLAY " ".                                                         
+140500     DISPLAY "FORMS FILE=" SCREEN-FORMS-FILE.                             
+140600     DISPLAY " ".                                                         
+140700     DISPLAY "FORM=" SCREEN-NAME.                                         
+140800     DISPLAY " ".                                                         
+140900     DISPLAY "FIELD-NUMBER=" DISP-N2.                                     
+141000     DISPLAY " ".                                                         
+141100     CALL INTRINSIC "QUITPROG" USING \0\.                                 
+141200                                                                          
+141300*------------------------------*                                          
+141400                                                                          
+141500 9050-GETDSEG-ERROR.                                                      
+141600     IF CC LESS THAN ZERO MOVE -1 TO X.                                   
+141700     IF CC GREATER THAN ZERO MOVE 1 TO X.                                 
+141800     IF CC = ZERO MOVE ZERO TO X.                                         
+141900     PERFORM 8795-UINT-CLOSETERM.                                         
+142000     DISPLAY "** GETDSEG ERROR OCCURED IN UINTSUBS **".                   
+142100     GO TO 9054-ABORT.                                                    
+142200                                                                          
+142300 9051-DMOVIN-ERROR.                                                       
+142400     IF CC LESS THAN ZERO MOVE -1 TO X.                                   
+142500     IF CC GREATER THAN ZERO MOVE 1 TO X.                                 
+142600     IF CC = ZERO MOVE ZERO TO X.                                         
+142700     PERFORM 8795-UINT-CLOSETERM.                                         
+142800     DISPLAY "** DMOVIN ERROR OCCURRED IN UINTSUBS **".                   
+142900     GO TO 9054-ABORT.                                                    
+143000                                                                          
+143100 9052-DMOVOUT-ERROR.                                                      
+143200     IF CC LESS THAN ZERO MOVE -1 TO X.                                   
+143300     IF CC GREATER THAN ZERO MOVE 1 TO X.                                 
+143400     IF CC = ZERO MOVE ZERO TO X.                                         
+143500     PERFORM 8795-UINT-CLOSETERM.                                         
+143600     DISPLAY "** DMOVOUT ERROR OCCURRED IN UINTSUBS **".                  
+143700     GO TO 9054-ABORT.                                                    
+143800                                                                          
+143900 9054-ABORT.                                                              
+144000     DISPLAY " ".                                                         
+144100     IF X LESS THAN ZERO                                                  
+144200         DISPLAY "CONDITION CODE = CCL"                                   
+144300     ELSE IF X GREATER THAN ZERO                                          
+144400         DISPLAY "CONDITION CODE = CCG"                                   
+144500     ELSE                                                                 
+144600         DISPLAY "CONDITION-CODE = CCE".                                  
+144700     CALL INTRINSIC "QUITPROG" USING \0\.                                 
+144800                                                                          
+144900 END PROGRAM UINTSUB.                                                     
+145000                                                                          
+145100                                                                          
+145200                                                                          
+203000$PAGE  "PRSUBS  - SUBROUTINE HANDLES ALL NECESSARY PRINTING"              
+203100*                                                                         
+203200*     ||           ||           ||           ||           ||              
+203300*     ||           ||           ||           ||           ||              
+203400*\\   ||   // \\   ||   // \\   ||   // \\   ||   // \\   ||   //         
+203500* \\  ||  //   \\  ||  //   \\  ||  //   \\  ||  //   \\  ||  //          
+203600*  \\ || //     \\ || //     \\ || //     \\ || //     \\ || //           
+203700*   \\||//       \\||//       \\||//       \\||//       \\||//            
+203800*    \  /         \  /         \  /         \  /         \  /             
+203900*     \/           \/           \/           \/           \/              
+204000*                                                                         
+204100$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                                
+204220 IDENTIFICATION DIVISION.                                                 
+204300 PROGRAM-ID. PRSUB.                                                       
+204400 AUTHOR.     Michael Anderson.                                            
+204500****************************************************************          
+204600*    -PRSUB- The Printer Control System.                       *          
+204700*                                                              *          
+204800*    This subprogram is responsible for addressing printer     *          
+204900*    devices using MPE file equations, setup of initial print  *          
+205000*    environment, writting carriage control and print line,    *          
+205100*    also resetting the device file equation and printer       *          
+205200*    environment.                                              *          
+205300*                                                              *          
+207400*    PLEASE MAKE A NOTE/EXPLAINATION OF ANY CHANGES            *          
+207500*    THAT YOU HAVE MADE.                                       *          
+207600*                                                              *          
+207700* MODIFICATIONS                                                *          
+207800* DATE     AUTHOR           DESCRIPTION                        *          
+207900*--------- ---------------- -----------------------------------           
+208000*                                                                         
+213900****************************************************************          
+214000 DATE-COMPILED.                                                           
+214100 ENVIRONMENT DIVISION.                                                    
+214200 CONFIGURATION SECTION.                                                   
+214300 SOURCE-COMPUTER. HP3000.                                                 
+214410 OBJECT-COMPUTER. HP3000.                                                 
+214500 SPECIAL-NAMES.                                                           
+214600     CONDITION-CODE IS CC.                                                
+214700$PAGE "Dynamic Working Storage Section"                                   
+214800 DATA DIVISION.                                                           
+214900******************************************************************        
+215000 WORKING-STORAGE SECTION.                                                 
+215100******************************************************************        
+215200 01  I                     PIC S9(4) COMP.                                
+215300 01  N                     PIC S9(4) COMP.                                
+215400 01  NUM-1                 PIC X(14).                                     
+215500 01  NUM-2                 PIC S9(14).                                    
+215600 01  N-DEC                 PIC S9(4) COMP.                                
+215700 01  N-ERR                 PIC S9(4) COMP.                                
+215800 01  CALCULATION           PIC S9(4)V9(6).                                
+215900 01  TCOUNT                PIC S9(4) COMP.                                
+216000 01  ENDREC                PIC S9(4) COMP.                                
+216100 01  FORM-NO               PIC S9(4) COMP.                                
+216200 01  SLAVE-DATA.                                                          
+216300     02 SLAVE-FNUM         PIC S9(4) COMP VALUE 0.                        
+216400     02 SLAVE-FLAG         PIC X VALUE SPACES.                            
+216500        88 SLAVE-PRINTER   VALUE "1".                                     
+216600     02 FILLER             PIC X.                                         
+216700     02 SLAVE-DEV          PIC X(4)  VALUE SPACES.                        
+216800 01  COMMAND-LINE          PIC X(80) VALUE SPACES.                        
+216900 01  HOLD-CTL              PIC X.                                         
+217000 01  NO-CR                 PIC X VALUE %320.                              
+217100 01  WORK-LINE.                                                           
+217200     02  WORK-CTL          PIC X.                                         
+217300     02  WORK-DATA.                                                       
+217400         03  WORK-X        PIC X OCCURS 256.                              
+217500 01  FULL-LINE-SW          PIC X VALUE "0".                               
+217600     88  FULL-LINE         VALUE "1".                                     
+217700 01  CR                    PIC X VALUE %15.                               
+217800 01  LF                    PIC X VALUE %12.                               
+217900 01  PAGE-LENGTH           PIC 99.                                        
+218000 01  X-FLOWJCW               PIC X(8) VALUE "FLOWTEST".                   
+218100 01  X-FLOWJCW-VALUE         PIC S9(4) COMP VALUE 0.                      
+218200     88  X-FLOWTEST          VALUE 1.                                     
+218300 01  PRJCW                 PIC X(8) VALUE "PRTEST".                       
+218400 01  PRJCW-VALUE           PIC S9(4) COMP VALUE 0.                        
+218500     88  PRTEST            VALUE 1.                                       
+218600$PAGE "LASERJET CODES"                                                    
+218700 01  LJ-VMI.                                                              
+218800     02  FILLER            PIC X VALUE %33.                               
+218900     02  FILLER            PIC X(2) VALUE "&l".                           
+219000     02  LJ-VMI-VALUE      PIC 99.                                        
+219100     02  FILLER            PIC XX   VALUE "C ".                           
+219200 01  LJ-PAGESIZE.                                                         
+219300     02  FILLER            PIC X VALUE %33.                               
+219400     02  FILLER            PIC X(2) VALUE "&l".                           
+219500     02  LJ-PAGESIZE-VALUE PIC 99.                                        
+219600     02  FILLER            PIC XX   VALUE "A ".                           
+219700 01  RESET-LJ.                                                            
+219800     02  FILLER    PIC X     VALUE %33.                                   
+219900     02  FILLER    PIC X     VALUE "E".                                   
+220000 01  ESC-FORM.                                                            
+220100     02  FILLER            PIC X VALUE %33.                               
+220200     02  FILLER            PIC XX VALUE "&f".                             
+220300     02  FORM-N            PIC 99999.                                     
+220400     02  FILLER            PIC XXX VALUE "y4X".                           
+220500 01  ESC-ORIENTATION.                                                     
+220600     02  FILLER            PIC X VALUE %33.                               
+220700     02  FILLER            PIC XX VALUE "&l".                             
+220800     02  PAGE-ORIENTATION  PIC 9.                                         
+220900     02  FILLER            PIC X VALUE "O".                               
+221000 01  ESC-TRAY.                                                            
+221100     02  FILLER            PIC X VALUE %33.                               
+221200     02  FILLER            PIC XX VALUE "&l".                             
+221300     02  TRAY              PIC X.                                         
+221400     02  FILLER            PIC X VALUE "H".                               
+221500 01  ESC-DUPLEX-ON.                                                       
+221600     02  FILLER            PIC X VALUE %33.                               
+221700     02  FILLER            PIC X(4) VALUE "&l1S".                         
+221800 01  ESC-FRONT.                                                           
+221900     02  FILLER            PIC X VALUE %33.                               
+222000     02  FILLER            PIC X(4) VALUE "&a1G".                         
+222100 01  ESC-BACK.                                                            
+222200     02  FILLER            PIC X VALUE %33.                               
+222300     02  FILLER            PIC X(4) VALUE "&a2G".                         
+222400 01  ESC-SIMPLEX-ON.                                                      
+222500     02  FILLER            PIC X VALUE %33.                               
+222600     02  FILLER            PIC X(4) VALUE "&l0S".                         
+222700 01  ESC-EJECT.                                                           
+222800     02  FILLER            PIC X VALUE %33.                               
+222900     02  FILLER            PIC X(4) VALUE "&l0H".                         
+223000 01  ESC-DISABLE-EOL-WRAP.                                                
+223100     02  FILLER            PIC X VALUE %33.                               
+223200     02  FILLER            PIC X(4) VALUE "&s1C".                         
+223300 01  ESC-ENABLE-EOL-WRAP.                                                 
+223400     02  FILLER            PIC X VALUE %33.                               
+223500     02  FILLER            PIC X(4) VALUE "&s0C".                         
+223600 01  ESC-Y.                                                               
+223700     02  FILLER            PIC X VALUE %33.                               
+223800     02  FILLER            PIC X VALUE "Y".                               
+223900 01  ESC-Z.                                                               
+224000     02  FILLER            PIC X VALUE %33.                               
+224100     02  FILLER            PIC X VALUE "Z".                               
+224200 01 FONT-SELECTION.                                                       
+224300    20 FILLER              PIC X      VALUE %33.                          
+224400    20 FILLER              PIC XX     VALUE "(s".                         
+224500    20 FS-SPACING          PIC X      VALUE "0".                          
+224600    20 FILLER              PIC X      VALUE "p".                          
+224700    20 FS-CPI              PIC ZZ.ZZ  VALUE "10.00".                      
+224800    20 FILLER              PIC X      VALUE "h".                          
+224900    20 FS-POINTSIZE        PIC ZZ.Z   VALUE "12.0".                       
+225000    20 FILLER              PIC X      VALUE "v".                          
+225100    20 FS-STYLE            PIC X      VALUE "0".                          
+225200    20 FILLER              PIC X      VALUE "s".                          
+225300    20 FS-STROKE           PIC X      VALUE "0".                          
+225400    20 FILLER              PIC X      VALUE "b".                          
+225500    20 FS-TYPEFACE         PIC X      VALUE "3".                          
+225600    20 FILLER              PIC X      VALUE "T".                          
+225700$PAGE "EPSON PRINTER CODES"                                               
+225800 01  EP-LPI                PIC 9     VALUE 0.                             
+225900 01  EP-FORMSIZE.                                                         
+226000     02 FILLER             PIC X     VALUE %33.                           
+226100     02 FILLER             PIC X     VALUE "C".                           
+226200     02 FILLER             PIC X     VALUE %0.                            
+226300     02 EP-PAGELEN         PIC X     VALUE %13.                           
+226400 01  EP-6-LPI.                                                            
+226500     02  FILLER            PIC X     VALUE %33.                           
+226600     02  FILLER            PIC X     VALUE "2".                           
+226700 01  EP-8-LPI.                                                            
+226800     02  FILLER            PIC X     VALUE %33.                           
+226900     02  FILLER            PIC X     VALUE "0".                           
+227000 01  EP-EXPANDED.                                                         
+227100     02  FILLER            PIC X     VALUE %16.                           
+227200 01  EP-NORMAL.                                                           
+227300     02  FILLER            PIC X     VALUE %33.                           
+227400     02  FILLER            PIC X     VALUE "P".                           
+227500 01  EP-HALF-COMP.                                                        
+227600     02  FILLER            PIC X     VALUE %33.                           
+227700     02  FILLER            PIC X     VALUE "M".                           
+227800 01  EP-COMPRESSED.                                                       
+227900     02  FILLER            PIC X     VALUE %17.                           
+228000 01  RESET-EP.                                                            
+228100     02  FILLER            PIC X     VALUE %33.                           
+228200     02  FILLER            PIC X     VALUE "@".                           
+228300$PAGE "HP PRINTER CODES"                                                  
+228400 01  HP-FORMSIZE.                                                         
+228500     02  FILLER            PIC X     VALUE %33.                           
+228600     02  FILLER            PIC X(2)  VALUE "&l".                          
+228700     02  HP-LPI            PIC 9     VALUE 6.                             
+228800     02  FILLER            PIC X     VALUE "d".                           
+228900     02  HP-PAGELEN        PIC 99.                                        
+229000     02  FILLER            PIC XX    VALUE "P ".                          
+229100 01  HP-NORMAL.                                                           
+229200     02  FILLER            PIC X     VALUE %33.                           
+229300     02  HPNORMAL          PIC X(4)  VALUE "&k0S".                        
+229400 01  HP-COMPRESSED.                                                       
+229500     02  FILLER            PIC X     VALUE %33.                           
+229600     02  HPCOMP            PIC X(4)  VALUE "&k2S".                        
+229700 01  HP-EXPANDED.                                                         
+229800     02  FILLER            PIC X     VALUE %33.                           
+229900     02  HPEXPAND          PIC X(4)  VALUE "&k1S".                        
+230000 01  RESET-HP.                                                            
+230100     02  FILLER            PIC X     VALUE %33.                           
+230200     02  FILLER            PIC X(4)  VALUE "&k0S".                        
+230300                                                                          
+230310     COPY AMSLINK  OF J3KLIB.                                             
+230400                                                                          
+230900$PAGE "ENTRY POINTS"                                                      
+231000 PROCEDURE DIVISION.                                                      
+231100******************************************************************        
+231200 0100-ENTRY SECTION.                                                      
+231300******************************************************************        
+231400*------------------------------*                                          
+231410     COPY AMSENTRY OF J3KLIB                                              
+231510     REPLACING ==VALUE OF PROCEDURE== BY =="PRASSIGN"==.                  
+231520     .                                                                    
+231600 0100-ASSIGN-PRINTER.                                                     
+231700     CALL INTRINSIC "FINDJCW" USING PRJCW PRJCW-VALUE N.                  
+231800     CALL INTRINSIC "FINDJCW" USING X-FLOWJCW X-FLOWJCW-VALUE N.          
+231900     IF X-FLOWTEST                                                        
+232000         DISPLAY "=============="                                         
+232100         DISPLAY "ENTER PRASSIGN".                                        
+232200     MOVE ZERO TO PRSUB-ERR.                                              
+232300     PERFORM 1000-ASSIGN-PRINTER.                                         
+232400     IF X-FLOWTEST                                                        
+232500         DISPLAY "EXIT  PRASSIGN"                                         
+232600         DISPLAY "==============".                                        
+232700     GOBACK.                                                              
+232800*------------------------------*                                          
+232810     COPY AMSENTRY OF J3KLIB                                              
+232910     REPLACING ==VALUE OF PROCEDURE== BY =="PRSETUP"==.                   
+232920     .                                                                    
+233000 0200-SETUP-PRINTER-ENTRY.                                                
+233100     CALL INTRINSIC "FINDJCW" USING PRJCW PRJCW-VALUE N.                  
+233200     CALL INTRINSIC "FINDJCW" USING X-FLOWJCW X-FLOWJCW-VALUE N.          
+233300     IF X-FLOWTEST                                                        
+233400         DISPLAY "=============="                                         
+233500         DISPLAY "ENTER PRSETUP".                                         
+233600     MOVE ZERO TO PRSUB-ERR.                                              
+233700     PERFORM 2000-SETUP-PRINTER.                                          
+233800     IF X-FLOWTEST                                                        
+233900         DISPLAY "EXIT  PRSETUP"                                          
+234000         DISPLAY "==============".                                        
+234100     GOBACK.                                                              
+234200*------------------------------*                                          
+234210     COPY AMSENTRY OF J3KLIB                                              
+234310     REPLACING ==VALUE OF PROCEDURE== BY =="PRWRITE"==.                   
+234320     .                                                                    
+234400 0300-WRITE-PRINTER-ENTRY.                                                
+234500     CALL INTRINSIC "FINDJCW" USING PRJCW PRJCW-VALUE N.                  
+234600     CALL INTRINSIC "FINDJCW" USING X-FLOWJCW X-FLOWJCW-VALUE N.          
+234700     IF X-FLOWTEST                                                        
+234800         DISPLAY "=============="                                         
+234900         DISPLAY "ENTER PRWRITE".                                         
+235000     MOVE ZERO TO PRSUB-ERR.                                              
+235100     PERFORM 3000-WRITE-LINE.                                             
+235200     IF X-FLOWTEST                                                        
+235300         DISPLAY "EXIT  PRWRITE"                                          
+235400         DISPLAY "==============".                                        
+235500     GOBACK.                                                              
+235600*------------------------------*                                          
+235610     COPY AMSENTRY OF J3KLIB                                              
+235710     REPLACING ==VALUE OF PROCEDURE== BY =="PRRESET"==.                   
+235720     .                                                                    
+235800 0400-RESET-PRINTER.                                                      
+235900     CALL INTRINSIC "FINDJCW" USING PRJCW PRJCW-VALUE N.                  
+236000     CALL INTRINSIC "FINDJCW" USING X-FLOWJCW X-FLOWJCW-VALUE N.          
+236100     IF X-FLOWTEST                                                        
+236200         DISPLAY "=============="                                         
+236300         DISPLAY "ENTER PRRESET".                                         
+236400     MOVE ZERO TO PRSUB-ERR.                                              
+236500     PERFORM 4000-RESET-PRINTER.                                          
+236600     IF X-FLOWTEST                                                        
+236700         DISPLAY "EXIT  PRRESET"                                          
+236800         DISPLAY "==============".                                        
+236900     GOBACK.                                                              
+237000$PAGE "ASSIGN PRINTER TO DEVICE"                                          
+237100******************************************************************        
+237200 1000-ASSIGN-PRINTER SECTION.                                             
+237300******************************************************************        
+237400 1000-BEGIN.                                                              
+237500     IF PRINTER-PRI NOT NUMERIC OR PRINTER-PRI < 1 OR > 13                
+237600         STRING "FILE " DELIMITED BY SIZE                                 
+237700             PRINTER-NAME DELIMITED BY SPACE                              
+237800             "=" SPOOLFILE-NAME DELIMITED BY SPACE                        
+237900             ";DEV=" DELIMITED BY SIZE                                    
+238000             PRINTER-DEV DELIMITED BY SPACE                               
+238100             CR DELIMITED BY SIZE INTO COMMAND-LINE                       
+238200     ELSE                                                                 
+238300         STRING "FILE " DELIMITED BY SIZE                                 
+238400             PRINTER-NAME DELIMITED BY SPACE                              
+238500             "=" SPOOLFILE-NAME DELIMITED BY SPACE                        
+238600             ";DEV=" DELIMITED BY SIZE                                    
+238700             PRINTER-DEV DELIMITED BY SPACE                               
+238800             "," PRINTER-PRI DELIMITED BY SIZE                            
+238900             CR DELIMITED BY SIZE INTO COMMAND-LINE.                      
+239000     PERFORM 7010-MPE-COMMAND.                                            
+239100     MOVE N-ERR TO PRSUB-ERR.                                             
+239200 1999-EXIT.                                                               
+239300     EXIT.                                                                
+239400$PAGE "SETUP PRINTER"                                                     
+239500******************************************************************        
+239600 2000-SETUP-PRINTER SECTION.                                              
+239700******************************************************************        
+239800 2000-BEGIN.                                                              
+239900     PERFORM 7020-GET-FNUM.                                               
+240000     PERFORM 7050-GET-RECSIZE.                                            
+240100     MOVE PRINTER-DEV(1:4) TO SLAVE-DEV.                                  
+240200     IF PRINTER-TYPE = "EP" PERFORM 4300-EPSON THRU 4999-END.             
+240600     MOVE %101 TO WORK-CTL.                                               
+240700     MOVE SPACES TO WORK-DATA.                                            
+240800     PERFORM 7000-WRITE-IT.                                               
+240900     MOVE %103 TO WORK-CTL.                                               
+241000     PERFORM 7000-WRITE-IT.                                               
+241100     MOVE NO-CR TO WORK-CTL.                                              
+241200     IF PRINTER-TYPE = "LJ" GO TO 2100-LASER-JET.                         
+241300     IF PRINTER-TYPE = "EP" GO TO 2300-EPSON.                             
+241400     IF PRINTER-TYPE = "HP" OR "LP" GO TO 2200-HP263X.                    
+241500     MOVE -1 TO PRSUB-ERR.                                                
+241600     GO TO 2999-EXIT.                                                     
+241700/                                                                         
+241800*------------------------------*                                          
+241900 2100-LASER-JET.                                                          
+242000D    DISPLAY "2100-LASER-JET".                                            
+242100     IF PRTEST PERFORM 7052-DISP-FUNC-ON.                                 
+242200     IF FORM-NUMBER NOT = SPACES PERFORM 6000-LOAD-LASER-FORM.            
+242300     MOVE NO-CR TO WORK-CTL.                                              
+242400     IF LINES-PER-INCH NOT = 8 AND 6  MOVE 6 TO LINES-PER-INCH.           
+242500     IF NOT LANDSCAPE AND PORTRAIT MOVE "P" TO ORIENTATION.               
+242600     IF LANDSCAPE                                                         
+242700        COMPUTE PAGE-LENGTH  = ( LINES-PER-INCH * 8.5 )                   
+242800     ELSE                                                                 
+242900        COMPUTE PAGE-LENGTH  = ( LINES-PER-INCH * 11 ).                   
+243000     MOVE PAGE-LENGTH TO HP-PAGELEN.                                      
+243100     MOVE LINES-PER-INCH TO HP-LPI.                                       
+243200     MOVE HP-FORMSIZE    TO WORK-DATA.                                    
+243300     PERFORM 7000-WRITE-IT.                                               
+243400     IF ( PORTRAIT ) AND ( FONT-CPI <  01.00  OR >  50.00  )              
+243500        MOVE  10.00  TO FONT-CPI                                          
+243600        MOVE  12.0   TO FONT-POINTSIZE                                    
+243700        IF RECSIZE > 80                                                   
+243800           MOVE  12.00  TO FONT-CPI                                       
+243900           MOVE  10.0   TO FONT-POINTSIZE                                 
+244000           IF RECSIZE > 96                                                
+244100              MOVE  16.67  TO FONT-CPI                                    
+244200              MOVE  08.5   TO FONT-POINTSIZE.                             
+244300     IF ( LANDSCAPE ) AND ( FONT-CPI <  01.00  OR >  50.00  )             
+244400        MOVE  10.00  TO FONT-CPI                                          
+244500        MOVE  12.0   TO FONT-POINTSIZE                                    
+244600        IF RECSIZE > 96                                                   
+244700           MOVE  12.00  TO FONT-CPI                                       
+244800           MOVE  10.0   TO FONT-POINTSIZE                                 
+244900           IF RECSIZE > 132                                               
+245000              MOVE  16.67  TO FONT-CPI                                    
+245100              MOVE  08.5   TO FONT-POINTSIZE.                             
+245200     PERFORM 6200-LASER-FONT.                                             
+245300     PERFORM 7000-WRITE-IT.                                               
+245400     MOVE -9999 TO HOLD-FORM.                                             
+245500     MOVE FONT TO HOLD-FONT.                                              
+245600     GO TO 2999-EXIT.                                                     
+245700/                                                                         
+245800*------------------------------*                                          
+245900 2200-HP263X.                                                             
+246000     IF PRTEST PERFORM 7052-DISP-FUNC-ON.                                 
+246100     MOVE NO-CR TO WORK-CTL.                                              
+246200     IF LINES-PER-INCH NOT = 8 AND 6  MOVE 6 TO LINES-PER-INCH.           
+246300     IF LINES-PER-PAGE = 0                                                
+246400        COMPUTE LINES-PER-PAGE = LINES-PER-INCH * 11.                     
+246500     IF PAGE-WIDTH NOT = "A" AND "B" MOVE "A" TO PAGE-WIDTH.              
+246600     MOVE LINES-PER-PAGE TO HP-PAGELEN.                                   
+246700     MOVE LINES-PER-INCH TO HP-LPI.                                       
+246800     MOVE HP-FORMSIZE    TO WORK-DATA.                                    
+246900     PERFORM 7000-WRITE-IT.                                               
+247000     IF PAGE-WIDTH = "B" GO TO 2250-HP263X-B.                             
+247100 2240-HP263X-A.                                                           
+247200     IF ( FONT-CPI <  01.00  OR >  50.00  )                               
+247300        MOVE  10.00  TO FONT-CPI                                          
+247400        MOVE  12.0   TO FONT-POINTSIZE                                    
+247500        IF RECSIZE > 80                                                   
+247600           MOVE  12.00  TO FONT-CPI                                       
+247700           MOVE  10.0   TO FONT-POINTSIZE                                 
+247800           IF RECSIZE > 96                                                
+247900              MOVE  16.67  TO FONT-CPI                                    
+248000              MOVE  08.5   TO FONT-POINTSIZE.                             
+248100     GO TO 2260-HP-FONT.                                                  
+248200 2250-HP263X-B.                                                           
+248300     IF ( FONT-CPI <  01.00  OR >  50.00  )                               
+248400        MOVE  10.00  TO FONT-CPI                                          
+248500        MOVE  12.0   TO FONT-POINTSIZE                                    
+248600        IF RECSIZE > 96                                                   
+248700           MOVE  12.00  TO FONT-CPI                                       
+248800           MOVE  10.0   TO FONT-POINTSIZE                                 
+248900           IF RECSIZE > 132                                               
+249000              MOVE  16.67  TO FONT-CPI                                    
+249100              MOVE  08.5   TO FONT-POINTSIZE.                             
+249200 2260-HP-FONT.                                                            
+249300     PERFORM 6200-HP-FONT                                                 
+249400     PERFORM 7000-WRITE-IT.                                               
+249500     MOVE -9999 TO HOLD-FORM.                                             
+249600     MOVE FONT TO HOLD-FONT.                                              
+249700     GO TO 2999-EXIT.                                                     
+249800/                                                                         
+249900*------------------------------*                                          
+250000 2300-EPSON.                                                              
+250100     MOVE NO-CR TO WORK-CTL.                                              
+250200     IF LINES-PER-INCH NOT = 8 AND 6  MOVE 6 TO LINES-PER-INCH.           
+250300     IF LINES-PER-INCH = 8                                                
+250400         MOVE EP-8-LPI TO WORK-DATA                                       
+250500     ELSE                                                                 
+250600         MOVE EP-6-LPI TO WORK-DATA.                                      
+250700     PERFORM 7000-WRITE-IT.                                               
+250800     IF LINES-PER-PAGE = 0                                                
+250900        COMPUTE LINES-PER-PAGE = LINES-PER-INCH * 11.                     
+251000     MOVE LINES-PER-INCH TO EP-LPI.                                       
+251100     MOVE EP-FORMSIZE    TO WORK-DATA.                                    
+251200     PERFORM 7000-WRITE-IT.                                               
+251300     IF PAGE-WIDTH NOT = "A" AND "B" MOVE "A" TO PAGE-WIDTH.              
+251400     IF PAGE-WIDTH = "B" GO TO 2350-EPSON-B.                              
+251500 2340-EPSON-A.                                                            
+251600     IF ( FONT-CPI <  01.00  OR >  50.00  )                               
+251700        MOVE  10.00  TO FONT-CPI                                          
+251800        MOVE  12.0   TO FONT-POINTSIZE                                    
+251900        IF RECSIZE > 80                                                   
+252000           MOVE  12.00  TO FONT-CPI                                       
+252100           MOVE  10.0   TO FONT-POINTSIZE                                 
+252200           IF RECSIZE > 96                                                
+252300              MOVE  16.67  TO FONT-CPI                                    
+252400              MOVE  08.5   TO FONT-POINTSIZE.                             
+252500     GO TO 2360-EP-FONT.                                                  
+252600 2350-EPSON-B.                                                            
+252700     IF ( FONT-CPI <  01.00  OR >  50.00  )                               
+252800        MOVE  10.00  TO FONT-CPI                                          
+252900        MOVE  12.0   TO FONT-POINTSIZE                                    
+253000        IF RECSIZE > 96                                                   
+253100           MOVE  12.00  TO FONT-CPI                                       
+253200           MOVE  10.0   TO FONT-POINTSIZE                                 
+253300           IF RECSIZE > 132                                               
+253400              MOVE  16.67  TO FONT-CPI                                    
+253500              MOVE  08.5   TO FONT-POINTSIZE.                             
+253600 2360-EP-FONT.                                                            
+253700     PERFORM 6200-EPSON-FONT                                              
+253800     PERFORM 7000-WRITE-IT.                                               
+253900     MOVE -9999 TO HOLD-FORM.                                             
+254000     MOVE FONT TO HOLD-FONT.                                              
+254100     GO TO 2999-EXIT.                                                     
+254200*------------------------------*                                          
+254300 2999-EXIT.                                                               
+254400     EXIT.                                                                
+254500$PAGE "WRITE LINE TO PRINTER"                                             
+254600******************************************************************        
+254700 3000-WRITE-LINE SECTION.                                                 
+254800******************************************************************        
+254900 3000-BEGIN.                                                              
+255000D    DISPLAY "3000-WRITE-LINE".                                           
+255100     MOVE PRINT-CTL TO HOLD-CTL.                                          
+255200     IF PRINTER-TYPE = "LJ"                                               
+255300         AND (PRINT-CTL = 1 OR HOLD-FORM = -9999                          
+255400             OR SIDE NOT = HOLD-SIDE                                      
+255500             OR ORIENTATION NOT = HOLD-ORIENTATION )                      
+255600                 PERFORM 6100-LASER-NEWPAGE THRU 6199-EXIT.               
+255700     IF PRINTER-TYPE = "LJ" AND FONT NOT = HOLD-FONT                      
+255800         PERFORM 6200-LASER-FONT.                                         
+255900     IF ( PRINTER-TYPE = "HP" OR "LP" ) AND FONT NOT = HOLD-FONT          
+256000         PERFORM 6200-HP-FONT.                                            
+256100     IF PRINTER-TYPE = "EP" AND FONT NOT = HOLD-FONT                      
+256200         PERFORM 6200-EPSON-FONT.                                         
+256300     MOVE PRINT-CTL TO WORK-CTL.                                          
+256400     MOVE PRINT-DATA TO WORK-DATA.                                        
+256500     PERFORM 7000-WRITE-IT.                                               
+256600     PERFORM 7040-GET-FORM-NO.                                            
+256700     MOVE ORIENTATION TO HOLD-ORIENTATION.                                
+256800     MOVE FORM-NO TO HOLD-FORM.                                           
+256900     MOVE PAPER-TRAY TO HOLD-TRAY.                                        
+257000     MOVE FONT TO HOLD-FONT.                                              
+257100     MOVE SIDE TO HOLD-SIDE.                                              
+257200     MOVE N-ERR TO PRSUB-ERR.                                             
+257300 3999-EXIT.                                                               
+257400     EXIT.                                                                
+257500$PAGE "RESET PRINTER"                                                     
+257600******************************************************************        
+257700 4000-RESET-PRINTER SECTION.                                              
+257800******************************************************************        
+257900 4000-BEGIN.                                                              
+258000     STRING "RESET " DELIMITED BY SIZE                                    
+258100         PRINTER-NAME DELIMITED BY SPACE                                  
+258200         CR DELIMITED BY SIZE                                             
+258300             INTO COMMAND-LINE.                                           
+258400     PERFORM 7010-MPE-COMMAND.                                            
+258500     MOVE NO-CR TO WORK-CTL.                                              
+258600     IF PRINTER-TYPE = "LJ" GO TO 4100-LASER-JET.                         
+258700     IF PRINTER-TYPE = "EP" GO TO 4999-EXIT.                              
+258800     IF PRINTER-TYPE = "HP" OR "LP" GO TO 4200-HP263X.                    
+258900     GO TO 4999-EXIT.                                                     
+259000 4100-LASER-JET.                                                          
+259100     MOVE  10.00  TO FONT-CPI.                                            
+259200     MOVE  12.0   TO FONT-POINTSIZE.                                      
+259300     PERFORM 6200-LASER-FONT.                                             
+259400     PERFORM 7000-WRITE-IT.                                               
+259500     MOVE LOW-VALUES TO HOLD-FONT HOLD-SIDE.                              
+259600     MOVE "0" TO DUPLEX-ON-SW.                                            
+259700     IF PRTEST PERFORM 7053-DISP-FUNC-OFF.                                
+259800     GO TO 4999-EXIT.                                                     
+259900 4200-HP263X.                                                             
+260000     MOVE RESET-HP TO WORK-DATA.                                          
+260100     PERFORM 7000-WRITE-IT.                                               
+260200     IF PRTEST PERFORM 7053-DISP-FUNC-OFF.                                
+260300     GO TO 4999-EXIT.                                                     
+260400 4300-EPSON.                                                              
+260500     MOVE %53 TO WORK-CTL.                                                
+260600     MOVE RESET-EP TO WORK-DATA.                                          
+260700     PERFORM 7000-WRITE-IT.                                               
+260800     MOVE NO-CR TO WORK-CTL.                                              
+260900     GO TO 4999-EXIT.                                                     
+261000 4999-EXIT.                                                               
+261100     MOVE PRINTER-DEV(1:4) TO SLAVE-DEV.                                  
+262000 4999-END.                                                                
+262100     EXIT.                                                                
+262200$PAGE "LOAD LASER FORM"                                                   
+262300******************************************************************        
+262400 6000-LOAD-LASER-FORM SECTION.                                            
+262500******************************************************************        
+262600 6000-BEGIN.                                                              
+262700D    DISPLAY "6000-LOAD-LASER-FORM".                                      
+262800     PERFORM 7040-GET-FORM-NO.                                            
+262900     MOVE ZERO TO N.                                                      
+263000D    DISPLAY "CHECKING FORM LIST TABLE".                                  
+263100     PERFORM VARYING N FROM 1 BY 1                                        
+263200       UNTIL ( N > 10 )                                                   
+263300       OR ( FORM-LIST(N) = ZERO )                                         
+263400       OR ( FORM-NO = FORM-LIST(N) )                                      
+263500         CONTINUE                                                         
+263600     END-PERFORM.                                                         
+263700     IF FORM-NO = FORM-LIST (N) GO TO 6099-EXIT.                          
+263800*    DISPLAY "FORM NOT FOUND, will be loaded".                            
+263900*    DISPLAY "Calling LOADLASER".                                         
+264000*    IF N < 11  MOVE FORM-NO TO FORM-LIST(N).                             
+264100*    INITIALIZE N COMMAND-LINE.                                           
+264110*    COPY AMSCALL OF J3KLIB                                               
+264210*    REPLACING ==VALUE OF PROCEDURE== BY =="LOADLASER"==.                 
+264230*     FORM-NUMBER FNUM COMMAND-LINE N.                                    
+264300*    IF N NOT = ZERO                                                      
+264400*       MOVE N TO PRSUB-ERR                                               
+264500*       DISPLAY COMMAND-LINE.                                             
+264600 6099-EXIT.                                                               
+264700     EXIT.                                                                
+264800$PAGE "NEW PAGE FOR LASER PRINTER"                                        
+264900*-------: A new page on a laser is more complicated then a                
+265000*         regular line printer.                                           
+265100**********************************************************                
+265200 6100-LASER-NEWPAGE.                                                      
+265300**********************************************************                
+265400 6100-BEGIN.                                                              
+265500D    DISPLAY "6100-LASER-NEWPAGE".                                        
+265600     IF HOLD-FORM = -9999                                                 
+265700         MOVE NO-CR TO WORK-CTL                                           
+265800     ELSE                                                                 
+265900         MOVE "1" TO WORK-CTL.                                            
+266000     IF SIDE = "F" OR "B"                                                 
+266100         MOVE NO-CR TO WORK-CTL                                           
+266200         IF NOT DUPLEX-ON                                                 
+266300D            DISPLAY "SETTING DUPLEX ON"                                  
+266400             MOVE ESC-DUPLEX-ON TO WORK-DATA                              
+266500             PERFORM 7000-WRITE-IT                                        
+266600             MOVE "1" TO DUPLEX-ON-SW.                                    
+266700     IF SIDE NOT = "F" AND "B" AND DUPLEX-ON                              
+266800D        DISPLAY "SETTING SIMPLEX ON"                                     
+266900         MOVE ESC-SIMPLEX-ON TO WORK-DATA                                 
+267000         PERFORM 7000-WRITE-IT                                            
+267100         MOVE "0" TO DUPLEX-ON-SW                                         
+267200         MOVE NO-CR TO WORK-CTL.                                          
+267300     IF SIDE = "B"                                                        
+267400D        DISPLAY "TURNING PAGE TO BACK SIDE"                              
+267500         MOVE ESC-BACK TO WORK-DATA                                       
+267600         MOVE NO-CR TO WORK-CTL                                           
+267700         PERFORM 7000-WRITE-IT                                            
+267800     ELSE IF PAPER-TRAY NOT = HOLD-TRAY                                   
+267900D        DISPLAY "SETTING PAPER TRAY"                                     
+268000         MOVE PAPER-TRAY TO TRAY                                          
+268100         MOVE ESC-TRAY TO WORK-DATA                                       
+268200         PERFORM 7000-WRITE-IT                                            
+268300         MOVE NO-CR TO WORK-CTL                                           
+268400         IF SIDE = "F"                                                    
+268500D            DISPLAY "TURNING PAGE TO FRONT SIDE"                         
+268600             MOVE ESC-FRONT TO WORK-DATA                                  
+268700             PERFORM 7000-WRITE-IT.                                       
+268800     IF FONT NOT = HOLD-FONT                                              
+268900        PERFORM 6200-LASER-FONT.                                          
+269000     IF LINES-PER-INCH NOT = 8 AND 6  MOVE 6 TO LINES-PER-INCH.           
+269100     MOVE LINES-PER-INCH TO HP-LPI.                                       
+269200     IF NOT LANDSCAPE AND PORTRAIT MOVE "P" TO ORIENTATION.               
+269300     IF ORIENTATION NOT = HOLD-ORIENTATION                                
+269400        IF LANDSCAPE                                                      
+269500D          DISPLAY "SETTING ORIENTATION TO LANDSCAPE"                     
+269600           MOVE "1" TO PAGE-ORIENTATION                                   
+269700           MOVE ESC-ORIENTATION TO WORK-DATA                              
+269800           MOVE NO-CR TO WORK-CTL                                         
+269900           PERFORM 7000-WRITE-IT                                          
+270000           COMPUTE PAGE-LENGTH  = ( LINES-PER-INCH * 8.5 )                
+270100           MOVE PAGE-LENGTH TO HP-PAGELEN                                 
+270200           MOVE HP-FORMSIZE    TO WORK-DATA                               
+270300           PERFORM 7000-WRITE-IT                                          
+270400           COMPUTE CALCULATION = 48 * ( 1 / LINES-PER-INCH )              
+270500           MOVE CALCULATION TO LJ-VMI-VALUE                               
+270600           MOVE LJ-VMI TO WORK-DATA                                       
+270700           PERFORM 7000-WRITE-IT                                          
+270800           PERFORM 7051-LASER-PAGESIZE                                    
+270900        ELSE                                                              
+271000D          DISPLAY "SETTING ORIENTATION TO PORTRAIT"                      
+271100           MOVE "0" TO PAGE-ORIENTATION                                   
+271200           MOVE ESC-ORIENTATION TO WORK-DATA                              
+271300           MOVE NO-CR TO WORK-CTL                                         
+271400           PERFORM 7000-WRITE-IT                                          
+271500           COMPUTE PAGE-LENGTH  = ( LINES-PER-INCH * 11 )                 
+271600           MOVE PAGE-LENGTH TO HP-PAGELEN                                 
+271700           MOVE HP-FORMSIZE    TO WORK-DATA                               
+271800           PERFORM 7000-WRITE-IT                                          
+271900           COMPUTE CALCULATION = 48 * ( 1 / LINES-PER-INCH )              
+272000           MOVE CALCULATION TO LJ-VMI-VALUE                               
+272100           MOVE LJ-VMI TO WORK-DATA                                       
+272200           PERFORM 7000-WRITE-IT.                                         
+272300     PERFORM 7040-GET-FORM-NO.                                            
+272400     IF FORM-NO NOT = ZERO                                                
+272500         MOVE FORM-NO TO FORM-N                                           
+272600D       DISPLAY "CALLING OVERLAY OF: FORM ["                              
+272700D                FORM-N "]"                                               
+272800         MOVE NO-CR TO WORK-CTL                                           
+272900         MOVE ESC-FORM TO WORK-DATA                                       
+273000         PERFORM 7000-WRITE-IT.                                           
+273100     MOVE "+" TO HOLD-CTL.                                                
+273200 6199-EXIT.                                                               
+273300     EXIT.                                                                
+273400$PAGE "Printer FONT changes"                                              
+273500*---------------------------------------------------------------          
+273600 6200-LASER-FONT.                                                         
+273700D    DISPLAY "FONT SELECTED = [" FONT "]".                                
+273800     IF FONT-SPACING NOT = "0" AND "1"                                    
+273900        MOVE "0" TO FONT-SPACING.                                         
+274000     IF FONT-STYLE NOT = "0" AND "1"                                      
+274100        MOVE "0" TO FONT-STYLE.                                           
+274200     IF FONT-STROKE NOT = "3" AND "0"                                     
+274300        MOVE "0" TO FONT-STROKE.                                          
+274400     IF FONT-TYPEFACE NOT = "0" AND "3" AND "4" AND "5" AND               
+274500                            "6" AND "8"                                   
+274600        MOVE "3" TO FONT-TYPEFACE.                                        
+274700     MOVE FONT-SPACING   TO FS-SPACING.                                   
+274800     MOVE FONT-STYLE     TO FS-STYLE.                                     
+274900     MOVE FONT-STROKE    TO FS-STROKE.                                    
+275000     MOVE FONT-TYPEFACE  TO FS-TYPEFACE.                                  
+275100     MOVE FONT-CPI       TO FS-CPI.                                       
+275200     MOVE FONT-POINTSIZE TO FS-POINTSIZE.                                 
+275300D    DISPLAY "SETTING FONT TO " QUOTE "<esc>(s" FS-SPACING                
+275400D            "p" FS-CPI "h" FS-POINTSIZE                                  
+275500D            "v" FS-STYLE "s" FS-STROKE "s" FS-TYPEFACE "T".              
+275600     MOVE FONT-SELECTION TO WORK-DATA.                                    
+275700     MOVE "+" TO WORK-CTL.                                                
+275800     PERFORM 7000-WRITE-IT.                                               
+275900/                                                                         
+276000*---------------------------------------------------------------          
+276100 6200-HP-FONT.                                                            
+276200D    DISPLAY "FONT SELECTED = [" FONT "]".                                
+276300     IF FONT-SPACING NOT = "0" AND "1"                                    
+276400        MOVE "0" TO FONT-SPACING.                                         
+276500     IF FONT-STYLE NOT = "0" AND "1"                                      
+276600        MOVE "0" TO FONT-STYLE.                                           
+276700     IF FONT-STROKE NOT = "3" AND "0"                                     
+276800        MOVE "0" TO FONT-STROKE.                                          
+276900     IF FONT-TYPEFACE NOT = "0" AND "3" AND "4" AND "5" AND               
+277000                            "6" AND "8"                                   
+277100        MOVE "3" TO FONT-TYPEFACE.                                        
+277200     MOVE FONT-SPACING   TO FS-SPACING.                                   
+277300     MOVE FONT-STYLE     TO FS-STYLE.                                     
+277400     MOVE FONT-STROKE    TO FS-STROKE.                                    
+277500     MOVE FONT-TYPEFACE  TO FS-TYPEFACE.                                  
+277600     MOVE FONT-CPI       TO FS-CPI.                                       
+277700     MOVE FONT-POINTSIZE TO FS-POINTSIZE.                                 
+277800D    DISPLAY "P.C.L.  FONT IS --->" QUOTE "<esc>(s" FS-SPACING            
+277900D            "p" FS-CPI "h" FS-POINTSIZE                                  
+278000D            "v" FS-STYLE "s" FS-STROKE "s" FS-TYPEFACE "T".              
+278100     IF FONT-CPI > 12.5                                                   
+278200D       DISPLAY "SETTING FONT CPI TO <esc>" HPCOMP                        
+278300        MOVE HP-COMPRESSED TO WORK-DATA                                   
+278400        MOVE "+" TO WORK-CTL                                              
+278500        PERFORM 7000-WRITE-IT                                             
+278600     ELSE IF FONT-CPI > 7.5                                               
+278700D            DISPLAY "SETTING FONT CPI TO <esc>" HPNORMAL                 
+278800             MOVE HP-NORMAL     TO WORK-DATA                              
+278900             MOVE "+" TO WORK-CTL                                         
+279000             PERFORM 7000-WRITE-IT                                        
+279100             ELSE                                                         
+279200D               DISPLAY "SETTING FONT CPI TO <esc>" HPEXPAND              
+279300                MOVE HP-EXPANDED   TO WORK-DATA                           
+279400                MOVE "+" TO WORK-CTL                                      
+279500                PERFORM 7000-WRITE-IT.                                    
+279600/                                                                         
+279700*---------------------------------------------------------------          
+279800 6200-EPSON-FONT.                                                         
+279900D    DISPLAY "FONT SELECTED = [" FONT "]".                                
+280000     IF FONT-SPACING NOT = "0" AND "1"                                    
+280100        MOVE "0" TO FONT-SPACING.                                         
+280200     IF FONT-STYLE NOT = "0" AND "1"                                      
+280300        MOVE "0" TO FONT-STYLE.                                           
+280400     IF FONT-STROKE NOT = "3" AND "0"                                     
+280500        MOVE "0" TO FONT-STROKE.                                          
+280600     IF FONT-TYPEFACE NOT = "0" AND "3" AND "4" AND "5" AND               
+280700                            "6" AND "8"                                   
+280800        MOVE "3" TO FONT-TYPEFACE.                                        
+280900     MOVE FONT-SPACING   TO FS-SPACING.                                   
+281000     MOVE FONT-STYLE     TO FS-STYLE.                                     
+281100     MOVE FONT-STROKE    TO FS-STROKE.                                    
+281200     MOVE FONT-TYPEFACE  TO FS-TYPEFACE.                                  
+281300     MOVE FONT-CPI       TO FS-CPI.                                       
+281400     MOVE FONT-POINTSIZE TO FS-POINTSIZE.                                 
+281500D    DISPLAY "P.C.L.  FONT IS --->" QUOTE "<esc>(s" FS-SPACING            
+281600D            "p" FS-CPI "h" FS-POINTSIZE                                  
+281700D            "v" FS-STYLE "s" FS-STROKE "s" FS-TYPEFACE "T".              
+281800     IF FONT-CPI > 12.5                                                   
+281900D       DISPLAY "SETTING FONT CPI TO, Epson COMPRESSED = %17"             
+282000        MOVE EP-COMPRESSED TO WORK-DATA                                   
+282100        MOVE "+" TO WORK-CTL                                              
+282200        PERFORM 7000-WRITE-IT                                             
+282300     ELSE IF FONT-CPI > 7.5                                               
+282400D            DISPLAY "SETTING FONT CPI TO, Epson NORMAL = <esc>P"         
+282500             MOVE EP-NORMAL     TO WORK-DATA                              
+282600             MOVE "+" TO WORK-CTL                                         
+282700             PERFORM 7000-WRITE-IT                                        
+282800             ELSE                                                         
+282900D             DISPLAY "SETTING FONT CPI TO, Epson EXPANDED = %16"         
+283000              MOVE EP-EXPANDED   TO WORK-DATA                             
+283100              MOVE "+" TO WORK-CTL                                        
+283200              PERFORM 7000-WRITE-IT.                                      
+283300$PAGE "MISC. SUBROUTINES"                                                 
+283400******************************************************************        
+283500 7000-MISC-SUBROUTINES SECTION.                                           
+283600******************************************************************        
+283700*------------------------------*                                          
+283800 7000-WRITE-IT.                                                           
+283900D    DISPLAY "7000-WRITE-IT".                                             
+284000     PERFORM 7030-GET-TCOUNT THRU 7030-EXIT.                              
+284100     MOVE ZERO TO N-ERR.                                                  
+284200     CALL INTRINSIC "FWRITE" USING FNUM WORK-LINE TCOUNT \1\.             
+284300     IF CC NOT = ZERO                                                     
+284400         CALL INTRINSIC "FCHECK" USING FNUM N-ERR.                        
+284500*------------------------------*                                          
+284600 7010-MPE-COMMAND.                                                        
+284700     CALL INTRINSIC "COMMAND" USING COMMAND-LINE N-ERR N-DEC.             
+284800*------------------------------*                                          
+284900 7020-GET-FNUM.                                                           
+285000     MOVE PRINTER-FNUM TO NUM-1.                                          
+285100     CALL "NUMGET" USING NUM-1 NUM-2 N-DEC N-ERR.                         
+285200     MOVE NUM-2 TO FNUM.                                                  
+285300*------------------------------*                                          
+285400 7030-GET-TCOUNT.                                                         
+285500     MOVE RECSIZE TO TCOUNT.                                              
+285600     IF FULL-LINE                                                         
+285700         COMPUTE TCOUNT = -1 - TCOUNT                                     
+285800         GO TO 7030-EXIT.                                                 
+285900 7030-LOOP.                                                               
+286000     IF WORK-X (TCOUNT) = SPACE AND TCOUNT GREATER THAN 0                 
+286100         SUBTRACT 1 FROM TCOUNT                                           
+286200         IF TCOUNT > 1 GO TO 7030-LOOP.                                   
+286300     COMPUTE TCOUNT = -1 - TCOUNT.                                        
+286400 7030-EXIT.                                                               
+286500     EXIT.                                                                
+286600*------------------------------*                                          
+286700 7040-GET-FORM-NO.                                                        
+286800     MOVE FORM-NUMBER TO NUM-1.                                           
+286900     CALL "NUMGET" USING NUM-1 NUM-2 N-DEC N-ERR.                         
+287000     MOVE NUM-2 TO FORM-NO.                                               
+287100*------------------------------*                                          
+287200 7050-GET-RECSIZE.                                                        
+287300     CALL INTRINSIC "FGETINFO" USING FNUM \\ \\ \\ RECSIZE.               
+287400     COMPUTE RECSIZE = -2 - RECSIZE.                                      
+287500*------------------------------*                                          
+287600 7051-LASER-PAGESIZE.                                                     
+287700D    DISPLAY "FONT CPI = [" FONT-CPI "]".                                 
+287800D    DISPLAY "RECSIZE = [" RECSIZE "]".                                   
+287900D    IF LANDSCAPE DISPLAY QUOTE "LANDSCAPE" QUOTE.                        
+288000D    IF PORTRAIT DISPLAY QUOTE "PORTRAIT" QUOTE.                          
+288100     MOVE 2 TO LJ-PAGESIZE-VALUE.                                         
+288200     IF ( LANDSCAPE ) AND (( RECSIZE / FONT-CPI ) > 8 )                   
+288300        MOVE 3 TO LJ-PAGESIZE-VALUE.                                      
+288400D    DISPLAY "SETTING PAGESIZE TO " QUOTE "<esc>&l"                       
+288500D            LJ-PAGESIZE-VALUE "A".                                       
+288600     MOVE LJ-PAGESIZE TO WORK-DATA.                                       
+288700     MOVE "+" TO WORK-CTL.                                                
+288800     PERFORM 7000-WRITE-IT.                                               
+288900*------------------------------*                                          
+289000 7052-DISP-FUNC-ON.                                                       
+289100     MOVE NO-CR TO WORK-CTL.                                              
+289200     IF PRINTER-TYPE = "LJ"                                               
+289300        MOVE  16.67  TO FONT-CPI                                          
+289400        MOVE  08.5   TO FONT-POINTSIZE                                    
+289500        PERFORM 6200-LASER-FONT                                           
+289600     ELSE                                                                 
+289700         MOVE HP-NORMAL TO WORK-DATA.                                     
+289800     PERFORM 7000-WRITE-IT.                                               
+289900     MOVE ESC-ENABLE-EOL-WRAP TO WORK-DATA.                               
+290000     PERFORM 7000-WRITE-IT.                                               
+290100     MOVE ESC-Y TO WORK-DATA.                                             
+290200     PERFORM 7000-WRITE-IT.                                               
+290300*------------------------------*                                          
+290400 7053-DISP-FUNC-OFF.                                                      
+290500     MOVE NO-CR TO WORK-CTL.                                              
+290600     MOVE ESC-Z TO WORK-DATA.                                             
+290700     PERFORM 7000-WRITE-IT.                                               
+290800     MOVE ESC-DISABLE-EOL-WRAP TO WORK-DATA.                              
+290900     PERFORM 7000-WRITE-IT.                                               
+291000*------------------------------*                                          
+291100 9000-END.                                                                
+291200 END PROGRAM PRSUB.                                                       

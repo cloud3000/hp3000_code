@@ -1,0 +1,804 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST                                   
+001100******************************************************************080702ma
+001210*   COPYRIGHT 2007 - 2009 J3K Solutions All rights reserved.      080702ma
+001220*            Turbo Image Migration PREP System                    080702ma
+001230*        Collecting Database names, and their creators            080702ma
+001240*                                                                 080702ma
+001250*   http://www.j3ksolutions.com                                   080702ma
+001260*   mailto:support@j3ksolutions.com                               080702ma
+001270******************************************************************080702ma
+001280 IDENTIFICATION DIVISION.                                                 
+001300 PROGRAM-ID.     MIG901.                                          060706MA
+001400 AUTHOR.     MICHAEL ANDERSON.                                            
+001500 ENVIRONMENT DIVISION.                                            060615MA
+001600 CONFIGURATION SECTION.                                           060615MA
+001700 SOURCE-COMPUTER. HP-3000.                                        060705MA
+001800*  SOURCE-COMPUTER. HP-3000 WITH DEBUGGING MODE.                  060705MA
+001900 OBJECT-COMPUTER. HP-3000.                                        060615MA
+002000*                                                                 060615MA
+002100 INPUT-OUTPUT SECTION.                                            060615MA
+002200 FILE-CONTROL.                                                    060615MA
+002300*                                                                 060615MA
+002400     SELECT PRINT-FILE      ASSIGN TO "DMG014,,,LP(SDTL)".        060706MA
+002500     SELECT SORTFILE        ASSIGN TO "DMG01SRT,,,,9000000".      060706MA
+002600     SELECT EXTFILE1        ASSIGN TO "DMG01A1,,,,9000000".       060706MA
+002700     SELECT EXTFILE2        ASSIGN TO "DMG01A2,,,,9000000".       060706MA
+002800     SELECT DMG01A3-FILE    ASSIGN TO "DMG01A3,,,,9000000".       060713MA
+002900     SELECT DMGFTP-FILE     ASSIGN TO "DMGFTP".                   060713MA
+003000                                                                  060713MA
+003100*                                                                 060615MA
+003200 DATA DIVISION.                                                   060615MA
+003300 FILE SECTION.                                                    060615MA
+003400                                                                  060615MA
+003500                                                                  060615MA
+003600 FD  PRINT-FILE                                                   060615MA
+003700     RECORD CONTAINS 132 CHARACTERS                               060615MA
+003800     BLOCK CONTAINS 1 RECORDS                                     060615MA
+003900     LABEL RECORDS ARE OMITTED.                                   060615MA
+004000 01  PRINT-LINE.                                                  060615MA
+004100     02  CLEAR-OUT                   PIC X(132).                  060615MA
+004200                                                                  060615MA
+004300 FD  EXTFILE2 DATA RECORD IS EXT-REC                              060615MA
+004400     RECORD CONTAINS 62 CHARACTERS.                               060615MA
+004500 01  EXT-REC2.                                                    060615MA
+004600     05  FILLER                PIC X(62).                         060615MA
+004700                                                                  060615MA
+004800 FD  EXTFILE1 DATA RECORD IS EXT-REC                              060615MA
+004900     RECORD CONTAINS 62 CHARACTERS.                               060615MA
+005000 01  EXT-REC.                                                     060615MA
+005100     05  FILLER                PIC X(62).                         060615MA
+005200                                                                  060615MA
+005300 SD  SORTFILE DATA RECORD IS SORT-REC                             060615MA
+005400          RECORD CONTAINS 62 CHARACTERS.                          060615MA
+005500 01  SORT-REC.                                                    060615MA
+005600     02 SORT-KEY PIC X(62).                                       060615MA
+005700 FD  DMG01A3-FILE                                                 060713MA
+005800     RECORD CONTAINS 4096 CHARACTERS                              060713MA
+005900     DATA RECORD IS Script-File.                                  060713MA
+006000 01  Script-File.                                                 060619MA
+006100     05  Script-Str                     PIC X(4096).              060619MA
+006200                                                                  060713MA
+006300 FD  DMGFTP-FILE                                                  060713MA
+006400     RECORD CONTAINS 256 CHARACTERS                               060713MA
+006500     DATA RECORD IS FTP-File.                                     060713MA
+006600 01  FTP-File.                                                    060713MA
+006700     05  FTP-Str                     PIC X(256).                  060713MA
+006800                                                                  060713MA
+006900$PAGE "WORKING STORAGE"                                           060615MA
+007000 WORKING-STORAGE SECTION.                                         060615MA
+007100 01  HPVAR-NAME        PIC X(20) VALUE "ITOSQLS_STATUS~  ".       060614MA
+007200 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                           
+007300 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                            
+007400 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                            
+007500 01  DS-IDX            PIC S9(9) COMP VALUE 0.                    060621MA
+007600 01  DI-IDX            PIC S9(9) COMP VALUE 0.                    060621MA
+007700 01  GETINFO-DATA.                                                        
+007800    05  GINFO-LEN                PIC S9(4) COMP.                          
+007900    05  GINFO-STR                PIC X(128).                              
+008000    05  GINFO-PARM               PIC S9(4) COMP.                          
+008100 01  PARSED-DATA.                                                         
+008200    05  ITEMS-PARSED             PIC S9(4) COMP.                          
+008300        88 PARSE-IS-COMPLETE VALUES ARE 8 THRU 99.                        
+008400    05  PARSED-STRING            PIC X(128).                              
+008500    05  NEXT-STRING              PIC X(128).                              
+008600    05  STRING-POINTER             PIC S9(4) COMP.                        
+008700    05  GX                       PIC S9(4) COMP.                          
+008800    05  GY                       PIC S9(4) COMP.                          
+008900    05  PX                       PIC S9(4) COMP.                          
+009000                                                                          
+009100 01  FULL-CURRENT-DATE.                                                   
+009200         05  C-DATE.                                                      
+009300             10  C-YEAR       PIC 9(4).                                   
+009400             10  C-MONTH      PIC 99.                                     
+009500             10  C-DAY        PIC 99.                                     
+009600         05  C-TIME.                                                      
+009700             10  C-HOUR       PIC 99.                                     
+009800             10  C-MINUTES    PIC 99.                                     
+009900             10  C-SECONDS    PIC 99.                                     
+010000             10  C-SEC-HUND   PIC 99.                                     
+010100         05  C-TIME-DIFF.                                                 
+010200             10  O-GMT-DIR    PIC X.                              060621MA
+010300             10  O-HOUR       PIC 99.                             060621MA
+010400             10  O-MINUTES    PIC 99.                             060621MA
+010500 01 ERROR-MSG                PIC X(80) VALUE SPACES.                      
+010600 01 NUMDEC                 PIC S9(4) COMP.                        060615MA
+010700 01 NUMERR                 PIC S9(4) COMP.                        060615MA
+010800 01 NUM1                   PIC X(14).                             060615MA
+010900 01 NUM2                   PIC S9(14).                            080902ma
+010910                                                                  080902ma
+010920 01  DB-MISC.                                                     080902ma
+011000     02  RE-READ           PIC S9(4) COMP VALUE 1.                060615MA
+011100     02  MAX-DB            PIC S9(4) COMP VALUE 100.              060615MA
+011200     02  SERIAL            PIC S9(4) COMP VALUE 2.                060615MA
+011300     02  BACKWARD          PIC S9(4) COMP VALUE 3.                060615MA
+011400     02  DIRECT            PIC S9(4) COMP VALUE 4.                060615MA
+011500     02  CHAINED           PIC S9(4) COMP VALUE 5.                060615MA
+011600     02  BACK-CHAINED      PIC S9(4) COMP VALUE 6.                060615MA
+011700     02  KEYED             PIC S9(4) COMP VALUE 7.                060615MA
+011800     02  MODE-1            PIC S9(4) COMP VALUE 1.                060615MA
+011900     02  MODE-3            PIC S9(4) COMP VALUE 3.                060615MA
+012000     02  MODE-4            PIC S9(4) COMP VALUE 4.                060621MA
+012100     02  MODE-20           PIC S9(4) COMP VALUE 20.               060621MA
+012200     02  MODE-104          PIC S9(4) COMP VALUE 104.              060621MA
+012300     02  MODE-102          PIC S9(4) COMP VALUE 102.              060621MA
+012400     02  MODE-103          PIC S9(4) COMP VALUE 103.              060621MA
+012500     02  MODE-202          PIC S9(4) COMP VALUE 202.              060621MA
+012600     02  MODE-203          PIC S9(4) COMP VALUE 203.              060621MA
+012700     02  MODE-301          PIC S9(4) COMP VALUE 301.              060621MA
+012800     02  MODE-406          PIC S9(4) COMP VALUE 406.              060621MA
+012900     02  MODE-5            PIC S9(4) COMP VALUE 5.                060615MA
+013000     02  MODE-N            PIC S9(4) COMP VALUE 0.                060615MA
+013100     02  IREAD-LEN         PIC S9(4) COMP VALUE 0.                060615MA
+013200     02  IMAGE-ERRNUM      PIC S9(4) COMP VALUE 0.                060615MA
+013300     02  CALL-STRING       PIC X(80) VALUE SPACES.                060615MA
+013400     02  CSLEN             PIC S9(4) COMP VALUE 0.                060615MA
+013500     02  ERROR-STRING      PIC X(80) VALUE SPACES.                060615MA
+013600     02  ESLEN             PIC S9(4) COMP VALUE 0.                060615MA
+013700     02  NULL-ITEM         PIC XXXX VALUE "; ".                   060615MA
+013800     02  ALL-ITEMS         PIC XX VALUE "@;".                     060615MA
+013900     02  SEARCH-ITEM       PIC X(18).                             060615MA
+014000     02  SEARCH-KEY        PIC X(64).                             060615MA
+014100     02  SEARCH-KEYI2 REDEFINES SEARCH-KEY.                               
+014200         03 SEARCH-KEYI32  PIC S9(9) COMP.                                
+014300         03 FILLER         PIC X(60).                                     
+014400     02  STATUS-AREA.                                             060615MA
+014500         03  CONDITION-WORD    PIC S9(4) COMP VALUE  0.           060615MA
+014600             88  NO-IMAGE-ERRORS         VALUE  0.                060615MA
+014700             88  IMAGE-ERRORS                                     060615MA
+014800                 VALUES ARE -9999 THRU -1, 1 THRU  9999.          060615MA
+014900             88  END-OF-FILE             VALUE 11.                060615MA
+015000             88  BEG-OF-FILE             VALUE 12.                060615MA
+015100             88  BEG-OF-CHAIN            VALUE 14.                060615MA
+015200             88  END-OF-CHAIN            VALUE 15.                060615MA
+015300             88  NO-ENTRY                VALUE 17.                060615MA
+015400         03  RECORD-LENGTH     PIC S9(4) COMP VALUE  0.           060615MA
+015500         03  RECORD-NUMBER     PIC S9(9) COMP VALUE  0.           060615MA
+015600         03  ENTRIES-IN-CHAIN  PIC S9(9) COMP VALUE  0.           060615MA
+015700         03  PREV-RECORD-NO    PIC S9(9) COMP VALUE  0.           060615MA
+015800         03  NEXT-RECORD-NO    PIC S9(9) COMP VALUE  0.           060615MA
+015900 01  FIRST-TIME-SW         PIC X.                                 060615MA
+016000     88  FIRST-TIME        VALUE "1".                             060615MA
+016100                                                                  060615MA
+016200 01  ERRORS-SW             PIC X.                                 060615MA
+016300     88  ERRORS            VALUE "1".                             060615MA
+016400                                                                  060615MA
+016500 01  EDIT-ERRORS-SW        PIC X.                                 060615MA
+016600     88  EDIT-ERRORS       VALUE "1".                             060615MA
+016700                                                                  060615MA
+016800 01  BAD-KEY-SW            PIC X.                                 060615MA
+016900     88  BAD-KEY           VALUE "1".                             060615MA
+017000                                                                  060615MA
+017100 01  Last-Column-SW       PIC X.                                  060622MA
+017200     88  Last-Column      VALUE "1".                              060622MA
+017300                                                                  060615MA
+017400 01  X-FLOWTEST-JCW          PIC X(8) VALUE "FLOWTEST".           060615MA
+017500 01  X-FLOWTEST-VALUE        PIC S9(4) COMP VALUE 0.              060615MA
+017600     88  X-FLOWTEST          VALUE 1.                             060615MA
+017700                                                                  060615MA
+017800 01 TARGET-FIELD                    PIC X(64) VALUE SPACES.       060706MA
+017900 01 DWNSHFT-SW                      PIC X.                        060706MA
+018000    88 OK-TO-DOWNSHIFT VALUE "1".                                 060706MA
+018100 01 MYIDX                           PIC S9(4) COMP VALUE 0.       060706MA
+018200 01 SOURCE-FIELD                    PIC X(64) VALUE SPACES.       060706MA
+018300 01 ASCII-CHARACTERS.                                             060706MA
+018400    02 TWO-BYTES                    PIC XX VALUE SPACES.          060706MA
+018500    02 SIXTEEN-BITS REDEFINES TWO-BYTES.                          060706MA
+018600       05 ASCII-INT                 PIC S9(4) COMP.               060706MA
+018700    02 TWO-CHARS    REDEFINES TWO-BYTES.                          060706MA
+018800       05 FILLER                    PIC X.                        060706MA
+018900       05 ASCII-CHAR                PIC X.                        060706MA
+019000                                                                  060706MA
+019100                                                                  060706MA
+019200 01 ABORT-SWITCHES.                                               060615MA
+019300    02 ON-IMAGE-ERRORS     PIC X VALUE "0".                       060615MA
+019400       88 ABORT-ON-IMAGE-ERRORS  VALUE "9".                       060615MA
+019500                                                                  060615MA
+019600 01  DATA-BASE-COMMON.                                            060615MA
+019700     02  DB-PTR                    PIC S9(4) COMP.                060615MA
+019800     02  DB-CNT                    PIC S9(4) COMP.                060615MA
+019900     02  DB-MAX                    PIC S9(4) COMP.                060615MA
+020000     02  DB-IDX                    PIC S9(4) COMP.                060615MA
+020100     02  DB-POINTER-STORAGE.                                      060615MA
+020200         03 DB-POINTER-ENTRIES OCCURS 100 TIMES.                  060615MA
+020300            04 DBPTR               PIC S9(4) COMP.                060615MA
+020400                                                                  060615MA
+020500     02  SAVE-STATUS.                                             060615MA
+020600         03  CONDITION-SAVED   PIC S9(4) COMP.                    060615MA
+020700         03  SAVED-LENGTH      PIC S9(4) COMP.                    060615MA
+020800         03  SAVED-NUMBER      PIC S9(9) COMP.                    060615MA
+020900         03  SAVED-IN-CHAIN    PIC S9(9) COMP.                    060615MA
+021000         03  PREV-SAVED-NO     PIC S9(9) COMP.                    060615MA
+021100         03  NEXT-SAVED-NO     PIC S9(9) COMP.                    060615MA
+021200                                                                  060615MA
+021300     02 DATABASE-TABLE value spaces.                              060621MA
+021400         03 DATA-BASE-NAMES            OCCURS 512 TIMES.          060621MA
+021500            05 DATA-BASE-NAME.                                    060621MA
+021600             10 IMAGE-WORD           PIC XX.                      060621MA
+021700             10 DBNAME               PIC X(26).                   060621MA
+021800               88 END-OF-DB-TABLE VALUE "LAST-DBN-ENTRY".         060615MA
+021900            05 DATA-BASE-PASS          PIC X(08).                 060621MA
+022000                                                                  060615MA
+022100 01 A-TABLE-SW               PIC X VALUE "0".                     060615MA
+022200    88 ITS-A-TABLE    VALUE "1".                                          
+022300 01 DOW                      PIC S9(4) COMP  VALUE 0.                     
+022400 01  MIGDB    PIC S9(4) COMP VALUE  9.                                    
+022500 01  MYDB     PIC S9(4) COMP VALUE  9.                                    
+022600 01  MIGDB-STATUS.                                                        
+022700     03  FILLER    PIC S9(4) COMP VALUE  0.                               
+022800     03  FILLER    PIC S9(4) COMP VALUE  0.                               
+022900     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+023000     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+023100     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+023200     03  FILLER    PIC S9(9) COMP VALUE  0.                               
+023300 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.                     
+023400 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.                     
+023500                                                                  060713MA
+023600 01 WHO-INTRINSIC-PARMS.                                          060713MA
+023700    15  WHO-TERM-DEV-NO        PIC S9999 COMP.                    060713MA
+023800    15  WHO-MODE               PIC S9999 COMP.                    060713MA
+023900    15  WHO-CAPABILITY         PIC S9(6) COMP.                    060713MA
+024000    15  WHO-LATTR              PIC S9(6) COMP.                    060713MA
+024100    15  WHO-USERN.                                                060713MA
+024200        20 BYTE1-6             PIC X(6).                          060713MA
+024300        20 SCHOOL-NUMBER       PIC XX.                            060713MA
+024400    15  WHO-GROUPN             PIC X(8).                          060713MA
+024500    15  WHO-ACCTN              PIC X(8).                          060713MA
+024600    15  WHO-HOMEN              PIC X(8).                          060713MA
+024700 COPY SRVMST OF J3KLIB.                                           060713MA
+024800 COPY DBMSTR OF J3KLIB.                                                   
+024900 COPY NXUNIQ OF J3KLIB.                                                   
+025000                                                                          
+025100 01 DP-IDX                  PIC S9(9) COMP  VALUE 0.              060705MA
+025200 01 MyHpSusan               PIC S9(9) COMP  VALUE 0.                      
+025300 01 MyCREATOR               PIC X(8)   VALUE SPACES.                      
+025400 01 MYACCOUNT               PIC X(8)   VALUE SPACES.                      
+025500 01 MYGROUP               PIC X(8)   VALUE SPACES.                        
+025600 01 LINK-USER  PIC X(8) VALUE SPACES.                                     
+025700 01 LINK-UPASS PIC X(8) VALUE SPACES.                                     
+025800 01 LINK-ACCT  PIC X(8) VALUE SPACES.                                     
+025900 01 LINK-APASS PIC X(8) VALUE SPACES.                                     
+026000 01 LINK-GROUP PIC X(8) VALUE SPACES.                                     
+026100 01 LINK-GPASS PIC X(8) VALUE SPACES.                                     
+026200                                                                          
+026300 01 MYCOST      PIC S9(18) COMP VALUE 0.                                  
+026400 01 MYMONEY     PIC S9(18) COMP VALUE 0.                                  
+026500 01 MYBYTES     PIC S9(18) COMP VALUE 0.                                  
+026600 01 MYMSG                   PIC X(79) VALUE SPACES.                       
+026700 01 SI-IDX                  PIC S9(9) COMP  VALUE 0.              060705MA
+026800 01 CMD                     PIC X(255)      VALUE SPACES.                 
+026900 01 M               Pic X(78) Value Spaces.                               
+027000 01 CSTR                     PIC X(255)      VALUE SPACES.                
+027100 01 CERR                     PIC S9(4) COMP  VALUE 0.                     
+027200 01 CPARM                    PIC S9(4) COMP  VALUE 0.                     
+027300 01 CMSG                     PIC S9(4) COMP  VALUE 2.                     
+027400 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.                     
+027500 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.                     
+027600 01  EXTFILE-STATUS            PIC X   VALUE "0".                 060619MA
+027700     88 EXTFILE-EOF                    VALUE "9".                 060619MA
+027800 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.                     
+027900 01 My-BaseName              Pic X(6) Value Spaces.               060705MA
+028000 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.                     
+028100 01 NUM-X                    PIC S9(4) COMP  VALUE 0.                     
+028200 01 MYINCREMENT              PIC S9(4) COMP  VALUE 0.                     
+028300                                                                          
+028400 01 My-Bytes                  pic S9(4) Comp  Value 0.                    
+028500 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.                     
+028600 01 VAR-LEN                  PIC S9(4) COMP  VALUE 0.                     
+028700 01 SHOWTIME-STR.                                                         
+028800    02 FILLER PIC X(8) VALUE "SHOWTIME".                                  
+028900    02 FILLER PIC X    VALUE %15.                                         
+029000 01 DATE-EDITING.                                                 060621MA
+029100    05 RAW-DATE.                                                  060621MA
+029200       10 D1     PIC X   VALUE SPACES.                            060621MA
+029300       10 D2     PIC X   VALUE SPACES.                            060621MA
+029400       10 D3     PIC X   VALUE SPACES.                            060621MA
+029500       10 D4     PIC X   VALUE SPACES.                            060621MA
+029600       10 D5     PIC X   VALUE SPACES.                            060621MA
+029700       10 D6     PIC X   VALUE SPACES.                            060621MA
+029800       10 D7     PIC X   VALUE SPACES.                            060621MA
+029900       10 D8     PIC X   VALUE SPACES.                            060621MA
+030000    05 EDITED-DATE.                                               060621MA
+030100       10 D5     PIC X   VALUE SPACES.                            060621MA
+030200       10 D6     PIC X   VALUE SPACES.                            060621MA
+030300       10 FILLER PIC X   VALUE "/".                               060621MA
+030400       10 D7     PIC X   VALUE SPACES.                            060621MA
+030500       10 D8     PIC X   VALUE SPACES.                            060621MA
+030600       10 FILLER PIC X   VALUE "/".                               060621MA
+030700       10 D1     PIC X   VALUE SPACES.                            060621MA
+030800       10 D2     PIC X   VALUE SPACES.                            060621MA
+030900       10 D3     PIC X   VALUE SPACES.                            060621MA
+031000       10 D4     PIC X   VALUE SPACES.                            060621MA
+031100                                                                  060621MA
+031200* 1: Database new limits (# of sets = 240,                        060619MA
+031300*                         # of items = 1200,                      060619MA
+031400*                         # paths per masters = 64)               060619MA
+031500* 0: Database old limits (# of sets = 199,                        060619MA
+031600*                         # of items = 1024,                      060619MA
+031700*                         # paths per master = 16)                060619MA
+031800                                                                  060619MA
+031900 01 Db-Info-406-Word-17.                                          060621MA
+032000    05  BIT1             PIC 9.                                   060619MA
+032100    05  BIT2             PIC 9.                                   060619MA
+032200    05  BIT3             PIC 9.                                   060619MA
+032300    05  BIT4             PIC 9.                                   060619MA
+032400    05  BIT5             PIC 9.                                   060619MA
+032500    05  BIT6             PIC 9.                                   060619MA
+032600    05  BIT7             PIC 9.                                   060619MA
+032700    05  BIT8             PIC 9.                                   060619MA
+032800    05  BIT9             PIC 9.                                   060619MA
+032900        88 Database-Newlimits Value 1.                            060621MA
+033000        88 Database-Oldlimits Value 0.                            060621MA
+033100    05  BIT10            PIC 9.                                   060619MA
+033200        88 Database-Entrynumber-Format Value 1.                   060621MA
+033300        88 Database-Entryname-Format   Value 0.                   060621MA
+033400    05  BIT11            PIC 9.                                   060619MA
+033500    05  BIT12            PIC 9.                                   060619MA
+033600        88 Expandable-Master-Dataset     Value 1.                 060621MA
+033700        88 No-Expandable-Master-Dataset   Value 0.                060621MA
+033800    05  BIT13            PIC 9.                                   060619MA
+033900        88 B-Tree      Value 1.                                   060621MA
+034000        88 No-B-Tree   Value 0.                                   060621MA
+034100    05  BIT14            PIC 9.                                   060619MA
+034200    05  BIT15            PIC 9.                                   060619MA
+034300    05  BIT16            PIC 9.                                   060619MA
+034400 01  BINARY-VALUE.                                                060621MA
+034500     05 BIT-ZERO                     PIC 9.                       060621MA
+034600     05 BIT OCCURS 15 TIMES          PIC 9.                       060621MA
+034700                                                                  060621MA
+034800 01 NUMERIC-EDITS.                                                060621MA
+034900    02 Split-Word        Pic S9(4) Comp.                          060621MA
+035000    02 Splating-a-word Redefines Split-Word.                      060621MA
+035100       05 Split-Word-1 Pic x.                                     060621MA
+035200       05 Split-Word-2 Pic x.                                     060621MA
+035300    02 CHR3              PIC XXX.                                         
+035400    02 Y1                PIC 9.                                   060621MA
+035500    02 Y2                PIC 99.                                  060621MA
+035600    02 Y3                PIC 999.                                 060621MA
+035700    02 Y4                PIC 9999.                                060621MA
+035800    02 Y5                PIC 99999.                               060621MA
+035900    02 CHR6              PIC XXXXXX.                              060621MA
+036000    02 Z1                PIC 9.                                           
+036100    02 Z2                PIC 99.                                          
+036200    02 Z3                PIC 999.                                         
+036300    02 Z4                PIC 9999.                                        
+036400    02 Z5                PIC 99999.                                       
+036500    02 COLUMN-BYTES    PIC S9(4) COMP.                                    
+036600                                                                          
+036700 01 Collate-Str          Pic x(64).                               060621MA
+036800 01 Db-Info-406.                                                  060619MA
+036900    02 DBI-406-DbName   Pic X(28).                                060619MA
+037000    02 DBI-406-OpenMode Pic S9(4) Comp.                           060619MA
+037100    02 DBI-406-Version  Pic S9(4) Comp.                           060619MA
+037200    02 DBI-406-Options  Pic S9(4) Comp.                           060619MA
+037300    02 Filler           Pic X(256).                               060621MA
+037400 01 Db-Info-203.                                                  060619MA
+037500    02 DBI-203-SetCount Pic S9(4) Comp.                           060619MA
+037600    02 DBI-203-SetList.                                           060619MA
+037700       05 DBI-203-SetEntries OCCURS 256 Times.                    060619MA
+037800          10 DBI-203-SetNumber Pic S9(4) Comp.                    060619MA
+037900 01 Db-Info-202.                                                  060619MA
+038000    02 DBI-SetName      Pic X(16).                                060619MA
+038100    02 DBI-SetType      Pic XX.                                   060619MA
+038200    02 DBI-SetEntryLen  Pic S9(4) Comp.                           060619MA
+038300    02 DBI-SetBlkFactor Pic S9(4) Comp.                           060619MA
+038400    02 DBI-SetUnused    Pic S9(9) Comp.                           060619MA
+038500    02 DBI-SetEntryCnt  Pic S9(9) Comp.                           060619MA
+038600    02 DBI-SetCapacity  Pic S9(9) Comp.                           060619MA
+038700 01 Ms-Info-202.                                                          
+038800    02 MSI-SetName      Pic X(16).                                        
+038900    02 MSI-SetType      Pic XX.                                           
+039000    02 MSI-SetEntryLen  Pic S9(4) Comp.                                   
+039100    02 MSI-SetBlkFactor Pic S9(4) Comp.                                   
+039200    02 MSI-SetUnused    Pic S9(9) Comp.                                   
+039300    02 MSI-SetEntryCnt  Pic S9(9) Comp.                                   
+039400    02 MSI-SetCapacity  Pic S9(9) Comp.                                   
+039500 01 Db-Info-103.                                                  060619MA
+039600    02 DBI-103-ItemCount Pic S9(4) Comp.                          060619MA
+039700    02 DBI-103-ItemList.                                          060619MA
+039800       05 DBI-103-ItemEntries OCCURS 1280 Times.                  060619MA
+039900          10 DBI-103-ItemNumber Pic S9(4) Comp.                   060619MA
+040000 01 Db-Info-104.                                                  060619MA
+040100    02 DBI-104-ItemCount Pic S9(4) Comp.                          060619MA
+040200    02 DBI-104-ItemList.                                          060619MA
+040300       05 DBI-104-ItemEntries OCCURS 1280 Times.                  060619MA
+040400          10 DBI-104-ItemNumber Pic S9(4) Comp.                   060619MA
+040500 01 Db-Info-102.                                                  060619MA
+040600    02 DBI-ItemName      Pic X(16).                               060619MA
+040700    02 DBI-ItemType      Pic XX.                                  060619MA
+040800    02 DBI-ItemSubLen    Pic S9(4) Comp.                          060619MA
+040900    02 DBI-ItemSubCount  Pic S9(4) Comp.                          060619MA
+041000    02 DBI-ItemUnused    Pic S9(9) Comp.                          060619MA
+041100 01 Sr-Info-102.                                                          
+041200    02 SrI-ItemName      Pic X(16).                                       
+041300    02 SrI-ItemType      Pic XX.                                          
+041400    02 SrI-ItemSubLen    Pic S9(4) Comp.                                  
+041500    02 SrI-ItemSubCount  Pic S9(4) Comp.                                  
+041600    02 SrI-ItemUnused    Pic S9(9) Comp.                                  
+041700 01 Db-Info-301.                                                  060619MA
+041800    02 DBI-301-ItemCount Pic S9(4) Comp.                          060619MA
+041900    02 DBI-301-ItemList.                                          060619MA
+042000       05 DBI-301-ItemEntries OCCURS 64 Times.                    060619MA
+042100          10 DBI-301-SetNumber    Pic S9(4) Comp.                 060619MA
+042200          10 DBI-301-SearchNumber Pic S9(4) Comp.                 060619MA
+042300          10 DBI-301-SortNumber   Pic S9(4) Comp.                 060619MA
+042400 01 Master-Info-202.                                              060619MA
+042500    02 MI-SetName      Pic X(16).                                 060619MA
+042600    02 MI-SetType      Pic XX.                                    060619MA
+042700    02 MI-SetEntryLen  Pic S9(4) Comp.                            060619MA
+042800    02 MI-SetBlkFactor Pic S9(4) Comp.                            060619MA
+042900    02 MI-SetUnused    Pic S9(9) Comp.                            060619MA
+043000    02 MI-SetEntryCnt  Pic S9(9) Comp.                            060619MA
+043100    02 MI-SetCapacity  Pic S9(9) Comp.                            060619MA
+043200 01  TDAY                PIC X(8)  VALUE SPACES.                  060619MA
+043300 01  TNUMDAY             PIC S9(9) COMP VALUE 0.                          
+043400 01  TDOW                PIC S9(4) COMP VALUE 0.                          
+043500 01  DDAY                PIC X(8)  VALUE SPACES.                          
+043600 01  DNUMDAY             PIC S9(9) COMP VALUE 0.                          
+043700 01  DDOW                PIC S9(4) COMP VALUE 0.                          
+043800 01  DCNT                PIC S9(4) COMP VALUE 0.                          
+043900 01  PICZ5 PIC Z,ZZZ.                                                     
+044000 COPY AMSMODE OF J3KLIB.                                                  
+044100                                                                          
+044200*=================================================================060620MA
+044300$PAGE  "Main logical flow"                                                
+044400*=================================================================060620MA
+044500 PROCEDURE DIVISION.                                                      
+044600 BEGIN-0000.                                                              
+044700     CALL   INTRINSIC "WHO"                                               
+044800     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN                   
+044900            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.               
+044910     MOVE WHO-MODE TO AMSMODE.                                            
+045010     IF WHO-ACCTN(1:3) <> "SYS" OR                                        
+045100        WHO-USERN(1:7) <> "MANAGER" OR                                    
+045200        WHO-GROUPN(1:3) <> "J3K"                                          
+045300       DISPLAY "PLEASE LOGON AS MANAGER.SYS,J3K"                          
+045400       DISPLAY "This program will not run as "                            
+045500               WHO-USERN "." WHO-ACCTN "," WHO-GROUPN                     
+045600       STOP RUN.                                                          
+045700     MOVE "Turbo Image/SQL Documentation Tool version C.7.3" TO M.        
+045800     PERFORM MSG-PROCESS                                                  
+045900     MOVE "------------------------------------------------" TO M.        
+046000     PERFORM MSG-PROCESS                                                  
+046100     MOVE "***            MIG901.PUB.J3K                ***" TO M.        
+046200     PERFORM MSG-PROCESS                                                  
+046300     MOVE "***                                          ***" TO M.        
+046400     PERFORM MSG-PROCESS                                                  
+046500     MOVE "***   Establishing access to each database   ***" TO M.        
+046600     PERFORM MSG-PROCESS                                                  
+046700     MOVE "***                                          ***" TO M.        
+046800     PERFORM MSG-PROCESS                                                  
+046900     MOVE "------------------------------------------------" TO M.        
+047000     PERFORM MSG-PROCESS                                                  
+047100     MOVE "Copyright 2007 J3K Solutions" TO M.                            
+047200     PERFORM MSG-PROCESS                                                  
+047300     CALL "GETCURRENT" USING TDAY TNUMDAY TDOW.                           
+047400*    INITIALIZE DDAY DNUMDAY DDOW.                                        
+047500*    MOVE "20070520" TO DDAY.                                             
+047600*    CALL "DAYNUM" USING DDAY DNUMDAY DDOW.                               
+047700*    COMPUTE DCNT = DNUMDAY - TNUMDAY.                                    
+047800*    IF DCNT < 0                                                          
+047900*     MOVE "------------------------------------------" TO M              
+048000*     PERFORM MSG-PROCESS                                                 
+048100*     MOVE "***                                    ***" TO M              
+048200*     PERFORM MSG-PROCESS                                                 
+048300*     MOVE "***                                    ***" TO M              
+048400*     PERFORM MSG-PROCESS                                                 
+048500*     MOVE "***   This DEMO version has expired    ***" TO M              
+048600*     PERFORM MSG-PROCESS                                                 
+048700*     MOVE "***   Email: Support@J3KSolutions.com  ***" TO M              
+048800*     PERFORM MSG-PROCESS                                                 
+048900*     MOVE "***                                    ***" TO M              
+049000*     PERFORM MSG-PROCESS                                                 
+049100*     MOVE "***                                    ***" TO M              
+049200*     PERFORM MSG-PROCESS                                                 
+049300*     MOVE "------------------------------------------" TO M              
+049400*     PERFORM MSG-PROCESS                                                 
+049500*     CALL INTRINSIC "QUIT" USING \0\                                     
+049600*    ELSE                                                                 
+049700*     MOVE DCNT TO Z2                                                     
+049800*     STRING "DEMO Period has " z2 " days remaining."                     
+049900*      DELIMITED BY SIZE INTO M                                           
+050000*     END-STRING                                                          
+050100*     PERFORM MSG-PROCESS                                                 
+050200*     MOVE "Expiration date is: May 20, 2007" TO M.                       
+050300*    PERFORM MSG-PROCESS.                                                 
+050400     PERFORM INITIALIZATION.                                      060615MA
+050500     PERFORM FIND-BASES.                                                  
+050600     INITIALIZE SrvMST-BUFFER.                                            
+050700     PERFORM LOCK-SRVMST.                                                 
+050800     Move 1 to Search-keyI32.                                             
+050900     PERFORM GET-SRVMST-KEYED                                             
+051000     If NOT No-Entry                                                      
+051100      MOVE DB-CNT TO SRVMST-SVR-DSCNT                                     
+051200      PERFORM UPDATE-SRVMST.                                              
+051300     PERFORM UNLOCK-SRVMST.                                               
+051400     Perform CLOSE-IMAGE-DB                                       060621MA
+051500     Move 0 To Condition-Word                                     060622MA
+051600     Go To 9999-RETURN.                                           060620MA
+051700*=================================================================060620MA
+051800$PAGE  "Major SubParagraphs"                                      060620MA
+051900*=================================================================060615MA
+052000 INITIALIZATION.                                                  060615MA
+052100D    DISPLAY "INITIALIZATION".                                    060621MA
+052200     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.             060615MA
+052300     MOVE C-DATE TO RAW-DATE.                                     060615MA
+052400     MOVE CORR RAW-DATE TO EDITED-DATE.                           060615MA
+052500     CALL   INTRINSIC "WHO"                                       060713MA
+052600     USING  WHO-MODE WHO-CAPABILITY WHO-LATTR WHO-USERN           060713MA
+052700            WHO-GROUPN WHO-ACCTN WHO-HOMEN WHO-TERM-DEV-NO.       060713MA
+052800     INITIALIZE CSTR.                                             060713MA
+052900     Perform ShowTime.                                            060615MA
+053000     PERFORM GET-HPSUSAN.                                                 
+053100     Initialize DATABASE-TABLE My-BaseName.                               
+053200     MOVE 128 TO GINFO-LEN.                                               
+053300     INITIALIZE GINFO-STR GINFO-PARM.                                     
+053400     MOVE 9 TO MIGDB.                                                     
+053500     MOVE "MIGDB.PUB.J3K" TO DbName(MIGDB)                                
+053600     MOVE "J3K" TO NULL-ITEM.                                             
+053700     CALL "DBOPEN" USING                                                  
+053800      DATA-BASE-NAME(MIGDB) NULL-ITEM MODE-1 STATUS-AREA.                 
+053900     IF IMAGE-ERRORS PERFORM 9000-IMAGE-ERROR.                            
+054000     MOVE STATUS-AREA TO MIGDB-STATUS.                                    
+054100     INITIALIZE SrvMST-BUFFER.                                            
+054200     MOVE ";" TO NULL-ITEM.                                               
+054300     Move 1 to Search-keyi32.                                             
+054400     Perform Get-SRVMST-Keyed.                                            
+054500     If No-Entry                                                          
+054600      Display "No server record found"                                    
+054700      Call Intrinsic "QUIT" Using \1\.                                    
+054800     MOVE FUNCTION CURRENT-DATE TO FULL-CURRENT-DATE.                     
+054900     MOVE C-DATE TO RAW-DATE.                                             
+055000     MOVE CORR RAW-DATE TO EDITED-DATE.                                   
+055100     perform GET-HPSUSAN.                                                 
+055200     IF SRVMST-SVR-SUSAN <> MYHPSUSAN                                     
+055300      DISPLAY "****************************"                              
+055400      DISPLAY "* INSTALLATION PROBLEM     *"                              
+055500      DISPLAY "*                          *"                              
+055600      DISPLAY "* Invalid License          *"                              
+055700      DISPLAY "****************************"                              
+055800      Call Intrinsic "QUIT" Using \1\.                                    
+055900*     Display  "Server: " SRVMST-SVR-NAME.                                
+056000*     Display  "HPSUSAN: " SRVMST-SVR-SUSAN.                              
+056100*     Display  "MPE/iX version: " SRVMST-SVR-MPEVERSION.                  
+056200     Initialize MYCOST MYMONEY MYBYTES CSTR CERR CPARM CMSG.      060615MA
+056300     Initialize Script-Str.                                       060622MA
+056400     Initialize CSTR CERR CPARM CMSG.                             060622MA
+056500     MOVE "Purge DMG01A1,Temp" to CMD.                                    
+056600     Perform MPE-COMMAND.                                                 
+056700                                                                          
+056800     MOVE "Purge DMG01A1" to CMD.                                         
+056900     Perform MPE-COMMAND.                                                 
+057000                                                                          
+057100     MOVE "Purge DMG01A2" to CMD.                                         
+057200     Perform MPE-COMMAND.                                                 
+057300                                                                          
+057400     MOVE "Purge DMG01A2,Temp" to CMD.                                    
+057500     Perform MPE-COMMAND.                                                 
+057600                                                                          
+057700     MOVE "File DMG01A1;rec=-62,1,f,ascii;disc=16384;save" to CMD.        
+057800     Perform MPE-COMMAND.                                                 
+057900                                                                          
+058000     Initialize CMD.                                                      
+058100     String "listfile "                     Delimited By Size             
+058200      "@.@.@;Seleq=[CODE=-400];format=qualify" Delimited By Space         
+058300            " > *DMG01A1"                                                 
+058400      Delimited By Size                                                   
+058500       into CMD.                                                          
+058600     Perform MPE-COMMAND.                                                 
+058700                                                                          
+058800     Sort SortFile ASCENDING KEY SORT-KEY                                 
+058900       Using ExtFile1 Giving ExtFile2.                                    
+059000                                                                          
+059100     Open Input ExtFile2.                                                 
+059200                                                                          
+059300*-----------------------------------------------------------------060619MA
+059400 FIND-BASES.                                                      060619MA
+059500D    DISPLAY "FIND-BASES".                                        060621MA
+059600     Perform varying DB-Idx From 1 By 1                                   
+059700       Until ( EXTFILE-EOF ) Or ( DB-Idx > 9999 )                         
+059800      READ EXTFILE2                                                       
+059900       AT END                                                             
+060000        MOVE "9" TO EXTFILE-STATUS                                        
+060100       NOT AT END                                                         
+060200       Add 1 To Db-Cnt                                                    
+060300       PERFORM ADD-THIS-BASE                                              
+060400      End-Read                                                            
+060500     End-Perform.                                                         
+060600     MOVE DB-CNT TO PICZ5.                                                
+060700*     DISPLAY PICZ5 " Databases Documented".                              
+060800*------------------------------------------------------                   
+060900 ADD-THIS-BASE.                                                           
+061000     INITIALIZE DBMSTR-BUFFER SEARCH-KEY.                                 
+061100     Move EXT-REC2 To DBMSTR-DB-NAME SEARCH-KEY.                          
+061200     MOVE "DB-NAME;" TO SEARCH-ITEM.                                      
+061300*     DISPLAY "ADDBASE [" DBMSTR-DB-NAME "]".                             
+061400     PERFORM FIND-DBMSTR.                                                 
+061500     IF NOT NO-ENTRY                                                      
+061600      PERFORM LOCK-DBMSTR                                                 
+061700      PERFORM GET-DBMSTR-CHAINED                                          
+061800      PERFORM DELETE-DBMSTR                                               
+061900      INITIALIZE DBMSTR-BUFFER                                            
+062000      PERFORM UNLOCK-DBMSTR.                                              
+062100     Move EXT-REC2         To DBMSTR-DB-NAME.                             
+062200     PERFORM GET-NEXT-DBUNIQ                                              
+062300     PERFORM GET-CREATOR.                                                 
+062400     PERFORM GET-ACCOUNT.                                                 
+062500     PERFORM GET-GROUP.                                                   
+062600     MOVE NXUNIQ-UNIQ-NUM  TO DBMSTR-DB-UNIQUE.                           
+062700     MOVE 1                TO DBMSTR-SVR-UNIQUE.                          
+062800     MOVE NXUNIQ-UNIQ-NUM  TO DBMSTR-DB-UNIQUE.                           
+062900     MOVE DBMSTR-DB-NAME   TO SOURCE-FIELD.                       060706MA
+063000     MOVE MYCREATOR        TO DBMSTR-DB-CREATOR.                          
+063100     MOVE MYACCOUNT        TO DBMSTR-DB-ACCT.                             
+063200     MOVE MYGROUP          TO DBMSTR-DB-GROUP.                            
+063300     PERFORM SET-TITLE-CASE.                                              
+063400     MOVE TARGET-FIELD     TO DBI-406-DbName.                             
+063500     MOVE DBI-406-DbName   TO DBMSTR-SQL-NAME.                            
+063600     MOVE DBI-203-SetCount TO DBMSTR-DB-SETCNT.                           
+063610     If DBMSTR-DB-CREATOR > Spaces                                        
+063700      PERFORM LOCK-DBMSTR                                                 
+063800      PERFORM PUT-DBMSTR                                                  
+063900      PERFORM UNLOCK-DBMSTR.                                              
+064000                                                                          
+064100*=================================================================        
+064200$page "MISC SubParagraphs"                                                
+064300*=================================================================        
+064400 GET-NUM.                                                                 
+064500D    DISPLAY "GET-NUM".                                                   
+064600     INITIALIZE NUM2 NUMDEC NUMERR.                                       
+064700     CALL "NUMGET" USING NUM1 NUM2 NUMDEC NUMERR.                         
+064800     IF NUMERR NOT = 0 MOVE 0 TO NUM2.                                    
+064900     IF NUMDEC NOT = 0 MOVE 0 TO NUM2.                                    
+065000*---------------------------------------------------------                
+065100 MPE-COMMAND.                                                             
+065200D    DISPLAY "MPE-COMMAND".                                               
+065300     INITIALIZE CSTR.                                                     
+065400     STRING CMD DELIMITED BY "  " %15 DELIMITED BY SIZE INTO CSTR.        
+065500     Move 2 To CMSG.                                                      
+065600     CALL INTRINSIC "HPCICOMMAND" USING                                   
+065700          CSTR CERR CPARM CMSG.                                           
+065800     INITIALIZE CMD.                                                      
+065900*---------------------------------------------------------                
+066000 SHOWTIME.                                                                
+066100     CALL INTRINSIC "HPCICOMMAND" USING                                   
+066200          SHOWTIME-STR CERR CPARM CMSG.                                   
+066300*-----------------------------------------------------------------        
+066400 CLOSE-IMAGE-DB.                                                          
+066500D    DISPLAY "CLOSE-IMAGE-DB".                                            
+066600      CALL "DBCLOSE" USING DATA-BASE-NAME(MIGDB)                          
+066700                           NULL-ITEM MODE-1 STATUS-AREA.                  
+066800*---------------------------------------------------------                
+066900*---------------------------------------------------------                
+067000 COPY SRVMST0 OF J3KLIB.                                                  
+067100 COPY SRVMST1 OF J3KLIB.                                                  
+067200 COPY SRVMST2 OF J3KLIB.                                                  
+067300 COPY SRVMST3 OF J3KLIB.                                                  
+067400 COPY SRVMST4 OF J3KLIB.                                                  
+067500 COPY SRVMST5 OF J3KLIB.                                                  
+067600 COPY SRVMST6 OF J3KLIB.                                                  
+067700 COPY SRVMST7 OF J3KLIB.                                                  
+067800 COPY SRVMST8 OF J3KLIB.                                                  
+067900                                                                          
+068000 COPY DBMSTR0 OF J3KLIB.                                                  
+068100 COPY DBMSTR1 OF J3KLIB.                                                  
+068200 COPY DBMSTR2 OF J3KLIB.                                                  
+068300 COPY DBMSTR3 OF J3KLIB.                                                  
+068400 COPY DBMSTR4 OF J3KLIB.                                                  
+068500 COPY DBMSTR5 OF J3KLIB.                                                  
+068600 COPY DBMSTR6 OF J3KLIB.                                                  
+068700 COPY DBMSTR7 OF J3KLIB.                                                  
+068800 COPY DBMSTR8 OF J3KLIB.                                                  
+068900                                                                          
+069000 COPY NXUNIQ0 OF J3KLIB.                                                  
+069100 COPY NXUNIQ1 OF J3KLIB.                                                  
+069200 COPY NXUNIQ2 OF J3KLIB.                                                  
+069300 COPY NXUNIQ3 OF J3KLIB.                                                  
+069400 COPY NXUNIQ4 OF J3KLIB.                                                  
+069500 COPY NXUNIQ5 OF J3KLIB.                                                  
+069600 COPY NXUNIQ6 OF J3KLIB.                                                  
+069700 COPY NXUNIQ7 OF J3KLIB.                                                  
+069800 COPY NXUNIQ8 OF J3KLIB.                                                  
+069900*---------------------------------------------------------                
+070000 9000-IMAGE-ERROR.                                                        
+070100D    DISPLAY "9000-IMAGE-ERROR".                                          
+070200     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+070300*---------------------------------------------------------                
+070400*---------------------------------------------------------                
+070500 9999-RETURN.                                                             
+070600D    DISPLAY "9999-RETURN".                                               
+070700     GOBACK.                                                              
+070800*-----------------------------------------------------------------060706MA
+070900 SET-TITLE-CASE.                                                  060706MA
+071000     INITIALIZE TARGET-FIELD.                                     060706MA
+071100     MOVE "0" TO DWNSHFT-SW.                                      060706MA
+071200     PERFORM VARYING MYIDX FROM 1 BY 1  UNTIL MYIDX > 63          060706MA
+071300      INITIALIZE ASCII-INT                                        060706MA
+071400      MOVE SOURCE-FIELD(MYIDX:1) TO ASCII-CHAR                    060706MA
+071500      IF ASCII-INT > 32 AND ASCII-INT < 48                        060706MA
+071600       MOVE 95 TO ASCII-INT                                       060706MA
+071700      END-IF                                                      060706MA
+071800      IF OK-TO-DOWNSHIFT                                          060706MA
+071900       IF ASCII-INT >= 65 AND ASCII-INT <= 90                     060706MA
+072000        ADD 32 TO ASCII-INT                                       060706MA
+072100       END-IF                                                     060706MA
+072200       IF ASCII-INT = 95                                          060706MA
+072300        MOVE "0" TO DWNSHFT-SW                                    060706MA
+072400       END-IF                                                     060706MA
+072500      ELSE                                                        060706MA
+072600       MOVE "1" TO DWNSHFT-SW                                     060706MA
+072700      END-IF                                                      060706MA
+072800      MOVE ASCII-CHAR TO TARGET-FIELD(MYIDX:1)                    060706MA
+072900     END-PERFORM.                                                 060706MA
+073000     INSPECT TARGET-FIELD REPLACING ALL "-" BY "_".               060818MA
+073100*--------------------------------------------------------                 
+073200 GET-HPSUSAN.                                                             
+073300     MOVE "HPSUSAN~" TO HPVAR-NAME.                                       
+073400     MOVE 1 TO HPVAR-ITEMNUM.                                             
+073500     INITIALIZE MYHPSUSAN HPVAR-ITEM HPVAR-STAT.                          
+073600     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                         
+073700         HPVAR-STAT HPVAR-ITEMNUM MYHPSUSAN.                              
+073800*     DISPLAY "HPSUSAN: " MYHPSUSAN.                                      
+073900*----------------------------------------------------------------         
+074000 GET-NEXT-DBUNIQ.                                                         
+074100     MOVE "DBMSTR" TO SEARCH-KEY.                                         
+074200     MOVE 20 TO MYINCREMENT.                                              
+074300     PERFORM  LOCK-NXUNIQ.                                                
+074400     PERFORM GET-NXUNIQ-KEYED.                                            
+074500     IF NO-ENTRY                                                          
+074600      MOVE "DBMSTR" TO NXUNIQ-UNIQ-ID                                     
+074700      MOVE MYINCREMENT TO NXUNIQ-UNIQ-NUM                                 
+074800      PERFORM PUT-NXUNIQ                                                  
+074900     ELSE                                                                 
+075000      ADD MYINCREMENT TO NXUNIQ-UNIQ-NUM                                  
+075100      PERFORM UPDATE-NXUNIQ.                                              
+075200     PERFORM UNLOCK-NXUNIQ.                                               
+075300*--------------------------------------------------------                 
+075400 GET-CREATOR.                                                             
+075500     INITIALIZE MYCREATOR HPVAR-NAME.                                     
+075600     STRING "SETVAR DBC FINFO('" DELIMITED BY SIZE                        
+075700             DBMSTR-DB-NAME DELIMITED BY SPACE                            
+075800            "','CREATOR')" DELIMITED BY SIZE INTO CMD.                    
+075900     PERFORM MPE-COMMAND.                                                 
+076000     MOVE "DBC~" TO HPVAR-NAME.                                           
+076100     MOVE 2 TO HPVAR-ITEMNUM.                                             
+076200     INITIALIZE HPVAR-ITEM HPVAR-STAT.                                    
+076300     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                         
+076400         HPVAR-STAT HPVAR-ITEMNUM MYCREATOR.                              
+076500*     DISPLAY "CREATOR: " MYCREATOR.                                      
+076600*--------------------------------------------------------                 
+076700 GET-ACCOUNT.                                                             
+076800     INITIALIZE MYACCOUNT HPVAR-NAME.                                     
+076900     STRING "SETVAR DBA FINFO('" DELIMITED BY SIZE                        
+077000             DBMSTR-DB-NAME DELIMITED BY SPACE                            
+077100            "','ACCOUNT')" DELIMITED BY SIZE INTO CMD.                    
+077200     PERFORM MPE-COMMAND.                                                 
+077300     MOVE "DBA~" TO HPVAR-NAME.                                           
+077400     MOVE 2 TO HPVAR-ITEMNUM.                                             
+077500     INITIALIZE HPVAR-ITEM HPVAR-STAT.                                    
+077600     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                         
+077700         HPVAR-STAT HPVAR-ITEMNUM MYACCOUNT.                              
+077800*     DISPLAY "ACCOUNT: " MYACCOUNT.                                      
+077900*--------------------------------------------------------                 
+078000 GET-GROUP.                                                               
+078100     INITIALIZE MYGROUP HPVAR-NAME.                                       
+078200     STRING "SETVAR DBG FINFO('" DELIMITED BY SIZE                        
+078300             DBMSTR-DB-NAME DELIMITED BY SPACE                            
+078400            "','GROUP')" DELIMITED BY SIZE INTO CMD.                      
+078500     PERFORM MPE-COMMAND.                                                 
+078600     MOVE "DBG~" TO HPVAR-NAME.                                           
+078700     MOVE 2 TO HPVAR-ITEMNUM.                                             
+078800     INITIALIZE HPVAR-ITEM HPVAR-STAT.                                    
+078900     CALL INTRINSIC "HPCIGETVAR" USING HPVAR-NAME                         
+079000         HPVAR-STAT HPVAR-ITEMNUM MYGROUP.                                
+079100*     DISPLAY "GROUP: " MYGROUP.                                          
+079200*------------------------------------------------------------             
+079300 MSG-PROCESS.                                                             
+079400     DISPLAY M.                                                           
+079500     INITIALIZE CSTR.                                                     
+079600     STRING "TELLOP " M  %15 DELIMITED BY SIZE INTO CSTR.                 
+079700     Move 2 To CMSG.                                                      
+079800     IF BATCH-PROCESS OR NOT-INTERACTIVE                                  
+079900      CALL INTRINSIC "HPCICOMMAND" USING                                  
+080000           CSTR CERR CPARM CMSG.                                          
+080100     INITIALIZE M CMD.                                                    
+080200                                                                          

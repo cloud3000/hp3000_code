@@ -1,0 +1,63 @@
+051700$TITLE "SUB1"                                                     090805ma
+051800$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                                
+051900 IDENTIFICATION DIVISION.                                                 
+052000 PROGRAM-ID. SUB1.                                                090805ma
+052100 ENVIRONMENT DIVISION.                                                    
+052200 DATA DIVISION.                                                           
+052300 WORKING-STORAGE SECTION.                                                 
+052400 PROCEDURE DIVISION.                                              090805ma
+052410 0-BEGIN.                                                         090805ma
+052420     DISPLAY "SUB1 FROM DMYXL".                                   090805ma
+052430     GOBACK.                                                      090805ma
+052440 END PROGRAM SUB1.                                                090805ma
+052450***************************************************************** 090805ma
+052460$TITLE "SUB2"                                                     090805ma
+052461$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+052462 IDENTIFICATION DIVISION.                                         090805ma
+052463 PROGRAM-ID. SUB2.                                                090805ma
+052464 ENVIRONMENT DIVISION.                                            090805ma
+052465 DATA DIVISION.                                                   090805ma
+052466 WORKING-STORAGE SECTION.                                         090805ma
+052467 PROCEDURE DIVISION.                                              090805ma
+052468 0-BEGIN.                                                         090805ma
+052469     DISPLAY "SUB2 FROM DMYXL".                                   090805ma
+052470     GOBACK.                                                      090805ma
+052471 END PROGRAM SUB2.                                                090805ma
+052472***************************************************************** 090805ma
+052473$TITLE "SUB3"                                                     090805ma
+052474$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+052475 IDENTIFICATION DIVISION.                                         090805ma
+052476 PROGRAM-ID. SUB3.                                                090805ma
+052477 ENVIRONMENT DIVISION.                                            090805ma
+052478 DATA DIVISION.                                                   090805ma
+052479 WORKING-STORAGE SECTION.                                         090805ma
+052480 PROCEDURE DIVISION.                                              090805ma
+052481 0-BEGIN.                                                         090805ma
+052482     DISPLAY "SUB3 FROM DMYXL".                                   090805ma
+052483     GOBACK.                                                      090805ma
+052484 END PROGRAM SUB3.                                                090805ma
+052485***************************************************************** 090805ma
+052486$TITLE "SUB4"                                                     090805ma
+052487$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,POST85                        090805ma
+052488 IDENTIFICATION DIVISION.                                         090805ma
+052489 PROGRAM-ID. SUB4.                                                090805ma
+052490 ENVIRONMENT DIVISION.                                            090805ma
+052491 DATA DIVISION.                                                   090805ma
+052492 WORKING-STORAGE SECTION.                                         090805ma
+052493 PROCEDURE DIVISION.                                              090805ma
+052494 0-BEGIN.                                                         090805ma
+052495     DISPLAY "SUB4 FROM DMYXL".                                   090805ma
+052496     GOBACK.                                                      090805ma
+052497 END PROGRAM SUB4.                                                090805ma
+052498***************************************************************** 090805ma
+052900*COB85XL  <f>,,$NULL                                              090805ma
+052910*PURGE XLNEW > $NULL                                              090805ma
+053001*PURGE TEMPIO > $NULL                                             090805ma
+053010*PURGE TEMPIO,TEMP > $NULL                                        090805ma
+053020*ECHO BUILDXL XLNEW >> TEMPIO                                     090805ma
+053030*ECHO ADDXL FROM=$oldpass;TO=XLNEW;MAP >> TEMPIO                  090805ma
+053040*ECHO EXIT >> TEMPIO                                              090805ma
+053100*LINKEDIT < TEMPIO                                                090805ma
+053500*PURGE DMYXL > $NULL                                              090805ma
+053600*RENAME XLNEW,DMYXL                                               090805ma
+053700*                                                                 090805ma

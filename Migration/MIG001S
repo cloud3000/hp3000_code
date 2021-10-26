@@ -1,0 +1,130 @@
+001000$CONTROL LIST,DYNAMIC,BOUNDS, POST85, RLFILE                              
+001100 IDENTIFICATION DIVISION.                                                 
+002501 PROGRAM-ID. MIG001.                                                      
+002502 AUTHOR.     MICHAEL ANDERSON.                                            
+002503 DATE-COMPILED.                                                           
+002504*                     COPYRIGHT 2007                                      
+002505*            J3K Solutions All rights reserved.                           
+002506*           Turbo Image Migration review System                           
+002507*                                                                         
+002508*                   SECURITY SCREEN                                       
+002509*                                                                         
+002510 ENVIRONMENT DIVISION.                                                    
+002511 CONFIGURATION SECTION.                                                   
+002600 SOURCE-COMPUTER. HP3000.                                                 
+002700 OBJECT-COMPUTER. HP3000.                                                 
+002800 SPECIAL-NAMES.                                                           
+002900     CONDITION-CODE IS CC.                                                
+003000$PAGE "WORKING STORAGE SECTION"                                           
+003100 DATA DIVISION.                                                           
+003200**********************************************************                
+003300 WORKING-STORAGE SECTION.                                                 
+003400**********************************************************                
+003500                                                                          
+003600 01  I                     PIC S9(4) COMP.                                
+003700 01  N                     PIC S9(4) COMP.                                
+003800 01  NUM1                  PIC X(14).                                     
+003900 01  NUM2                  PIC S9(14).                                    
+004000* 01  IREAD-LEN             PIC S9(4) COMP.                       22 DEC06
+004100 01  NUMDEC                PIC S9(4) COMP.                                
+004200 01  NUMERR                PIC S9(4) COMP.                                
+004300 01  DISP-N                PIC ---9.                                      
+004400 01  CMDSTR                PIC X(255) value SPACES.                       
+004500 01  CMDPRM                PIC S9(4) COMP VALUE 0.                        
+004600 01  CMDERR                PIC S9(4) COMP VALUE 0.                        
+004700 01  CMDMSG                PIC S9(4) COMP VALUE 2.                        
+005000     COPY SWITCHES OF J3KLIB.                                             
+005010     COPY FLOWEX   OF J3KLIB.                                             
+005310     COPY APPCOM   OF J3KLIB.                                             
+005410     COPY AMSLINK OF J3KLIB.                                              
+005500     02  COMMAND-BUFFER REDEFINES SCREEN-BUFFER.                          
+005600         03  SC1-USERNAME             PIC X(8).                           
+005810         03  SC1-PASS                 PIC X(16).                          
+006000         03 FILLER         PIC X(1876).                                   
+006200*****************************************************************         
+006500 COPY AMSPROC OF J3KLIB.                                                  
+006510           .                                                              
+006600*****************************************************************         
+006700 0000-ENTRY.                                                              
+006800*****************************************************************         
+006900                                                                          
+007000 0000-BEGIN.                                                              
+008800     IF THIS-SCREEN = "J3K_SECURITY"                                      
+008900        PERFORM 2000-SECURITY THRU 2999-EXIT                              
+009000        GO TO 0999-EXIT.                                                  
+009200     MOVE "WRONGPROG        " TO NEXT-SCREEN.                             
+009300 0999-EXIT.                                                               
+009400     GO TO 9900-RETURN.                                                   
+009500/                                                                         
+009600******************************************************************        
+009700 2000-SECURITY.                                                           
+009800******************************************************************        
+009900                                                                          
+010000 2000-BEGIN.                                                              
+010100     MOVE "J3K_SECURITY" TO NEXT-SCREEN SCREEN-NAME.                      
+010200     PERFORM 7802-SECSCRN.                                                
+010910      COPY AMSCALL OF J3KLIB                                              
+011010     REPLACING ==VALUE OF PROCEDURE== BY =="VSWRITE"==.                   
+011020     END-CALL.                                                            
+011030 2010-LOOP.                                                               
+011100     IF NEXT-SCREEN <> "J3K_SECURITY"                                     
+011200        GO TO 2999-EXIT.                                                  
+011300     PERFORM 7800-READ-SCREEN.                                            
+011400                                                                          
+011500     IF TIMEOUT GO TO 2999-EXIT.                                          
+014700     IF SCREEN-KEY-PRESSED = 8                                            
+014800        MOVE "EXIT"   TO NEXT-SCREEN                                      
+014900        GO TO 2999-EXIT.                                                  
+015000     IF EDIT-ERRORS AND SCREEN-KEY-PRESSED = 0                            
+015110         COPY AMSCALL OF J3KLIB                                           
+015210         REPLACING ==VALUE OF PROCEDURE== BY =="VSSHOWERR"==.             
+015220         END-CALL                                                         
+015230         GO TO 2010-LOOP.                                                 
+015240     IF SCREEN-KEY-PRESSED = 0                                            
+015250      EVALUATE SC1-USERNAME ALSO SC1-PASS                                 
+015260       WHEN "J3K" ALSO "MOOQUE001"                                        
+015270        MOVE "MAINMENU" TO NEXT-SCREEN                                    
+015290       WHEN "ADMIN" ALSO "Z3BR499"                                        
+015310        MOVE "MAINMENU" TO NEXT-SCREEN                                    
+015321       WHEN "DEMO" ALSO "DEMO"                                            
+015340        MOVE "MAINMENU" TO NEXT-SCREEN                                    
+015351       WHEN OTHER                                                         
+015352        MOVE "INVALID USERNAME OR PASSWORD" TO SCREEN-MESSAGE             
+015354      END-EVALUATE                                                        
+015355      GO TO 2010-LOOP.                                                    
+015360     IF BAD-KEY    OR SCREEN-KEY-PRESSED <> 0                             
+015400        PERFORM 7801-BAD-FUNCTION-KEY                                     
+015500        GO TO 2010-LOOP.                                                  
+015700     GO TO 2010-LOOP.                                                     
+015800 2999-EXIT.                                                               
+015900     EXIT.                                                                
+016000$PAGE "MISC. SUBROUTINES"                                                 
+016100*****************************************************************         
+016200 7800-MISC-SUBROUTINES.                                                   
+016300*****************************************************************         
+016400     COPY READSCR  OF J3KLIB.                                             
+016500/                                                                         
+016600*---------------------------------------------------------------          
+016700 7802-SECSCRN.                                                            
+017000     MOVE "J3K Solutions (Image Data Mapper)" TO SCREEN-TITLE.            
+017100     COPY AMSCALL OF J3KLIB                                               
+017300      REPLACING ==VALUE OF PROCEDURE== BY =="VSINIT"==.                   
+017400      END-CALL.                                                           
+017700     MOVE "  EXIT      " TO SCREEN-FUNC-KEY(8).                           
+017800     MOVE SPACES TO SCREEN-BUFFER.                                        
+017900     STRING %33 "&dS" DELIMITED BY SIZE INTO SC1-PASS.                    
+018710*---------------------------------------------------------------          
+018800$PAGE "END OF PROGRAM"                                                    
+018900*****************************************************************         
+019000 9900-END-PROGRAM.                                                        
+019100*****************************************************************         
+019200$PAGE "DISASTROUS ERROR ROUTINES"                                         
+019300*------------------------------*                                          
+019400 9000-IMAGE-ERROR.                                                        
+019610      COPY AMSCALL OF J3KLIB                                              
+019710     REPLACING ==VALUE OF PROCEDURE== BY =="VSCLOSE"==.                   
+019720     END-CALL.                                                            
+019730     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+019800     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+019900 9900-RETURN.                                                             
+020400     GOBACK.                                                              

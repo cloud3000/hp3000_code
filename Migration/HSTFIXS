@@ -1,0 +1,384 @@
+001000$CONTROL POST85, BOUNDS, LINES=59, LIST                                   
+001100******************************************************************        
+001200 IDENTIFICATION DIVISION.                                                 
+001300 PROGRAM-ID.     HSTFIX.                                                  
+001400 AUTHOR.     MICHAEL ANDERSON.                                            
+001500* DATE-WRITTEN OCT, 4 2007                                                
+001600 ENVIRONMENT DIVISION.                                                    
+001700 CONFIGURATION SECTION.                                                   
+001800 SOURCE-COMPUTER.  HP-3000.                                               
+001900*SOURCE-COMPUTER.  HP-3000 WITH DEBUGGING MODE.                           
+002000 OBJECT-COMPUTER.  HP-3000.                                               
+002100 DATA DIVISION.                                                           
+002200$PAGE  "MISC WORKING STORAGE"                                             
+002300 WORKING-STORAGE SECTION.                                                 
+002400 01  HPVAR-NAME        PIC X(20) VALUE "HSTFIXS_STATUS~  ".               
+002500 01  HPVAR-ITEM        PIC S9(9) COMP VALUE -1.                           
+002600 01  HPVAR-ITEMNUM     PIC S9(9) COMP VALUE 1.                            
+002700 01  HPVAR-STAT        PIC S9(9) COMP VALUE 0.                            
+002800 01  GETINFO-DATA.                                                        
+002900    05  GINFO-LEN                PIC S9(4) COMP.                          
+003000    05  GINFO-STR                PIC X(128).                              
+003100    05  GINFO-PARM               PIC S9(4) COMP.                          
+003200                                                                          
+003300 01  X12-DATE        PIC X(12) VALUE SPACES.                              
+003400 01  X12-TIME        PIC X(12) VALUE SPACES.                              
+003500                                                                          
+003600 01  PARSED-DATA.                                                         
+003700    05  ITEMS-PARSED             PIC S9(4) COMP.                          
+003800        88 PARSE-IS-COMPLETE VALUES ARE 3 THRU 99.                        
+003900    05  PARSED-STRING            PIC X(128).                              
+004000    05  NEXT-STRING              PIC X(128).                              
+004100    05  STRING-POINTER             PIC S9(4) COMP.                        
+004200    05  YY                       PIC S9(9) COMP.                          
+004300    05  GY                       PIC S9(4) COMP.                          
+004400    05  XX                       PIC S9(9) COMP.                          
+004500                                                                          
+004600 01  FULL-CURRENT-DATE.                                                   
+004700         05  C-DATE.                                                      
+004800             10  C-YEAR       PIC 9(4).                                   
+004900             10  C-MONTH      PIC 99.                                     
+005000             10  C-DAY        PIC 99.                                     
+005100         05  C-TIME.                                                      
+005200             10  C-HOUR       PIC 99.                                     
+005300             10  C-MINUTES    PIC 99.                                     
+005400             10  C-SECONDS    PIC 99.                                     
+005500             10  C-SEC-HUND   PIC 99.                                     
+005600         05  C-TIME-DIFF.                                                 
+005700             10  C-GMT-DIR    PIC X.                                      
+005800             10  C-HOUR       PIC 99.                                     
+005900             10  C-MINUTES    PIC 99.                                     
+006000 01 ERROR-MSG                PIC X(80) VALUE SPACES.                      
+006100 01 NUM1                PIC X(14) VALUE SPACES.                           
+006200 01 NUM2                PIC 9(14) VALUE ZERO.                             
+006300 01 NUMDEC              PIC S9(4) COMP VALUE 0.                           
+006400 01 NUMERR              PIC S9(4) COMP VALUE 0.                           
+006500     COPY SWITCHES  OF J3KLIB.                                            
+006600 01 A-TABLE-SW               PIC X VALUE "0".                             
+006700    88 ITS-A-TABLE    VALUE "1".                                          
+006800 01 DOW                      PIC S9(4) COMP  VALUE 0.                     
+006900 01 INSPECT-IDX              PIC S9(4) COMP  VALUE 0.                     
+007000 01 NUMDATE                  PIC S9(9) COMP  VALUE 0.                     
+007100 01 CSTR                     PIC X(255)      VALUE SPACES.                
+007200 01 CERR                     PIC S9(4) COMP  VALUE 0.                     
+007300 01 CPARM                    PIC S9(4) COMP  VALUE 0.                     
+007400 01 CMSG                     PIC S9(4) COMP  VALUE 0.                     
+007500 01 STR-PTR                  PIC S9(4) COMP  VALUE 0.                     
+007600 01 PICTURE-COLUMN           PIC S9(4) COMP  VALUE 42.                    
+007700 01 PIC999                   PIC 999.                                     
+007800 01 PIC99                    PIC 99.                                      
+007900 01 OCCURS-VALUE             PIC S9(4) COMP  VALUE 0.                     
+008000 01 OCCURS-LAST              PIC S9(4) COMP  VALUE 0.                     
+008100 01 OCCURS-PTR               PIC S9(4) COMP  VALUE 0.                     
+008200 01 NUM-X                    PIC S9(4) COMP  VALUE 0.                     
+008300 01 DASH-PTR                 PIC S9(4) COMP  VALUE 0.                     
+008400 01 IREAD-LEN                  PIC S9(4) COMP  VALUE 0.                   
+008500 01 DSITEM-IDX               PIC S9(9) COMP  VALUE 0.                     
+008600 01 DSETINFO-BUFF.                                                        
+008700    02 DSETINFO-ITEM-CNT     PIC S9(4) COMP  VALUE 0.                     
+008800    02 HSTFIX-ITEM-TBL.                                                   
+008900       05 DSETINFO-ITEM-NBR  PIC S9(4) COMP OCCURS 1024.                  
+009000 01 DSITEMINFO-BUFF.                                                      
+009100    02 DSITEMINFO-NAME       PIC X(16) VALUE SPACES.                      
+009200    02 DSITEMINFO-TYPE       PIC X(2)  VALUE SPACES.                      
+009300    02 DSITEMINFO-LEN        PIC S9(4) COMP VALUE 0.                      
+009400    02 DSITEMINFO-CNT        PIC S9(4) COMP VALUE 0.                      
+009500    02 DSITEMINFO-FILL       PIC X(4)  VALUE SPACES.                      
+009600 01 DSITEMINFO-MODE          PIC S9(4) COMP VALUE 102.                    
+009700 01 DSETINFO-MODE            PIC S9(4) COMP VALUE 104.                    
+009800 01 HSTFIX-RECNBR            PIC S9(9) COMP  VALUE 0.                     
+009900 01 WORK-TBL.                                                             
+010000    02 WORK-CNT          PIC S9(4) COMP.                                  
+010100    02 WORK-IDX          PIC S9(4) COMP.                                  
+010200    02 WORK-ENTRY OCCURS  2048.                                           
+010300       05 WORK-NAME      PIC X(48).                                       
+010400       05 WORK-TYPE      PIC X.                                           
+010500       05 WORK-LEN       PIC S9(4) COMP.                                  
+010600 01 TABLE-MAKER.                                                          
+010700    02 TM-PTR            PIC S9(4) COMP.                                  
+010800    02 TM-IDX            PIC S9(4) COMP.                                  
+010900    02 TM-CNT            PIC S9(4) COMP.                                  
+011000    02 TM-OCCURANCES     PIC S9(4) COMP.                                  
+011100    02 TM-ABBR           PIC X(6).                                        
+011200    02 TM-NAME           PIC X(48).                                       
+011300    02 TM-TYPE           PIC X(2).                                        
+011400    02 TM-LEN            PIC S9(4) COMP.                                  
+011500 01 COBOL-LINE.                                                           
+011600    02 CL-SEQ-NBR        PIC 999999.                                      
+011700    02 CL-CODE           PIC X(72).                                       
+011800    02 CL-VER            PIC XX.                                          
+011900 01 COBOL-BUFFER.                                                         
+012000    02 COB-CNT           PIC S9(4) COMP.                                  
+012100    02 COB-IDX           PIC S9(4) COMP.                                  
+012200    02 COB-PTR           PIC S9(4) COMP.                                  
+012300    02 COBOL-BUFFER-ENTRY OCCURS 4096.                                    
+012400       05 COB-LEVEL      PIC 99.                                          
+012500       05 COB-VARNAME    PIC X(48).                                       
+012600       05 COB-PICTURE    PIC X(10).                                       
+012700       05 COB-VALUE      PIC X(26).                                       
+012800 01 SAVE-DBPOINTER           PIC S9(4) COMP  VALUE 0.                     
+012900 01 SHOWTIME-STR.                                                         
+013000    02 FILLER PIC X(8) VALUE "SHOWTIME".                                  
+013100    02 FILLER PIC X    VALUE %15.                                         
+013200 COPY AMSMODE  OF J3KLIB.                                                 
+013300 COPY DBEX     OF J3KLIB.                                                 
+013400 COPY IMAGE   OF J3KLIB.                                                  
+013500 COPY USERX   OF J3KLIB.                                                  
+013600 01 LINK-DSETNAME          PIC X(16).                                     
+013700 01 LINK-DBASENAME         PIC X(28).                                     
+013800 01 LINK-DSETABBR     PIC X(6).                                           
+013900 01 LINK-HSTFIX-RETURN.                                                   
+014000    02 LINK-BEGIN-DATE    PIC X(8).                                       
+014100    02 LINK-BEGIN-NUMDATE PIC S9(9) COMP.                                 
+014200    02 LINK-BEGIN-DOW     PIC S9(4) COMP.                                 
+014300    02 LINK-BEGIN-TYPE    PIC X(2).                                       
+014400    02 LINK-END-DATE      PIC X(8).                                       
+014500    02 LINK-END-NUMDATE   PIC S9(9) COMP.                                 
+014600    02 LINK-END-DOW       PIC S9(4) COMP.                                 
+014700    02 LINK-END-TYPE      PIC X(2).                                       
+014800    02 LINK-ERR           PIC S9(4) COMP.                                 
+014900    02 LINK-MESSAGE       PIC X(80).                                      
+015000                                                                          
+015100 01 STUMST PIC X(16) VALUE "STUDENT-MSTR;".                               
+015200                                                                          
+015300*  05/13/96  W GOODOFF     -Add new item STREET-NO to data set.  *        
+015400 01  GOOD-BUFFER.                                                         
+015500  02 PART1.                                                               
+015600     05  STU-ID-SMH             PIC X(10).                                
+015700     05  F-NAME-SMH             PIC X(12).                                
+015800     05  L-NAME-SMH             PIC X(14).                                
+015900     05  MAR-NAME-SMH           PIC X(14).                                
+016000     05  M-NAME-SMH             PIC X(10).                                
+016100     05  SEX-SMH                PIC XX.                                   
+016200     05  RACE-SMH               PIC XX.                                   
+016300     05  BIRTH-DATE-SMH.                                                  
+016400         10 BD-YR-SMH           PIC XX.                                   
+016500         10 BD-MO-SMH           PIC XX.                                   
+016600         10 BD-DA-SMH           PIC XX.                                   
+016700     05  PHONE-NO-SMH.                                                    
+016800         10 PN-AREA-SMH         PIC XXX.                                  
+016900         10 PN-PREFIX-SMH       PIC XXX.                                  
+017000         10 PN-SUFFIX-SMH       PIC XXXX.                                 
+017100     05  STREET-NO-SMH          PIC X(08).                                
+017200     05  STREET-NAME-SMH.                                                 
+017300         10 STREET-REST-SMH     PIC X(24).                                
+017400     05  CITY-SMH               PIC X(16).                                
+017500     05  STATE-SMH              PIC XX.                                   
+017600     05  ZIP-SMH.                                                         
+017700         10 ZIP-PREFIX-SMH      PIC X(05).                                
+017800         10 ZIP-SUFFIX-SMH      PIC X(05).                                
+017900  02 PART2.                                                               
+018000     05  MAIL-STREET-NAME-SMH.                                            
+018100         10 MAIL-STR-NO-SMH     PIC X(05).                                
+018200         10 MAIL-STR-REST-SMH   PIC X(19).                                
+018300     05  MAIL-CITY-SMH          PIC X(16).                                
+018400     05  MAIL-STATE-SMH         PIC XX.                                   
+018500     05  MAIL-ZIP-SMH.                                                    
+018600         10 MAIL-ZIP-PREFIX-SMH PIC X(05).                                
+018700         10 MAIL-ZIP-SUFFIX-SMH PIC X(05).                                
+018800     05  SSN-SMH                PIC 9(10) COMP-3.                         
+018900     05  DATE-GRADUATION-SMH.                                             
+019000         10 DATE-GRAD-YR-SMH   PIC XX.                                    
+019100         10 DATE-GRAD-MO-SMH   PIC XX.                                    
+019200         10 DATE-GRAD-DA-SMH   PIC XX.                                    
+019300     05  CODE2-SMH.                                                       
+019400         10  CODE-1-SMH        PIC XX OCCURS 5 TIMES.                     
+019500     05  CODE-2-RED REDEFINES CODE2-SMH.                                  
+019600         10  RANK-EXCLUDE-SMH   PIC X(02).                                
+019700         10  B-STATE-SMH        PIC X(02).                                
+019800         10  FILLER             PIC X(02).                                
+019900         10  FILLER             PIC X(02).                                
+020000         10  FILLER             PIC X(02).                                
+020100     05  CODE6-SMH.                                                       
+020200         10  CODE-2-SMH        PIC X(06) OCCURS 5 TIMES.                  
+020300     05  CODE-6-RED REDEFINES CODE6-SMH.                                  
+020400         10  DATE-ENTER-9TH-SMH.                                          
+020500             15  YY-9TH-SMH     PIC XX.                                   
+020600             15  MM-9TH-SMH     PIC XX.                                   
+020700             15  DD-9TH-SMH     PIC XX.                                   
+020800         10  FILLER             PIC X(06).                                
+020900         10  FILLER             PIC X(06).                                
+021000         10  FILLER             PIC X(06).                                
+021100         10  FILLER             PIC X(06).                                
+021200     05  PARENT-NAME-SMH.                                                 
+021300         10  P-FIRST-NAME-SMH  PIC X(14).                                 
+021400         10  P-LAST-NAME-SMH  PIC X(12).                                  
+021500     05  BIRTH-PLACE-SMH       PIC X(14).                                 
+021600     05  SCHOOL-LAST-ATT-SMH   PIC X(24).                                 
+021700     05  SCHL-LST-ADDRESS-SMH.                                            
+021800         10 SLA-STREET-SMH     PIC X(24).                                 
+021900         10 SLA-CITY-SMH       PIC X(16).                                 
+022000         10 SLA-STATE-SMH      PIC X(02).                                 
+022100         10 SLA-ZIP-SMH        PIC X(10).                                 
+022200                                                                          
+022300*  05/13/96  W GOODOFF     -Add new item STREET-NO to data set.  *        
+022400  01 BAD-BUFFER.                                                          
+022500     05  STU-ID-SMH             PIC X(10).                                
+022600     05  F-NAME-SMH             PIC X(12).                                
+022700     05  L-NAME-SMH             PIC X(14).                                
+022800     05  MAR-NAME-SMH           PIC X(14).                                
+022900     05  M-NAME-SMH             PIC X(10).                                
+023000     05  SEX-SMH                PIC XX.                                   
+023100     05  RACE-SMH               PIC XX.                                   
+023200     05  BIRTH-DATE-SMH.                                                  
+023300         10 BD-YR-SMH           PIC XX.                                   
+023400         10 BD-MO-SMH           PIC XX.                                   
+023500         10 BD-DA-SMH           PIC XX.                                   
+023600     05  PHONE-NO-SMH.                                                    
+023700         10 PN-AREA-SMH         PIC XXX.                                  
+023800         10 PN-PREFIX-SMH       PIC XXX.                                  
+023900         10 PN-SUFFIX-SMH       PIC XXXX.                                 
+024000     05  STREET-NO-SMH          PIC X(08).                                
+024100     05  STREET-NAME-SMH.                                                 
+024200         10 STREET-REST-SMH     PIC X(24).                                
+024300     05  CITY-SMH               PIC X(16).                                
+024400     05  STATE-SMH              PIC XX.                                   
+024500     05  ZIP-SMH.                                                         
+024600         10 ZIP-PREFIX-SMH      PIC X(05).                                
+024700         10 ZIP-SUFFIX-SMH      PIC X(05).                                
+024800     05  MAIL-STREET-NAME-SMH.                                            
+024900         10 MAIL-STR-NO-SMH     PIC X(05).                                
+025000         10 MAIL-STR-REST-SMH   PIC X(19).                                
+025100     05  MAIL-CITY-SMH          PIC X(24).                                
+025200     05  MAIL-STATE-SMH         PIC XX.                                   
+025300     05  MAIL-ZIP-SMH.                                                    
+025400         10 MAIL-ZIP-PREFIX-SMH PIC X(05).                                
+025500         10 MAIL-ZIP-SUFFIX-SMH PIC X(05).                                
+025600     05  SSN-SMH                PIC 9(10) COMP-3.                         
+025700     05  DATE-GRADUATION-SMH.                                             
+025800         10 DATE-GRAD-YR-SMH   PIC XX.                                    
+025900         10 DATE-GRAD-MO-SMH   PIC XX.                                    
+026000         10 DATE-GRAD-DA-SMH   PIC XX.                                    
+026100     05  CODE2-SMH.                                                       
+026200         10  CODE-1-SMH        PIC XX OCCURS 5 TIMES.                     
+026300     05  CODE-2-RED REDEFINES CODE2-SMH.                                  
+026400         10  RANK-EXCLUDE-SMH   PIC X(02).                                
+026500         10  B-STATE-SMH        PIC X(02).                                
+026600         10  FILLER             PIC X(02).                                
+026700         10  FILLER             PIC X(02).                                
+026800         10  FILLER             PIC X(02).                                
+026900     05  CODE6-SMH.                                                       
+027000         10  CODE-2-SMH        PIC X(06) OCCURS 5 TIMES.                  
+027100     05  CODE-6-RED REDEFINES CODE6-SMH.                                  
+027200         10  DATE-ENTER-9TH-SMH.                                          
+027300             15  YY-9TH-SMH     PIC XX.                                   
+027400             15  MM-9TH-SMH     PIC XX.                                   
+027500             15  DD-9TH-SMH     PIC XX.                                   
+027600         10  FILLER             PIC X(06).                                
+027700         10  FILLER             PIC X(06).                                
+027800         10  FILLER             PIC X(06).                                
+027900         10  FILLER             PIC X(06).                                
+028000     05  PARENT-NAME-SMH.                                                 
+028100         10  P-FIRST-NAME-SMH  PIC X(14).                                 
+028200         10  P-LAST-NAME-SMH  PIC X(12).                                  
+028300     05  BIRTH-PLACE-SMH       PIC X(14).                                 
+028400     05  SCHOOL-LAST-ATT-SMH   PIC X(24).                                 
+028500     05  SCHL-LST-ADDRESS-SMH.                                            
+028600         10 SLA-STREET-SMH     PIC X(24).                                 
+028700         10 SLA-CITY-SMH       PIC X(16).                                 
+028800         10 SLA-STATE-SMH      PIC X(02).                                 
+028900         10 SLA-ZIP-SMH        PIC X(10).                                 
+029000                                                                          
+029100                                                                          
+029200$PAGE  "Main logical flow"                                                
+029300 PROCEDURE DIVISION.                                                      
+029400 BEGIN-0000.                                                              
+029500     INITIALIZE USER-AREA DATA-BASE-COMMON                                
+029600                MODE-N SEARCH-ITEM SEARCH-KEY.                            
+029700     INITIALIZE LINK-DSETNAME LINK-DSETABBR LINK-HSTFIX-RETURN            
+029800                WORK-TBL TABLE-MAKER COBOL-BUFFER.                        
+029900     MOVE 1 TO RE-READ MODE-1.                                            
+030000     MOVE 2 TO SERIAL.                                                    
+030100     MOVE 3 TO BACKWARD MODE-3.                                           
+030200     MOVE 4 TO DIRECT MODE-4.                                             
+030300     MOVE 5 TO CHAINED MODE-5.                                            
+030400     MOVE 6 TO BACK-CHAINED.                                              
+030500     MOVE 7 TO KEYED.                                                     
+030600     MOVE "; " TO NULL-ITEM.                                              
+030700     MOVE "@;" TO ALL-ITEMS.                                              
+030800     MOVE 128 TO GINFO-LEN.                                               
+030900     MOVE "SUPER;" TO DATA-BASE-PASS(1).                                  
+031000     MOVE "DBHIST.HISTORY.STUDENT" TO DBNAME(1).                          
+031100     CALL "DBOPEN"   USING DATA-BASE-NAME (1)                             
+031200                 DATA-BASE-PASS(1) MODE-1 STATUS-AREA.                    
+031300     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+031400     MOVE 1 TO SAVE-DBPOINTER.                                            
+031500     INITIALIZE LINK-HSTFIX-RETURN.                                       
+031600     PERFORM CHANGE-HISTORY.                                              
+031700     GO TO 9999-RETURN.                                                   
+031800*------------------------------------------------                         
+031900$PAGE "IMAGE TO COBOL"                                                    
+032000 CHANGE-HISTORY.                                                          
+032100     INITIALIZE XX YY.                                                    
+032200     PERFORM LOCK-STUMST.                                                 
+032300     PERFORM REWIND-STUMST.                                               
+032400     PERFORM VARYING XX FROM 1 BY 1 UNTIL (END-OF-FILE)                   
+032500      INITIALIZE GOOD-BUFFER BAD-BUFFER                                   
+032600      PERFORM GET-STUMST-SERIAL                                           
+032700      IF NOT END-OF-FILE                                                  
+032800       MOVE STU-ID-SMH OF GOOD-BUFFER TO NUM1                             
+032900       IF NUM1 = "079104    " OR                                          
+033000                 "080462    " OR                                          
+033100                 "113958    "                                             
+033200        DISPLAY "[" SSN-SMH OF GOOD-BUFFER "]"                            
+033300        ADD 1 TO YY                                                       
+033400*        MOVE GOOD-BUFFER TO BAD-BUFFER                                   
+033500*        INITIALIZE GOOD-BUFFER                                           
+033600*        MOVE CORR BAD-BUFFER TO GOOD-BUFFER                              
+033700        INITIALIZE PART2                                                  
+033800        DISPLAY "CHANGE TO [" SSN-SMH OF GOOD-BUFFER "]"                  
+033900        PERFORM UPDATE-STUMST                                             
+034000       END-IF                                                             
+034100      END-IF                                                              
+034200     END-PERFORM.                                                         
+034300     PERFORM UNLOCK-STUMST.                                               
+034400*------------------------------*                                          
+034500 GET-STUMST-SERIAL.                                                       
+034600     CALL "DBGET" USING DATA-BASE-NAME (1 ) STUMST SERIAL                 
+034700         STATUS-AREA ALL-ITEMS GOOD-BUFFER NULL-ITEM.                     
+034800     IF IMAGE-ERRORS AND NOT END-OF-FILE                                  
+034900         GO TO 9000-IMAGE-ERROR.                                          
+035000     COMPUTE IREAD-LEN = FUNCTION LENGTH (GOOD-BUFFER).                   
+035100     COMPUTE IREAD-LEN = ( IREAD-LEN / 2 )                                
+035200     IF ( NOT END-OF-FILE ) AND                                           
+035300        (IREAD-LEN NOT = RECORD-LENGTH)                                   
+035400        DISPLAY "DBGET STUMST,READ  " RECORD-LENGTH                       
+035500        DISPLAY "GOOD-BUFFER LENGTH ="  IREAD-LEN.                        
+035600*------------------------------*                                          
+035700 LOCK-STUMST.                                                             
+035800     CALL "DBLOCK" USING DATA-BASE-NAME (1 ) STUMST                       
+035900         MODE-3 STATUS-AREA.                                              
+036000     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+036100*------------------------------*                                          
+036200 UNLOCK-STUMST.                                                           
+036300     CALL "DBUNLOCK" USING DATA-BASE-NAME (1 ) STUMST                     
+036400         MODE-1 STATUS-AREA.                                              
+036500     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+036600*------------------------------*                                          
+036700 UPDATE-STUMST.                                                           
+036800     CALL "DBUPDATE" USING DATA-BASE-NAME (1 ) STUMST                     
+036900         MODE-1 STATUS-AREA ALL-ITEMS GOOD-BUFFER.                        
+037000     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+037100*----------------------------------*                                      
+037200 REWIND-STUMST.                                                           
+037300     CALL "DBCLOSE" USING DATA-BASE-NAME (1) STUMST                       
+037400         MODE-3 STATUS-AREA.                                              
+037500     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+037600                                                                          
+037700*------------------------------*                                          
+037800                                                                          
+037900$PAGE "End of program & error processing"                                 
+038000*----------------------------------*                                      
+038100 9000-IMAGE-ERROR.                                                        
+038200     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+038300*---------------------------------------------------------                
+038400 9999-RETURN.                                                             
+038500     IF LINK-ERR NOT = 0                                                  
+038600        DISPLAY "HSTFIX ERROR = " LINK-ERR                                
+038700        DISPLAY LINK-MESSAGE.                                             
+038800     CALL "DBCLOSE" USING DATA-BASE-NAME(1) NULL-ITEM                     
+038900                          MODE-1 STATUS-AREA.                             
+039000     DISPLAY XX " RECORDS READ".                                          
+039100     DISPLAY YY " RECORD UPDATED".                                        
+039200     GOBACK.                                                              
+039300                                                                          

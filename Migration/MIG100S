@@ -1,0 +1,427 @@
+001000$CONTROL POST85,LIST,DYNAMIC,RLFILE                                       
+001100 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. MIG100.                                              050820MA
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400 DATE-COMPILED.                                                           
+001500*                     COPYRIGHT 2007                                      
+001600*            J3K Solutions All rights reserved.                           
+001700*            Turbo Image Migration PREP System                            
+001800*                                                                         
+001900*                    SERVER MASTER SCREEN                                 
+002000*                                                                         
+002100 ENVIRONMENT DIVISION.                                                    
+002200 CONFIGURATION SECTION.                                                   
+002300 SOURCE-COMPUTER. HP3000.                                                 
+002400*SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                             
+002500 OBJECT-COMPUTER. HP3000.                                                 
+002600 SPECIAL-NAMES.                                                           
+002700     CONDITION-CODE IS CC.                                                
+002800 DATA DIVISION.                                                           
+002900$PAGE "WORKING STORAGE SECTION"                                           
+003000 WORKING-STORAGE SECTION.                                                 
+003100*------------------------------*                                          
+003200 01  I                     PIC S9(4) COMP.                                
+003300 01  N                     PIC S9(4) COMP.                                
+003400 01  X                     PIC S9(4) COMP.                                
+003500 01  Y                     PIC S9(4) COMP.                                
+003600 01  LINK-ERRORMSG         PIC X(128) VALUE SPACES.                       
+003700 01  LINK-ERRORNUM         PIC S9(4) COMP VALUE 0.                        
+003800 01  NUM-1                 PIC X(14).                                     
+003900 01  NUM-2                 PIC S9(14).                                    
+004000 01  N-DEC                 PIC S9(4) COMP.                                
+004100 01  N-ERR                 PIC S9(4) COMP.                                
+004200* 01  IREAD-LEN             PIC S9(4) COMP.                       22 DEC06
+004300 01  PIC99                 PIC 99 VALUE ZERO.                             
+004400 01  DISP-N2A              PIC 99.                                        
+004500 01  DISP-N2B              PIC 99.                                        
+004600 01  DISP-N4               PIC ---9.                                      
+004700 01  DISP-6                PIC 999999.                                    
+004800 01  DISP-N6               PIC -----9.                                    
+004900 01  DISP-98               PIC 99999999.                                  
+005000 01  DISP-98X REDEFINES DISP-98 PIC X(8).                                 
+005100 01  DISP-DEC2-2           PIC $$$.99.                                    
+005200 01  CAL-DATE              PIC 9(8) VALUE ZERO.                           
+005300 01  CALDATE REDEFINES CAL-DATE.                                          
+005400   02 CALYEAR                                                     050820MA
+005500     05 CAL-CN           PIC 99.                                  050820MA
+005600     05 CAL-YR           PIC 99.                                  050820MA
+005700   02 CAL-MO             PIC 99.                                  050820MA
+005800   02 CAL-DA             PIC 99.                                  050820MA
+005900 01  NUMDATE               PIC S9(9) COMP.                                
+006000 01  DAYNUM                PIC S9(4) COMP.                                
+006100 01  WORK-DATE             PIC 9(8) VALUE ZERO.                           
+006200 01  WORKDATE-FORMAT REDEFINES WORK-DATE.                                 
+006300     02 CN             PIC 99.                                            
+006400     02 YR             PIC 99.                                            
+006500     02 MO             PIC 99.                                            
+006600     02 DA             PIC 99.                                            
+006700 01  VIEW-DATE             PIC 9(6) VALUE ZERO.                           
+006800 01  VIEWDATE-FORMAT REDEFINES VIEW-DATE.                                 
+006900     02 MO             PIC 99.                                            
+007000     02 DA             PIC 99.                                            
+007100     02 YR             PIC 99.                                            
+007200     COPY SWITCHES OF COMLIB.                                             
+007300 01  SRVMST-ON-FILE-SW       PIC X    VALUE "0".                          
+007400     88 SRVMST-ON-FILE       VALUE "1".                                   
+007500 01 SRVMST-REC-NUMBER      PIC S9(9) COMP VALUE 0.                        
+007600 01 EXTERNAL-COMMAND       EXTERNAL PIC X(20).                            
+007700 01 LINKTYPE               PIC X(6) VALUE SPACES.                         
+007800$PAGE "STANDARD OPERATING DATA AREA"                                      
+007900     COPY USEREX   OF COMLIB.                                             
+008000     COPY FLOWEX   OF COMLIB.                                             
+008100 01 WRK-BUFFER.                                                           
+008200    02 WRK-SVR-UNIQUE                 PIC S9(09) COMP VALUE 0.            
+008300    02 WRK-SVR-NAME                   PIC X(024) VALUE SPACES.            
+008400    02 WRK-SVR-IPADDR                 PIC X(016) VALUE SPACES.            
+008500    02 WRK-SVR-DBCNT                  PIC S9(18) COMP VALUE 0.            
+008600    02 WRK-SVR-DSCNT                  PIC S9(18) COMP VALUE 0.            
+008700    02 WRK-SVR-FLDCNT                 PIC S9(18) COMP VALUE 0.            
+008800    02 WRK-SVR-RECCNT                 PIC S9(18) COMP VALUE 0.            
+008900    02 WRK-SVR-SUSAN                  PIC S9(09) COMP VALUE 0.            
+009000    02 WRK-SVR-REC-COST               PIC S9(18) COMP VALUE 0.            
+009100    02 WRK-SVR-MPEVERSION             PIC X(008) VALUE SPACES.            
+009200                                                                          
+010500$PAGE "SCREEN DATA"                                                       
+010600*------------------------------*                                          
+010700     COPY SCREENEX OF COMLIB.                                             
+010800     02  SC1-BUFFER REDEFINES SCREEN-BUFFER.                              
+010810      03 SC1-HEADER.                                                      
+010910        05 SC1-SVR-NAME       PIC X(024).                                 
+010920        05 SC1-SVR-IPADDR     PIC X(016).                                 
+010930        05 SC1-SRV-DBCNT      PIC ZZ,ZZZ.                                 
+010940        05 SC1-SVR-SUSAN      PIC Z(16).                                  
+010950        05 SC1-SVR-MPEVERSION PIC X(008).                                 
+010960        05 SC1-PAGE1          PIC ZZZ.                                    
+010970        05 SC1-PAGE2          PIC ZZZ.                                    
+010980          06 SC1-DATA-AREA.                                               
+011100            10 SC1-SVR-NAME       PIC X(024)                              
+011200            10 SC1-SVR-IPADDR     PIC X(016)                              
+011300            10 SC1-SVR-DBCNT      PIC S9(18)                              
+011400            10 SC1-SVR-DSCNT      PIC S9(18)                              
+011500            10 SC1-SVR-FLDCNT     PIC S9(18)                              
+011600            10 SC1-SVR-RECCNT     PIC S9(18)                              
+011700            10 SC1-SVR-SUSAN      PIC S9(09)                              
+011800            10 SC1-SVR-REC-COST   PIC S9(18)                              
+011900            10 SC1-SVR-MPEVERSION PIC X(008)                              
+012000          06 SC1-FILLER        PIC X(1770).                               
+012100                                                                          
+012200 01 APPLICATION-FUNC-KEYS.                                                
+012300    05 F1-FKEY        PIC X(16).                                          
+012400    05 CHANGE-FKEY    PIC X(16).                                          
+012500    05 F3-FKEY        PIC X(16).                                          
+012600    05 F4-FKEY        PIC X(16).                                          
+012700*                                                                         
+012800    05 F5-FKEY        PIC X(16).                                          
+012900    05 PRINT-FKEY     PIC X(16).                                          
+013000    05 F7-FKEY        PIC X(16).                                          
+013100    05 EXIT-FKEY      PIC X(16).                                          
+013200 01 SCREEN-FUNCTION-SW      PIC X    VALUE "S".                           
+013300    88 SELECTION-SCREEN     VALUE "S".                                    
+013400    88 EXIT-SCREEN          VALUE "X".                                    
+013500    88 CHANGE-SCREEN        VALUE "C".                                    
+013600    88 REVIEW-SCREEN        VALUE "R".                                    
+013700    88 ADD-SCREEN           VALUE "A".                                    
+013800    88 DELETE-SCREEN        VALUE "D".                                    
+013900    88 MAINT-SCREEN         VALUES ARE "C" "R" "A" "M" "D".               
+014000    88 DELETE-RECORD        VALUE "D".                                    
+014100 01 SAVE-KEY-LABELS                  VALUE SPACES.                        
+014200    02  SAVE-KEY-LABEL     OCCURS 8 TIMES PIC X(16).                      
+014300 01 SAVE-KEY               PIC 9 VALUE 0.                                 
+014400 01  INITIAL-FIELD-SPECS   PIC X(420) VALUE SPACES.                       
+014500 01  LAST-SCREEN-NAME      PIC X(16) VALUE SPACES.                        
+014600 01  SAVE-HDR1             PIC X(20) VALUE SPACES.                        
+014700 01  SAVE-HDR2             PIC X(20) VALUE SPACES.                        
+014800$PAGE "IMAGE DATA"                                                        
+014900*------------------------------*                                          
+015300     COPY SRVMST   OF J3KLIB.                                             
+015310*****************************************************************         
+015410 COPY AMSPROC OF J3KLIB.                                                  
+015411                                                                          
+015420$PAGE "MAIN SECTION"                                                      
+015500 PROCEDURE DIVISION.                                                      
+015600 0000-MAIN.                                                               
+015700     IF FLOWTEST DISPLAY "0000-BEGIN".                                    
+015800     CALL INTRINSIC "FINDJCW" USING FLOWTEST-JCW FLOWTEST-VALUE N.        
+015900     IF FLOWTEST                                                          
+016000         DISPLAY "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"               
+016100         DISPLAY "-MIG100- BEGIN".                                050820MA
+021800     MOVE SPACES TO NEXT-SCREEN.                                          
+021900     CALL "OPENMGEN" USING USER-AREA DATA-BASE-COMMON.                    
+022000     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERROR.                              
+022100 0100-MAIN-LOOP.                                                          
+022200     IF FLOWTEST DISPLAY "--->> 0100-MAIN-LOOP".                          
+022300     IF NEXT-SCREEN NOT = SPACES GO TO 0999-EXIT.                         
+022400     IF THIS-SCREEN = "SELECTCLIENT"                              050820MA
+022500        PERFORM 3000-MAINT-SCREEN THRU 3999-EXIT                          
+022600        GO TO 0100-MAIN-LOOP.                                             
+022700     MOVE "WRONGPROG" TO NEXT-SCREEN.                                     
+022800 0999-EXIT.                                                               
+022900     IF FLOWTEST DISPLAY "0999-EXIT".                                     
+023000     GO TO 9900-RETURN.                                                   
+023100*---------------------------------------------------------------          
+023200$PAGE "MAINT SCREEN"                                                      
+023300 3000-MAINT-SCREEN.                                                       
+023400     IF FLOWTEST DISPLAY "3000-MAINT-SCREEN".                             
+023500     PERFORM 6801-FORMINIT.                                               
+023600     MOVE "R" TO SCREEN-FUNCTION-SW.                                      
+023700 3100-LOOP.                                                               
+023800D    DISPLAY "3100-LOOP MAINT SCREEN"                                     
+023900     IF NEXT-SCREEN NOT = SPACES GO TO 3999-EXIT.                         
+024000     MOVE "0" TO ERRORS-SW DATA-CHANGED-SW.                               
+024100     PERFORM 6002-WORK-TO-SCREEN THRU 6002-EXIT.                          
+024200 3110-READ.                                                               
+024300     IF FLOWTEST DISPLAY "3110-READ".                                     
+024400     PERFORM 6800-SETUP-SCREEN.                                           
+024500     PERFORM 7800-READ-SCREEN.                                            
+024600     MOVE EXTERNAL-COMMAND TO CALL-INFO.                                  
+024700     INITIALIZE EXTERNAL-COMMAND.                                         
+024800     IF NEXT-SCREEN NOT = SPACES GO TO 3999-EXIT.                         
+024900     IF BAD-KEY                                                           
+025000         PERFORM 7801-BAD-FUNCTION-KEY                                    
+025100         GO TO 3110-READ.                                                 
+025200     IF ( ADD-SCREEN OR CHANGE-SCREEN )   AND ( DATA-CHANGED )            
+025300        AND ( SCREEN-KEY-PRESSED NOT = 0 )                                
+025400            PERFORM 7810-EXIT-WARNING.                                    
+025500     IF SCREEN-KEY-PRESSED = 0 GO TO 3110-ENTER-KEY.                      
+025600     IF SCREEN-FUNC-KEY(SCREEN-KEY-PRESSED) = CHANGE-FKEY                 
+025700        MOVE "C" TO SCREEN-FUNCTION-SW                                    
+025800        GO TO 3110-READ.                                                  
+025900     IF SCREEN-FUNC-KEY(SCREEN-KEY-PRESSED) = PRINT-FKEY                  
+026000        CALL "VSPRINT" USING SCREEN-COMMON                                
+026100        GO TO 3110-READ.                                                  
+026200     IF SCREEN-KEY-PRESSED = 8                                            
+026300        MOVE "ENTRY_MENU " TO NEXT-SCREEN                                 
+026400        GO TO 3100-LOOP.                                                  
+026500     IF SCREEN-KEY-PRESSED NOT = 0                                        
+026600        PERFORM 7801-BAD-FUNCTION-KEY                                     
+026700        GO TO 3110-READ.                                                  
+026800 3110-ENTER-KEY.                                                          
+026900     IF ( EDIT-ERRORS ) AND ( ADD-SCREEN OR CHANGE-SCREEN )               
+027000         CALL "VSSHOWERR" USING SCREEN-COMMON                             
+027100         GO TO 3110-READ.                                                 
+027200     IF SCREEN-KEY-PRESSED  = 0 GO TO 3110-PROCESS-RECORD.                
+027300     IF SCREEN-KEY-PRESSED NOT = 0                                        
+027400         GO TO 3100-LOOP.                                                 
+027500 3110-PROCESS-RECORD.                                                     
+027600     IF REVIEW-SCREEN                                                     
+027700        PERFORM 7814-REVIEW-RECORD                                        
+027800        GO TO 3110-READ.                                                  
+027900     IF CHANGE-SCREEN                                                     
+028000        PERFORM 7812-CHANGE-RECORD                                        
+028100        GO TO 3110-READ.                                                  
+028200     GO TO 3110-READ.                                                     
+028300 3999-EXIT.   EXIT.                                                       
+028400$PAGE "DATA BUFFER PROCESSING"                                            
+028500*---------------------------------------------------------------          
+028600 6001-SCREEN-TO-WORK.                                                     
+028700D    DISPLAY "6001-SCREEN-TO-WORK".                                       
+028800     MOVE "0" TO ERRORS-SW.                                               
+028900     MOVE SC1-CLIENT       TO WRK-CLIENT.                                 
+029000     PERFORM 7000-SCREEN-SRVMST-ID THRU 7000-EXIT.                        
+029100     IF REVIEW-SCREEN  OR ERRORS GO TO 6001-EXIT.                         
+029200*    *-------*                                                            
+029300     MOVE SC1-SVR-NAME       TO WRK-SVR-NAME.                             
+029400     MOVE SC1-SVR-IPADDR     TO WRK-SVR-IPADDR.                           
+029500     MOVE SC1-SVR-DBCNT      TO WRK-SVR-DBCNT.                            
+029600     MOVE SC1-SVR-DSCNT      TO WRK-SVR-DSCNT.                            
+029700     MOVE SC1-SVR-FLDCNT     TO WRK-SVR-FLDCNT.                           
+029800     MOVE SC1-SVR-RECCNT     TO WRK-SVR-RECCNT.                           
+029900     MOVE SC1-SVR-SUSAN      TO WRK-SVR-SUSAN.                            
+030000     MOVE SC1-SVR-REC-COST   TO WRK-SVR-REC-COST.                         
+030100     MOVE SC1-SVR-MPEVERSION TO WRK-SVR-MPEVERSION.                       
+030200 6001-EXIT.   EXIT.                                                       
+030300*---------------------------------------------------------------          
+030400 6002-WORK-TO-SCREEN.                                                     
+030500D    DISPLAY "6002-WORK-TO-SCREEN".                                       
+030600     INITIALIZE SC1-BUFFER.                                               
+030700     IF  ADD-SCREEN OR DELETE-SCREEN                                      
+030800        GO TO 6002-EXIT.                                                  
+030900     IF NOT SRVMST-ON-FILE GO TO 6002-EXIT.                               
+031000                                                                          
+031100     MOVE WRK-CLIENT    TO SC1-CLIENT.                                    
+031200     MOVE WRK-NAME      TO SC1-NAME.                                      
+031300     MOVE WRK-ADDRESS   TO SC1-ADDRESS.                                   
+031400     MOVE WRK-CITY      TO SC1-CITY.                                      
+031500     MOVE WRK-STATE     TO SC1-STATE.                                     
+031600     MOVE WRK-ZIP       TO SC1-ZIP.                                       
+031700     MOVE WRK-BUSTYPE   TO SC1-BUSTYPE.                                   
+031800     MOVE WRK-FYE       TO SC1-FYE.                                       
+031900     MOVE WRK-PARENT    TO SC1-PARENT.                                    
+032000     MOVE WRK-ATTENTION TO SC1-ATTENTION.                                 
+032100 6002-EXIT.   EXIT.                                                       
+032200*---------------------------------------------------------------          
+032300 6003-WORK-TO-DB.                                                         
+032400D    DISPLAY "6003-WORK-TO-DB".                                           
+032500     INITIALIZE SRVMST-BUFFER.                                            
+032600     IF NOT CHANGE-SCREEN                                                 
+032700        MOVE "Program logic has failed!" TO SCREEN-MESSAGE                
+032800        MOVE "1" TO ERRORS-SW                                             
+032900        GO TO 6003-EXIT.                                                  
+033000*                                                                         
+033100     PERFORM LOCK-SRVMST.                                                 
+033200     IF SRVMST-ON-FILE                                                    
+033300      MOVE SRVMST-REC-NUMBER TO RECORD-NUMBER                             
+033400      PERFORM GET-SRVMST-DIRECT                                           
+033500     MOVE WRK-NAME      TO SRVMST-NAME.                                   
+033600     MOVE WRK-ADDRESS   TO SRVMST-ADDRESS.                                
+033700     MOVE WRK-CITY      TO SRVMST-CITY.                                   
+033800     MOVE WRK-STATE     TO SRVMST-STATE.                                  
+033900     MOVE WRK-ZIP       TO SRVMST-ZIP.                                    
+034000     MOVE WRK-BUSTYPE   TO SRVMST-BUSTYPE.                                
+034100     MOVE WRK-FYE       TO SRVMST-FYE.                                    
+034200     MOVE WRK-PARENT    TO SRVMST-PARENT.                                 
+034300     MOVE WRK-ATTENTION TO SRVMST-ATTENTION.                              
+034400     PERFORM UPDATE-SRVMST.                                               
+034500     MOVE RECORD-NUMBER TO SRVMST-REC-NUMBER.                             
+034600     MOVE "1" TO SRVMST-ON-FILE-SW.                                       
+034700 6003-END.                                                                
+034800     PERFORM UNLOCK-SRVMST.                                               
+034900 6003-EXIT.   EXIT.                                                       
+035000*---------------------------------------------------------------          
+035100 6004-DB-TO-WORK.                                                         
+035200D    DISPLAY "6004-DB-TO-WORK".                                           
+035300     INITIALIZE WRK-BUFFER.                                               
+035400     IF NOT SRVMST-ON-FILE GO TO 6004-EXIT.                               
+035500     MOVE SRVMST-REC-NUMBER TO RECORD-NUMBER.                             
+035600     PERFORM GET-SRVMST-DIRECT.                                           
+035700     IF NO-ENTRY                                                          
+035800        MOVE "1" TO ERRORS-SW                                             
+035900        MOVE "BAD RECORD NUMBER, in DB-TO-WORK" TO SCREEN-MESSAGE         
+036000        GO TO 6004-EXIT.                                                  
+036100     MOVE SRVMST-CLIENT    TO WRK-CLIENT.                                 
+036200     MOVE SRVMST-NAME      TO WRK-NAME.                                   
+036300     MOVE SRVMST-ADDRESS   TO WRK-ADDRESS.                                
+036400     MOVE SRVMST-CITY      TO WRK-CITY.                                   
+036500     MOVE SRVMST-STATE     TO WRK-STATE.                                  
+036600     MOVE SRVMST-ZIP       TO WRK-ZIP.                                    
+036700     MOVE SRVMST-BUSTYPE   TO WRK-BUSTYPE.                                
+036800     MOVE SRVMST-FYE       TO WRK-FYE.                                    
+036900     MOVE SRVMST-PARENT    TO WRK-PARENT.                                 
+037000     MOVE SRVMST-ATTENTION TO WRK-ATTENTION.                              
+037100                                                                          
+037200 6004-EXIT.   EXIT.                                                       
+037300*---------------------------------------------------------------          
+037400$PAGE "SCREEN MANAGEMENT"                                                 
+037500 6800-SETUP-SCREEN.                                                       
+037600     MOVE "0" TO ERRORS-SW.                                               
+037700D    DISPLAY "6800-SETUP-SCREEN     " SCREEN-FUNCTION-SW " "              
+037800D            SCREEN-TITLE.                                                
+037900     MOVE INITIAL-FIELD-SPECS TO SCREEN-FIELD-SPECS.                      
+038000     EVALUATE SCREEN-FUNCTION-SW                                          
+038100      WHEN "A" MOVE "-- ADD --       "   TO SCREEN-TITLE(30:16)           
+038200      WHEN "C" MOVE "-- CHANGE --    "   TO SCREEN-TITLE(30:16)           
+038300      WHEN "D" MOVE "-- DELETE --    "   TO SCREEN-TITLE(30:16)           
+038400      WHEN "R" MOVE "-- REVIEW --    "   TO SCREEN-TITLE(30:16).          
+038500*                                                                         
+038600*------>> SET Field specification (Enhancement & Data type)               
+038700      IF CHANGE-SCREEN                                                    
+038800       PERFORM VARYING X FROM 1 BY 1 UNTIL X > 10                         
+038900        MOVE "HI  O CHAR" TO SCREEN-FIELD-SPEC(X)                         
+039000       END-PERFORM                                                        
+039100       MOVE "R"          TO SCREEN-FIELD-TYPE(1)                          
+039200                            SCREEN-FIELD-TYPE(2).                         
+039300         IF CHANGE-SCREEN                                                 
+039400             MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(1).                   
+039500*                                                                         
+039600*------>> SET Function key lable values                                   
+039700     MOVE SPACES TO SCREEN-FUNC-KEYS.                                     
+039800     MOVE EXIT-FKEY TO SCREEN-FUNC-KEY(8).                                
+039900     IF ( REVIEW-SCREEN )                                                 
+040000        IF SRVMST-ON-FILE                                                 
+040100           MOVE CHANGE-FKEY TO SCREEN-FUNC-KEY(2)                         
+040200           MOVE PRINT-FKEY  TO SCREEN-FUNC-KEY(6).                        
+040300*----->>> Last chance data modification                                   
+040400     IF REVIEW-SCREEN                                                     
+040500        IF NOT SRVMST-ON-FILE                                             
+040600               MOVE SPACES TO SCREEN-BUFFER(7:).                          
+040700     MOVE "0" TO DATA-CHANGED-SW.                                         
+040800D    DISPLAY "6800-SETUP-SCREEN END " SCREEN-FUNCTION-SW " "              
+040900D            SCREEN-TITLE.                                                
+041000*---------------------------------------------------------------          
+041100 6801-FORMINIT.                                                           
+041200D    DISPLAY "6801-FORMINIT".                                             
+041300     MOVE THIS-SCREEN TO SCREEN-NAME LAST-SCREEN-NAME.                    
+041400     CALL "VSINIT" USING SCREEN-COMMON.                                   
+041500     MOVE "Maintain Client ID Master "    TO SCREEN-TITLE.                
+041600     MOVE SCREEN-FIELD-SPECS TO INITIAL-FIELD-SPECS.                      
+041700     MOVE SCREEN-FUNC-KEYS TO APPLICATION-FUNC-KEYS.                      
+041800     MOVE SPACES TO SCREEN-FUNC-KEYS.                                     
+041900     MOVE SPACES TO SCREEN-BUFFER.                                        
+042000     Move "R" To SCREEN-FUNCTION-SW.                                      
+042100     Move LINK-CLIENT To SC1-Client.                                      
+042200     Perform 7000-SCREEN-SRVMST-ID Thru 7000-EXIT.                        
+042300     If SRVMST-ON-FILE                                                    
+042400      Perform 6004-DB-TO-WORK                                             
+042500      Perform 6002-WORK-TO-SCREEN.                                        
+042600$PAGE "FIELD EDIT SUBROUTINES"                                            
+042700 7000-FIELD-EDITS.                                                        
+042800*---------------------------------------------------------------          
+042900 7000-SCREEN-SRVMST-ID.                                                   
+043000D    DISPLAY "7000-SCREEN-SRVMST-ID".                                     
+043100     MOVE "0" TO SRVMST-ON-FILE-SW.                                       
+043200     IF SC1-CLIENT   NOT > SPACES                                         
+043300        MOVE "Client ID is required." TO SCREEN-MESSAGE                   
+043400        GO TO 7000-ERROR.                                                 
+043500     MOVE SC1-CLIENT   TO SEARCH-KEY.                                     
+043600     PERFORM GET-SRVMST-KEYED                                             
+043700     IF NOT NO-ENTRY                                                      
+043800        MOVE RECORD-NUMBER TO SRVMST-REC-NUMBER                           
+043900        MOVE "1" TO SRVMST-ON-FILE-SW.                                    
+044000     IF ADD-SCREEN AND SRVMST-ON-FILE                                     
+044100        MOVE "Client ID Already Exist's" TO SCREEN-MESSAGE                
+044200        GO TO 7000-ERROR.                                                 
+044300     IF ( REVIEW-SCREEN OR CHANGE-SCREEN OR DELETE-SCREEN )               
+044400        AND ( SRVMST-ON-FILE-SW NOT = "1" )                               
+044500        MOVE "Client ID not found" TO SCREEN-MESSAGE                      
+044600        GO TO 7000-ERROR.                                                 
+044700     GO TO 7000-EXIT.                                                     
+044800 7000-ERROR.                                                              
+044900     MOVE 1 TO SCREEN-FIELD.                                              
+045000     MOVE "1" TO ERRORS-SW.                                               
+045100     CALL "VSFLAG" USING SCREEN-COMMON.                                   
+045200 7000-EXIT.   EXIT.                                                       
+045300*---------------------------------------------------------------          
+045400                                                                          
+045500*------------------------------*                                          
+045600$PAGE "MISC. SUBROUTINES"                                                 
+045700 7800-MISC-SUBROUTINES.                                                   
+045800     COPY READSCR  OF J3KLIB.                                             
+045900     COPY EXITWARN OF J3KLIB.                                             
+046000     COPY CHGREC   OF J3KLIB.                                             
+046100     COPY REVREC   OF J3KLIB.                                             
+046200*---------------------------------------------------------------          
+046300 7850-INITIAL-DATES.                                                      
+046400     CALL "GETCURRENT" USING CALDATE NUMDATE DAYNUM.                      
+046500*---------------------------------------------------------------          
+046600 7860-WORKDATE-CENTURY.                                                   
+046700D    DISPLAY "7860-WORKDATE-CENTURY".                                     
+046800     MOVE 20 TO CN OF WORKDATE-FORMAT.                                    
+046900     IF YR OF WORKDATE-FORMAT > 50                                        
+047000        MOVE 19 TO CN OF WORKDATE-FORMAT.                                 
+047100$PAGE "IMAGE SUBROUTINES"                                                 
+047200 8000-IMAGE-SUBROUTINES.                                                  
+047300*-------------------------------*                                         
+047400     COPY SRVMST0  OF J3KLIB.                                             
+047500     COPY SRVMST1  OF J3KLIB.                                             
+047600     COPY SRVMST2  OF J3KLIB.                                             
+047700     COPY SRVMST3  OF J3KLIB.                                             
+047800     COPY SRVMST4  OF J3KLIB.                                             
+047900     COPY SRVMST5  OF J3KLIB.                                             
+048000     COPY SRVMST6  OF J3KLIB.                                             
+048100     COPY SRVMST7  OF J3KLIB.                                             
+048200     COPY SRVMST8  OF J3KLIB.                                             
+048300$PAGE "DISASTROUS ERROR ROUTINES"                                         
+048400*------------------------------*                                          
+048500 9000-IMAGE-ERROR.                                                        
+048600     IF FLOWTEST DISPLAY "9000-IMAGE-ERROR".                              
+048700     CALL "VSCLOSE" USING SCREEN-COMMON.                                  
+048800     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+048900     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+049000     GO TO 9900-RETURN.                                                   
+049100$PAGE "END OF PROGRAM"                                                    
+049200 9900-RETURN.                                                             
+049300     IF FLOWTEST DISPLAY "9900-RETURN".                                   
+049400     IF FLOWTEST                                                          
+049500         DISPLAY "-MIG100- END"                                   050820MA
+049600         DISPLAY "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^".              
+049700     GOBACK.                                                              

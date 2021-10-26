@@ -1,0 +1,498 @@
+000100****************************************************************  060724MA
+000200*                                                              *  060724MA
+000300* - (XL) MPE/XL Subroutine Library (NMXL)              -       *  060724MA
+000400*                                                              *  060724MA
+000500*                                                                 060925MA
+000600*  To convert HP-REAL numbers to IEEE-REAL, and other             060925MA
+000700*  standard format.                                               060925MA
+000800*  Source of data to be converted, is as follows:                 060925MA
+000900*  sformat & dformat are both 16-bit signed integers by value,    060925MA
+001000*  and are required to specify the source format and the          060925MA
+001100*  destination format.                                            060925MA
+001200*                                                                 060925MA
+001300*     1 =  Hewlett-Packard 3000 32-bit                            060925MA
+001400*                                                                 060925MA
+001500*     2 =  Hewlett-Packard 3000 64-bit                            060925MA
+001600*                                                                 060925MA
+001700*     3 =  IEEE 32-bit                                            060925MA
+001800*                                                                 060925MA
+001900*     4 =  IEEE 64-bit                                            060925MA
+002000*                                                                 060925MA
+002100*     5 =  IEEE 128-bit                                           060925MA
+002200*                                                                 060925MA
+002300*                                                                 060925MA
+002400*                                                                 060925MA
+002500*                                                                 060925MA
+002600*                                                                 060925MA
+002700* Possible exceptions to be return could range from 1 to 8.       060925MA
+002800*                                                                 060925MA
+002900*      0   No exceptions                                          060925MA
+003000*                                                                 060925MA
+003100*      1   Inexact only (native mode destination only)            060925MA
+003200*                                                                 060925MA
+003300*      3   Underflow and inexact                                  060925MA
+003400*                                                                 060925MA
+003500*      5   Overflow and inexact                                   060925MA
+003600*                                                                 060925MA
+003700*      8   Invalid operation                                      060925MA
+003800*                                                                 060925MA
+003900*                                                                 060925MA
+004000* The rules for rounding are as follows:                          060925MA
+004100*                                                                 060925MA
+004200*                                                                 060925MA
+004300*  The rounding mode is not applicable if destination is an       060925MA
+004400*  HP-REAL format.                                                060925MA
+004500*                                                                 060925MA
+004600* Value   Meaning                                                 060925MA
+004700*                                                                 060925MA
+004800* 0   Round to nearest, to even if tie (default)                  060925MA
+004900*                                                                 060925MA
+005000* 1   Round to zero                                               060925MA
+005100*                                                                 060925MA
+005200* 2   Round to positive infinity                                  060925MA
+005300*                                                                 060925MA
+005400* 3   Round to negative infinity                                  060925MA
+005500                                                                  060925MA
+005600                                                                  060925MA
+005700*                                                              *  060724MA
+005800*  PROGRAM NAME   Descrption                                   *  060724MA
+005900*  ------------- --------------------------------------------     060724MA
+006000*   NUMGET42     Converts a X42 string into a 9(18)               060925MA
+006100*   X8R4V18      Converts a R4(real)X8 to standard formats        060925MA
+006200*   X4R2V18      Converts a R2(real)X4 to standard formats        060925MA
+006300*   X8E4V18      Converts a E4(real)X8 to standard formats        060925MA
+006400*   X4E2V18      Converts a E2(real)X4 to standard formats        060925MA
+006500*************************************************************     060724MA
+006600                                                                  060724MA
+006700$PAGE "THIS PROGRAM ---> NUMGET42 "                               060925MA
+006800                                                                  060724MA
+006900*                                                                 060724MA
+007000*     |           |           |           |           |           060724MA
+007100*     |           |           |           |           |           060724MA
+007200*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      060724MA
+007300* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       060724MA
+007400*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        060724MA
+007500*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         060724MA
+007600*    \|/         \|/         \|/         \|/         \|/          060724MA
+007700*     Y           Y           Y           Y           Y           060724MA
+007800*                                                                 060724MA
+007900$TITLE "NUMGET42 - Get a Numeric value 9(18) From a X(18)"        060925MA
+008000$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,OPTFEATURES=LINKALIGNED       060925MA
+008100 IDENTIFICATION DIVISION.                                         060724MA
+008200 PROGRAM-ID. NUMGET42.                                            060925MA
+008300 AUTHOR.     Michael Anderson.                                    060724MA
+008400 DATE-COMPILED.                                                   060724MA
+008500                                                                  060724MA
+008600*************************************************************     060724MA
+008700*                                                                 060724MA
+008800*  Converts Numeric ASCII digits found in a Character String      060724MA
+008900*  into Computational, Signed numbers                             060724MA
+009000*                                                                 060724MA
+009100*  PARAMETERS:                                                    060724MA
+009200*                                                                 060724MA
+009300*  Char42    A 42 Character feild containning the numeric digits  060925MA
+009400*            passed by the caller to be converted.                060724MA
+009500*                                                                 060724MA
+009600*  Num42     The converted 18 ASCII Signed Numeric Value of       060919MA
+009700*            Char42 Returned to the caller.                       060919MA
+009800*                                                                 060724MA
+009900*  DecPtr    Integer Returned to the caller representing the      060724MA
+010000*            number of Decimal places found in the number.        060724MA
+010100*                                                                 060724MA
+010200*  EditError Integer Returns a NON-ZERO if Char42 DID Not         060919MA
+010300*            contain valid numeric data.                          060724MA
+010400*                                                                 060724MA
+010500*************************************************************     060724MA
+010600                                                                  060724MA
+010700 ENVIRONMENT DIVISION.                                            060724MA
+010800 CONFIGURATION SECTION.                                           060724MA
+010900 SOURCE-COMPUTER. HP3000.                                         061002MA
+011000 OBJECT-COMPUTER. HP3000.                                         060724MA
+011100 DATA DIVISION.                                                   060724MA
+011200 WORKING-STORAGE SECTION.                                         060724MA
+011300                                                                  060724MA
+011400 01  My-Char               PIC X(42) Value Spaces.                060919MA
+011500 01  N                     PIC 9(4) COMP.                         060724MA
+011600 01  CharPtr               PIC 9(4) COMP.                         060724MA
+011700 01  DigitPtr              PIC 9(4) COMP.                         060724MA
+011800 01  DECIMAL-SW            PIC X.                                 060724MA
+011900 01  COMMA-SW              PIC X.                                 060724MA
+012000 01  MINUS-SW              PIC X.                                 060724MA
+012100 01  MyNum.                                                       060919MA
+012200     02 MyNumber      Pic 9(18).                                  060919MA
+012300     02 N1 REDEFINES MyNumber Pic X OCCURS 18 times.              060919MA
+012400 01 XPtr                   PIC S9(4) COMP VALUE 0.                060921MA
+012500 01 YPtr                   PIC S9(4) COMP VALUE 0.                060921MA
+012600 01 ZPtr                   PIC S9(4) COMP VALUE 0.                060921MA
+012700 01 NUMLEN                 PIC S9(4) COMP VALUE 0.                060921MA
+012800                                                                  060921MA
+012900 LINKAGE SECTION.                                                 060724MA
+013000                                                                  060724MA
+013100 01  Char42.                                                      060919MA
+013200     02  X1                PIC X  OCCURS 42 TIMES.                060919MA
+013300 01  Num18                 Pic S9(18).                            060919MA
+013400 01  DecPtr                PIC 9(4) COMP.                         060919MA
+013500 01  EditError             PIC 9(4) COMP.                         060724MA
+013600$PAGE                                                             060724MA
+013700 PROCEDURE DIVISION USING Char42 Num18 DecPtr EditError.          060921MA
+013800                                                                  060724MA
+013900 Begin-0000.                                                      060724MA
+014000D     Display "NUMGET42 Char42 [" Char42 "]".                     060927MA
+014100     Move 42 TO DigitPtr.                                         060919MA
+014200     Move "0" TO DECIMAL-SW COMMA-SW MINUS-SW.                    060724MA
+014300     Initialize XPtr NumLen ZPtr Num18 DecPtr EditError.          060919MA
+014400**** //                                                           060919MA
+014500**** // Find the end of the numeric string                        060919MA
+014600     Perform Varying N From 42 By -1 Until N < 1 OR ZPtr > 1      060919MA
+014700      If X1(N) <> "0" and <> " "                                  060927MA
+014800       MOVE N TO ZPtr                                             060919MA
+014900      End-If                                                      060724MA
+015000     End-perform.                                                 060724MA
+015100     If N < 1                                                     060927MA
+015200      Move "   0.0" To Char42                                     060927MA
+015300      Move 6 To ZPtr.                                             060927MA
+015400D     DISPLAY "THE END OF THE NUMBER WAS FOUND AT: " ZPtr         060927MA
+015500     Move 0 to N.                                                 060919MA
+015600**** //                                                           060919MA
+015700**** // Find the beginning of the numeric string                  060919MA
+015800     Perform Varying N From 1 By 1 Until N > 41 OR XPtr > 1       060919MA
+015900      IF X1(N) > " "                                              060919MA
+016000       MOVE N TO XPtr                                             060919MA
+016100      End-If                                                      060919MA
+016200     End-perform.                                                 060919MA
+016300D     DISPLAY "THE BEGINNING OF THE NUMBER WAS FOUND AT: " XPtr   060927MA
+016400**** //                                                           060919MA
+016500**** // Find the decimal place in the numeric string              060919MA
+016600     Initialize N.                                                060919MA
+016700     Perform Varying N From ZPtr By -1 Until N < 2 Or DecPtr > 0  060921MA
+016800      IF X1(N) = "."                                              060919MA
+016900       COMPUTE DecPtr = ZPTR - N END-COMPUTE                      060927MA
+017000      End-If                                                      060919MA
+017100     End-Perform.                                                 060919MA
+017200D     DISPLAY "DECIMAL POINT FOUND AT: " DecPtr.                  060927MA
+017300**** //                                                           060919MA
+017400**** // Move only the numeric string to a new variable            060919MA
+017500     Compute NumLen = ((ZPtr + 1) - XPtr).                        060919MA
+017600     If NumLen > 1 Move Char42(XPtr:NumLen) To My-Char.           060921MA
+017700D     DISPLAY "THE LENGTH OF THE NUMBER IS : " NumLen             060927MA
+017800D     Display "NUMGET42 Char42 [" Char42(XPtr:NumLen) "]".        060927MA
+017900                                                                  060925MA
+018000**** //                                                           060919MA
+018100**** // Is the numeric string a negative value?                   060919MA
+018200     If My-Char(1:1) = "-" Move "1" To  Minus-Sw.                 060921MA
+018300                                                                  060919MA
+018400**** //                                                           060919MA
+018500**** // Convert to COBOL signed Integer value                     060919MA
+018600     InitIalize MyNumber.                                         060921MA
+018700     Move My-Char To Char42.                                      060921MA
+018800     Move 18 To DigitPtr.                                         060919MA
+018900     Perform Varying N From 42 By -1                              060927MA
+019000      Until N < 1 OR DigitPtr < 1                                 060927MA
+019100      If X1(N) >= "0" AND X1(N) <= "9"                            060921MA
+019200       Move X1(N) To N1(DigitPtr)                                 060919MA
+019300       Compute DigitPtr = DigitPtr - 1 End-Compute                060919MA
+019400      End-If                                                      060919MA
+019500     End-Perform.                                                 060724MA
+019600     Inspect MyNum Replacing Leading Spaces By "0".               060919MA
+019700     MOVE MYNUMBER TO NUM18.                                      060925MA
+019800     If Minus-Sw = "1" Compute NUM18 = ( MyNumber * -1).          060925MA
+019900D     Display "NUMGET42 Char42    [" Char42 "]".                  060927MA
+020000D     Display "NUMGET42 Num18     [" Num18 "]".                   060927MA
+020100D     Display "NUMGET42 DecPtr    [" DecPtr "]".                  060927MA
+020200D     Display "NUMGET42 EditError [" EditError "]".               060927MA
+020300     EXIT PROGRAM.                                                060724MA
+020400 END PROGRAM NUMGET42.                                            060925MA
+020500$PAGE "THIS PROGRAM ---> X8R4V18 "                                060724MA
+020600*     |           |           |           |           |           060724MA
+020700*     |           |           |           |           |           060724MA
+020800*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      060724MA
+020900* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       060724MA
+021000*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        060724MA
+021100*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         060724MA
+021200*    \|/         \|/         \|/         \|/         \|/          060724MA
+021300*     Y           Y           Y           Y           Y           060724MA
+021400$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,OPTFEATURES=LINKALIGNED       060925MA
+021500 IDENTIFICATION DIVISION.                                         060724MA
+021600 PROGRAM-ID. X8R4V18.                                             060724MA
+021700 ENVIRONMENT DIVISION.                                            061002MA
+021810 CONFIGURATION SECTION.                                           061002MA
+021820 SOURCE-COMPUTER. HP3000.                                         061002MA
+021830 OBJECT-COMPUTER. HP3000.                                         061002MA
+021840 DATA DIVISION.                                                   061002MA
+021850 WORKING-STORAGE SECTION.                                         061002MA
+021900 01  STATUS-WORD             PIC S9(9) COMP VALUE 0.              060927MA
+022000 01  MYSTAT REDEFINES STATUS-WORD.                                060927MA
+022100     02 STATUS-WORD1         PIC S9(4)    COMP.                   060927MA
+022200     02 STATUS-WORD2         PIC S9(4)    COMP.                   060927MA
+022300 01  ERR                     PIC S9(4)    COMP.                   060927MA
+022400 01  EXCEPTIONS              PIC S9(4)    COMP.                   060927MA
+022500 01  BAL-IEEE                PIC X(8).                            060927MA
+022600 01  X8R4V18-Num1            PIC X(42).                           060927MA
+022700 01  BAL-EDITED              PIC ------------9.9999.              060927MA
+022800 01  BAL-TOTAL               PIC S9(14)V9999        VALUE 0.      060927MA
+022900 01  NUMDEC                  PIC S9(4) COMP.                      060927MA
+023000 01  NUMERR                  PIC S9(4) COMP.                      060927MA
+023100 01  Char42.                                                      060919MA
+023200     02  X1                  PIC X  OCCURS 42 TIMES.              060927MA
+023300 01  Num18                   Pic S9(18).                          060927MA
+023400 LINKAGE SECTION.                                                 060724MA
+023500 01 X8R4V18-Dataarea.                                             060925MA
+023600    02 X8R4V18-Realr4    Pic X(8).                                060925MA
+023700    02 X8R4V18-Return.                                            060925MA
+023800       05  X8R4V18-Int     Pic S9(18) Comp.                       060925MA
+023900       05  BAL-EXTERNAL    Pic X(42).                             060925MA
+024000       05  X8R4V18-Dec     Pic S9(4) Comp.                        060925MA
+024100       05  X8R4V18-Err     Pic S9(4) Comp.                        060925MA
+024200       05  X8R4V18-Nbr     Pic S9(14)V9999.                       060925MA
+024300       05  X8R4V18-Edited  Pic -------------9.9999.               060925MA
+024400 PROCEDURE DIVISION USING X8R4V18-DataArea.                       060724MA
+024500 100-BEGIN.                                                       060724MA
+024600     INITIALIZE X8R4V18-Return.                                   060724MA
+024700*    Convert from 64-bit HP-3000 format to                        060724MA
+024800*    64-bit IEEE format.                                          060724MA
+024900     CALL INTRINSIC "HPFPCONVERT" USING                           060724MA
+025000         X8R4V18-Realr4, BAL-IEEE, 2, 4, STATUS-WORD, EXCEPTIONS. 060925MA
+025100     IF STATUS-WORD NOT = 0                                       060724MA
+025200      DISPLAY "HPFPCONVERT PROBLEM"                               060925MA
+025300      GO 999-ABORT.                                               060925MA
+025400                                                                  060925MA
+025500     CALL INTRINSIC "HPINEXT" USING                               060724MA
+025600         BAL-IEEE, -2, 42, 18, -3, 0, BAL-EXTERNAL, ERR           060927MA
+025700     IF ERR NOT = 0                                               060724MA
+025800         DISPLAY "HPINEXT PROBLEM"                                060724MA
+025900         GO 999-ABORT                                             060724MA
+026000     END-IF                                                       060724MA
+026100     Initialize Num18 NumDec NumErr.                              060919MA
+026200     Call "NUMGET42" Using BAL-EXTERNAL Num18 NumDec NumErr.      060925MA
+026300     Compute X8R4V18-NBR =  Num18 / ( 10 ** NUMDEC ).             060925MA
+026400     MOVE X8R4V18-NBR  TO X8R4V18-INT.                            060927MA
+026500     MOVE X8R4V18-NBR  TO X8R4V18-EDITED.                         060927MA
+026600     MOVE BAL-EXTERNAL TO X8R4V18-NUM1.                           060927MA
+026700     MOVE NumDec       TO X8R4V18-DEC.                            060927MA
+026800     MOVE NumErr       TO X8R4V18-ERR.                            060927MA
+026900D     DISPLAY "X8R4 BAL-EXTERNAL: [" BAL-EXTERNAL "]".            060927MA
+027000     GOBACK.                                                      060927MA
+027100*-----------------------------------------------------------------060927MA
+027200 999-ABORT.                                                       060724MA
+027300     DISPLAY "*** X8R4V18 TERMINATED ABNORMALLY ***"              060724MA
+027400     GOBACK.                                                      060724MA
+027500 END PROGRAM X8R4V18.                                             060724MA
+027600$PAGE "THIS PROGRAM ---> X4R2V18 "                                060919MA
+027700*     |           |           |           |           |           060919MA
+027800*     |           |           |           |           |           060919MA
+027900*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      060919MA
+028000* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       060919MA
+028100*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        060919MA
+028200*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         060919MA
+028300*    \|/         \|/         \|/         \|/         \|/          060919MA
+028400*     Y           Y           Y           Y           Y           060919MA
+028500$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,OPTFEATURES=LINKALIGNED       060925MA
+028600 IDENTIFICATION DIVISION.                                         060919MA
+028700 PROGRAM-ID. X4R2V18.                                             060919MA
+028800 ENVIRONMENT DIVISION.                                            061002MA
+029010 CONFIGURATION SECTION.                                           061002MA
+029020 SOURCE-COMPUTER. HP3000.                                         061002MA
+029030 OBJECT-COMPUTER. HP3000.                                         061002MA
+029040 DATA DIVISION.                                                   061002MA
+029050 WORKING-STORAGE SECTION.                                         061002MA
+029060 01  STATUS-WORD           PIC S9(9) COMP VALUE 0.                060927MA
+029100 01  MYSTAT REDEFINES STATUS-WORD.                                060925MA
+029200     02 STATUS-WORD1       PIC S9(4)  COMP.                       060927MA
+029300     02 STATUS-WORD2       PIC S9(4)  COMP.                       060927MA
+029400 01  ERR                   PIC S9(4)  COMP VALUE 0.               060927MA
+029500 01  EXCEPTIONS            PIC S9(4)  COMP VALUE 0.               060927MA
+029600 01  BAL-IEEE              PIC X(8)  value spaces.                061002MA
+029700 01  X4R2V18-Num1          PIC X(42) value spaces.                060927MA
+029800 01  BAL-EDITED            PIC ------------9.9999.                060927MA
+029900 01  BAL-TOTAL             PIC S9(14)V9999 VALUE 0.               060927MA
+030000 01 NUMDEC                 PIC S9(4)  COMP VALUE 0.               060927MA
+030100 01 NUMERR                 PIC S9(4)  COMP VALUE 0.               060927MA
+030200 01  Char42 value spaces.                                         060927MA
+030300     02  X1                PIC X  OCCURS 42 TIMES.                060921MA
+030400 01  Num18                 Pic S9(18) value 0.                    060927MA
+030500 LINKAGE SECTION.                                                 060919MA
+030600 01 X4R2V18-Dataarea.                                             060925MA
+030700    02 X4R2V18-Realr2      Pic X(4).                              060927MA
+030800    02 X4R2V18-Return.                                            060925MA
+030900       05  X4R2V18-Int     Pic S9(18) Comp.                       060925MA
+031000       05  BAL-EXTERNAL    Pic X(42).                             060927MA
+031100       05  X4R2V18-Dec     Pic S9(4)  Comp.                       060927MA
+031200       05  X4R2V18-Err     Pic S9(4)  Comp.                       060927MA
+031300       05  X4R2V18-Nbr     Pic S9(14)V9999.                       060925MA
+031400       05  X4R2V18-Edited  Pic -------------9.9999.               060925MA
+031500                                                                  060925MA
+031600 PROCEDURE DIVISION USING X4R2V18-DataArea.                       060919MA
+031700 100-BEGIN.                                                       060919MA
+031800     INITIALIZE X4R2V18-Return.                                   060919MA
+031900*    Convert from 32-bit HP-3000 format to 32-bit IEEE format.    060925MA
+032000*                                                                 060925MA
+032100     CALL INTRINSIC "HPFPCONVERT" USING                           060925MA
+032200         X4R2V18-REALR2, BAL-IEEE, 1, 4, STATUS-WORD, EXCEPTIONS  061002MA
+032300     IF STATUS-WORD NOT = 0                                       060925MA
+032400      DISPLAY "HPFPCONVERT PROBLEM"                               060925MA
+032500      GO 999-ABORT.                                               060925MA
+032600                                                                  060925MA
+032700     CALL INTRINSIC "HPINEXT" USING                               060919MA
+032800         BAL-IEEE, -2, 42, 18, -3, 0, BAL-EXTERNAL, ERR           061002MA
+032900     IF ERR NOT = 0                                               060919MA
+033000      DISPLAY "HPINEXT PROBLEM"                                   060927MA
+033100      GO 999-ABORT.                                               060927MA
+033200                                                                  060927MA
+033300     Initialize Num18 NumDec NumErr.                              060921MA
+033400     Call "NUMGET42" Using BAL-EXTERNAL Num18 NumDec NumErr.      060925MA
+033500     Compute X4R2V18-NBR =  Num18 / ( 10 ** NUMDEC ).             060925MA
+033600     MOVE BAL-EXTERNAL TO X4R2V18-NUM1.                           060925MA
+033700     MOVE X4R2V18-NBR  TO X4R2V18-INT.                            060927MA
+033800     MOVE X4R2V18-NBR  TO X4R2V18-EDITED.                         060927MA
+033900     MOVE NumDec       TO X4R2V18-DEC.                            060927MA
+034000     MOVE NumErr       TO X4R2V18-ERR.                            060927MA
+034100D     DISPLAY "X4R2 BAL-EXTERNAL: [" BAL-EXTERNAL "]".            060927MA
+034200     GOBACK.                                                      060927MA
+034300 999-ABORT.                                                       060919MA
+034400     DISPLAY "*** X4R2V18 TERMINATED ABNORMALLY ***"              060919MA
+034500     GOBACK.                                                      060919MA
+034600 END PROGRAM X4R2V18.                                             060925MA
+034700$PAGE "THIS PROGRAM ---> X8E4V18 "                                060925MA
+034800*     |           |           |           |           |           060925MA
+034900*     |           |           |           |           |           060925MA
+035000*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      060925MA
+035100* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       060925MA
+035200*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        060925MA
+035300*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         060925MA
+035400*    \|/         \|/         \|/         \|/         \|/          060925MA
+035500*     Y           Y           Y           Y           Y           060925MA
+035600$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,OPTFEATURES=LINKALIGNED       060925MA
+035700 IDENTIFICATION DIVISION.                                         060925MA
+035800 PROGRAM-ID. X8E4V18.                                             060925MA
+035900 ENVIRONMENT DIVISION.                                            061002MA
+036110 CONFIGURATION SECTION.                                           061002MA
+036120 SOURCE-COMPUTER. HP3000.                                         061002MA
+036130 OBJECT-COMPUTER. HP3000.                                         061002MA
+036140 DATA DIVISION.                                                   061002MA
+036150 WORKING-STORAGE SECTION.                                         061002MA
+036160 01  ERR             PIC S9(4)    COMP.                           060925MA
+036200 01  STATUS-WORD     PIC S9(9) COMP VALUE 0.                      060925MA
+036300 01  MYSTAT REDEFINES STATUS-WORD.                                060925MA
+036400     02 STATUS-WORD1     PIC S9(4)    COMP.                       060925MA
+036500     02 STATUS-WORD2     PIC S9(4)    COMP.                       060925MA
+036600 01  EXCEPTIONS      PIC S9(4)    COMP.                           060925MA
+036700 01  BAL-IEEE        PIC X(8).                                    060925MA
+036800 01  BAL-EXTERNAL    PIC X(42).                                   060925MA
+036900 01  BAL-EDITED PIC ------------9.9999.                           060925MA
+037000                                                                  060925MA
+037100 01  BAL-TOTAL       PIC S9(14)V9999        VALUE 0.              060925MA
+037200 01 NUMDEC                 PIC S9(4) COMP.                        060925MA
+037300 01 NUMERR                 PIC S9(4) COMP.                        060925MA
+037400 01  Char42.                                                      060925MA
+037500     02  X1                PIC X  OCCURS 42 TIMES.                060925MA
+037600 01  Num18                 Pic S9(18).                            060925MA
+037700 LINKAGE SECTION.                                                 060925MA
+037800 01 X8E4V18-Dataarea.                                             060925MA
+037900    02 X8E4V18-Reale4    Pic X(8).                                060925MA
+038000    02 X8E4V18-Return.                                            060925MA
+038100       05  X8E4V18-Int     Pic S9(18) Comp.                       060925MA
+038200       05  X8E4V18-Num1    Pic X(42).                             060925MA
+038300       05  X8E4V18-Dec     Pic S9(4) Comp.                        060925MA
+038400       05  X8E4V18-Err     Pic S9(4) Comp.                        060925MA
+038500       05  X8E4V18-Nbr     Pic S9(14)V9999.                       060925MA
+038600       05  X8E4V18-Edited  Pic -------------9.9999.               060925MA
+038700                                                                  060925MA
+038800 PROCEDURE DIVISION USING X8E4V18-DataArea.                       060925MA
+038900 100-BEGIN.                                                       060925MA
+039000     INITIALIZE X8E4V18-Return.                                   060925MA
+039100     PERFORM 200-CONVERT.                                         060925MA
+039200     GOBACK.                                                      060925MA
+039300 200-CONVERT.                                                     060925MA
+039400*    Convert from 64-bit HP-3000 format to                        060925MA
+039500*    64-bit IEEE format.                                          060925MA
+039600     CALL INTRINSIC "HPINEXT" USING                               061002MA
+039710         X8E4V18-Reale4, -2, 42, 18, -3, 0, BAL-EXTERNAL, ERR     060927MA
+039800     IF ERR NOT = 0                                               060925MA
+039900         DISPLAY "HPINEXT PROBLEM"                                060925MA
+040000         GO 999-ABORT                                             060925MA
+040100     END-IF                                                       060925MA
+040200     Initialize Num18 NumDec NumErr.                              060925MA
+040300     Call "NUMGET42" Using BAL-EXTERNAL Num18 NumDec NumErr.      060925MA
+040400     Compute X8E4V18-NBR =  Num18 / ( 10 ** NUMDEC ).             060925MA
+040500     MOVE BAL-EXTERNAL TO X8E4V18-NUM1                            060927MA
+040600     MOVE X8E4V18-NBR  TO X8E4V18-INT.                            060927MA
+040700     MOVE X8E4V18-NBR  TO X8E4V18-EDITED.                         060927MA
+040800     MOVE NumDec       TO X8E4V18-DEC.                            060927MA
+040900     MOVE NumErr       TO X8E4V18-ERR.                            060927MA
+041000D     DISPLAY "X8E4 BAL-EXTERNAL: [" BAL-EXTERNAL "]".            060927MA
+041100 999-ABORT.                                                       060925MA
+041200     DISPLAY "*** X8E4V18 TERMINATED ABNORMALLY ***"              060925MA
+041300     GOBACK.                                                      060925MA
+041400 END PROGRAM X8E4V18.                                             060925MA
+041500$PAGE "THIS PROGRAM ---> X4E2V18 "                                060925MA
+041600*     |           |           |           |           |           060925MA
+041700*     |           |           |           |           |           060925MA
+041800*>>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<< >>>>\|/<<<<      060925MA
+041900* >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<   >>>\|/<<<       060925MA
+042000*  >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<     >>\|/<<        060925MA
+042100*   >\|/<       >\|/<       >\|/<       >\|/<       >\|/<         060925MA
+042200*    \|/         \|/         \|/         \|/         \|/          060925MA
+042300*     Y           Y           Y           Y           Y           060925MA
+042400$CONTROL RLFILE,LIST,DYNAMIC,BOUNDS,OPTFEATURES=LINKALIGNED       060925MA
+042500 IDENTIFICATION DIVISION.                                         060925MA
+042600 PROGRAM-ID. X4E2V18.                                             060925MA
+042700 ENVIRONMENT DIVISION.                                            061002MA
+042910 CONFIGURATION SECTION.                                           061002MA
+042920 SOURCE-COMPUTER. HP3000.                                         061002MA
+042930 OBJECT-COMPUTER. HP3000.                                         061002MA
+042940 DATA DIVISION.                                                   061002MA
+042950 WORKING-STORAGE SECTION.                                         061002MA
+042960 01  ERR             PIC S9(4)    COMP.                           060925MA
+043000 01  STATUS-WORD     PIC S9(9) COMP VALUE 0.                      060925MA
+043100 01  MYSTAT REDEFINES STATUS-WORD.                                060925MA
+043200     02 STATUS-WORD1     PIC S9(4)    COMP.                       060925MA
+043300     02 STATUS-WORD2     PIC S9(4)    COMP.                       060925MA
+043400 01  EXCEPTIONS      PIC S9(4)    COMP.                           060925MA
+043500 01  BAL-IEEE        PIC X(8).                                    060925MA
+043600 01  BAL-EXTERNAL    PIC X(42).                                   060925MA
+043700 01  BAL-EDITED PIC ------------9.9999.                           060925MA
+043800                                                                  060925MA
+043900 01  BAL-TOTAL       PIC S9(14)V9999        VALUE 0.              060925MA
+044000 01 NUMDEC                 PIC S9(4) COMP.                        060925MA
+044100 01 NUMERR                 PIC S9(4) COMP.                        060925MA
+044200 01  Char42.                                                      060925MA
+044300     02  X1                PIC X  OCCURS 42 TIMES.                060925MA
+044400 01  Num18                 Pic S9(18).                            060925MA
+044500 LINKAGE SECTION.                                                 060925MA
+044600 01 X4E2V18-Dataarea.                                             060927MA
+044700    02 X4E2V18-Reale2   Pic X(4).                                 060927MA
+044800    02 X4E2V18-Return.                                            060927MA
+044900       05  X4E2V18-Int     Pic S9(18) Comp.                       060927MA
+045000       05  X4E2V18-Num1    Pic X(42).                             060927MA
+045100       05  X4E2V18-Dec     Pic S9(4) Comp.                        060927MA
+045200       05  X4E2V18-Err     Pic S9(4) Comp.                        060927MA
+045300       05  X4E2V18-Nbr     Pic S9(14)V9999.                       060927MA
+045400       05  X4E2V18-Edited  Pic -------------9.9999.               060927MA
+045500                                                                  060927MA
+045600 PROCEDURE DIVISION USING X4E2V18-DataArea.                       060925MA
+045700 100-BEGIN.                                                       060925MA
+045800     INITIALIZE X4E2V18-Return.                                   060925MA
+045900     PERFORM 200-CONVERT.                                         060925MA
+046000     GOBACK.                                                      060925MA
+046100 200-CONVERT.                                                     060925MA
+046200*    Convert from 32-bit HP-3000 format to                        060925MA
+046300*    64-bit IEEE format.                                          060925MA
+046400     CALL INTRINSIC "HPINEXT" USING                               060925MA
+046500         X4E2V18-REALE2, 1, 42, 18, -3, 0, BAL-EXTERNAL, ERR      060927MA
+046600     IF ERR NOT = 0                                               060925MA
+046700         DISPLAY "HPINEXT PROBLEM"                                060925MA
+046800         GO 999-ABORT                                             060925MA
+046900     END-IF                                                       060925MA
+047000     Initialize Num18 NumDec NumErr.                              060925MA
+047100     Call "NUMGET42" Using BAL-EXTERNAL Num18 NumDec NumErr.      060925MA
+047200     Compute X4E2V18-NBR =  Num18 / ( 10 ** NUMDEC ).             060927MA
+047300     MOVE BAL-EXTERNAL TO X4E2V18-NUM1.                           060927MA
+047400     MOVE X4E2V18-NBR  TO X4E2V18-INT.                            060927MA
+047500     MOVE X4E2V18-NBR  TO X4E2V18-EDITED.                         060927MA
+047600     MOVE NumDec       TO X4E2V18-DEC.                            060927MA
+047700     MOVE NumErr       TO X4E2V18-ERR.                            060927MA
+047800D     DISPLAY "X4E2 BAL-EXTERNAL: [" BAL-EXTERNAL "]".            060927MA
+047900 999-ABORT.                                                       060925MA
+048000     DISPLAY "*** X4E2V18 TERMINATED ABNORMALLY ***"              060925MA
+048100     GOBACK.                                                      060925MA
+048200 END PROGRAM X4E2V18.                                             060925MA

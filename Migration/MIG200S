@@ -1,0 +1,565 @@
+000100$CONTROL LIST,DYNAMIC,BOUNDS, POST85                                      
+000200 IDENTIFICATION DIVISION.                                                 
+000300 PROGRAM-ID. MIG200.                                                      
+000400 AUTHOR.     MICHAEL ANDERSON.                                            
+000500 DATE-COMPILED.                                                           
+000600*                     COPYRIGHT 2007                                      
+000700*            J3K Solutions All rights reserved.                           
+000800*            Turbo Image Migration PREP System                            
+000900*                                                                         
+001000*                    DATABASE SCREEN                                      
+001100*                                                                         
+001200 ENVIRONMENT DIVISION.                                                    
+001300 CONFIGURATION SECTION.                                                   
+001400 SOURCE-COMPUTER. HP3000.                                                 
+001500 OBJECT-COMPUTER. HP3000.                                                 
+001600 SPECIAL-NAMES.                                                           
+001700     CONDITION-CODE IS CC.                                                
+001800$PAGE "WORKING STORAGE SECTION"                                           
+001900 DATA DIVISION.                                                           
+002000*****************************************************************         
+002100 WORKING-STORAGE SECTION.                                                 
+002200*****************************************************************         
+002300 01 COMMAND-INTRINSIC.                                                    
+002400    02 CMD                PIC X(256) VALUE SPACES.                        
+002500    02 CMDSTR             PIC X(256) VALUE SPACES.                        
+002600    02 CMDERR             PIC S9(4) COMP VALUE 0.                         
+002700    02 CMDPTR             PIC S9(4) COMP VALUE 0.                         
+002800    02 CMDPARM            PIC S9(4) COMP VALUE 0.                         
+002900    02 CMDMSG             PIC S9(4) COMP VALUE 0.                         
+003000 01 WK1-TABLE.                                                            
+003100    02 WK1IDX             PIC S9(4) COMP VALUE 0.                         
+003200    02 WK1PTR             PIC S9(4) COMP VALUE 0.                         
+003300    02 WK1CNT             PIC S9(4) COMP VALUE 0.                         
+003400    02 WK1MAX             PIC S9(4) COMP VALUE 0.                         
+003500    02 WK1-DETAIL.                                                        
+003600       05 WK1-LINES OCCURS 17 TIMES.                                      
+003700          10 WK1-DBUNIQ     PIC S9(9) COMP.                               
+003800          10 WK1-PTR        PIC X.                                        
+003900          10 WK1-BASENAME   PIC X(32).                                    
+004000          10 WK1-MBYTES     PIC ZZZ,ZZZ.                                  
+004100          10 WK1-SETS       PIC ZZZ,ZZZ.                                  
+004200          10 WK1-RECORDS    PIC ZZZ,ZZZ,ZZZ,ZZZ.                          
+004300          10 WK1-DB-MIG     PIC X(6).                                     
+004400                                                                          
+004500 01 End-of-base-Sw pic x value "0".                                       
+004600    88 End-of-base value "1".                                             
+004700 01 End-of-Data-Sw pic x value "0".                                       
+004800    88 End-of-Data value "1".                                             
+004900 01 CATIDX              PIC S9(4) COMP VALUE 0.                           
+005000 01 TBLIDX              PIC S9(4) COMP VALUE 0.                           
+005100                                                                          
+005200                                                                          
+005300 01  LINK-MONTH            PIC X(2).                                      
+005400 01  LINK-YEAR             PIC X(2).                                      
+005500 01  I                     PIC S9(4) COMP.                                
+005600 01  N                     PIC S9(4) COMP.                                
+005700 01  NUM1                  PIC X(14).                                     
+005800 01  NUM2                  PIC S9(14).                                    
+005900 01  NUMDEC                PIC S9(4) COMP.                                
+006000 01  NUMERR                PIC S9(4) COMP.                                
+006100 01  DISP-N                PIC ---9.                                      
+006200 01  DISP-DEV              PIC 999.                                       
+006300 01  WHO-LDEV              PIC S9(4) COMP.                                
+006400 01  PGTOTAL               PIC S9(4) COMP.                                
+006500 01  PGNBR                 PIC S9(4) COMP.                                
+006600 01  MBYTES                PIC S9(4) COMP.                                
+006700 01  FLD1                  PIC S9(4) COMP.                                
+006800                                                                          
+006900     COPY DsMSTR   OF J3KLIB.                                             
+007000     COPY DBMSTR   OF J3KLIB.                                             
+007100     COPY SRVMST   OF J3KLIB.                                             
+007200     COPY IMAGEEX  OF J3KLIB.                                             
+007300     COPY SWITCHES OF J3KLIB.                                             
+007400     COPY FLOWEX   OF J3KLIB.                                             
+007500     COPY APPCOM   OF J3KLIB.                                             
+007600     COPY AMSLINK  OF J3KLIB.                                             
+007700     02 SC1-BUFFER REDEFINES SCREEN-BUFFER.                               
+007800      03 SC1-HEADER.                                                      
+007900        05 SC1-SVR-NAME       PIC X(024).                                 
+008000        05 SC1-SVR-IPADDR     PIC X(016).                                 
+008100        05 SC1-SRV-DBCNT      PIC ZZ,ZZZ.                                 
+008200        05 SC1-SVR-SUSAN      PIC Z(16).                                  
+008300        05 SC1-SVR-MPEVERSION PIC X(008).                                 
+008400        05 SC1-PAGE1          PIC ZZZ.                                    
+008500        05 SC1-PAGE2          PIC ZZZ.                                    
+008600      03 SC1-DETAIL.                                                      
+008700        05 SC1-LINES OCCURS 17 TIMES.                                     
+008800           10 SC1-PTR        PIC X.                                       
+008900           10 SC1-BASENAME   PIC X(32).                                   
+009000           10 SC1-MBYTES     PIC ZZZ,ZZZ.                                 
+009100           10 SC1-SETS       PIC ZZZ,ZZZ.                                 
+009200           10 SC1-RECORDS    PIC ZZZ,ZZZ,ZZZ,ZZZ.                         
+009300           10 SC1-MIG        PIC X(6).                                    
+009400      03 FILLER             PIC X(668).                                   
+009500*****************************************************************         
+009600 COPY AMSPROC OF J3KLIB.                                                  
+009700           .                                                              
+009800 0000-BEGIN.                                                              
+009900                                                                          
+010000     IF THIS-SCREEN = "BASEDATA"                                          
+010100        PERFORM 2000-BEGIN    THRU 2999-EXIT                              
+010200        GO TO 0999-EXIT.                                                  
+010300                                                                          
+010400     MOVE "WRONGPROG        " TO NEXT-SCREEN.                             
+010500 0999-EXIT.                                                               
+010600     GO TO 9900-RETURN.                                                   
+010700******************************************************************        
+010800 2000-BEGIN.                                                              
+010900     MOVE "BASEDATA" TO NEXT-SCREEN SCREEN-NAME.                          
+011000     PERFORM 7802-MENUSCRN.                                               
+011100     PERFORM LOAD-SERVER-DATA.                                            
+011200     PERFORM LOAD-FIRSTPAGE.                                              
+011300     MOVE "1" TO DATA-CHANGED-SW.                                         
+011400      COPY AMSCALL OF J3KLIB                                              
+011500     REPLACING ==VALUE OF PROCEDURE== BY =="VSWRITE"==.                   
+011600     END-CALL.                                                            
+011700 2010-LOOP.                                                               
+011800     IF NEXT-SCREEN <> "BASEDATA"                                         
+011900        GO TO 2999-EXIT.                                                  
+012000     PERFORM WK1-TO-SC1.                                                  
+012100 2010-READ.                                                               
+012200     PERFORM SETUP-SCREEN.                                                
+012300     PERFORM 7800-READ-SCREEN.                                            
+012400                                                                          
+012500     IF TIMEOUT GO TO 2999-EXIT.                                          
+012600     IF SCREEN-KEY-PRESSED = 8                                            
+012700        MOVE "MAINMENU" TO NEXT-SCREEN                                    
+012800        GO TO 2999-EXIT.                                                  
+012900                                                                          
+013000     IF SCREEN-KEY-PRESSED = 1                                            
+013100        MOVE "SETDATA   "   TO NEXT-SCREEN                                
+013200        PERFORM SET-DB-UNIQUE                                             
+013300        IF ERRORS GO TO 2010-READ END-IF                                  
+013400        GO TO 2999-EXIT.                                                  
+013500                                                                          
+013600     IF SCREEN-KEY-PRESSED = 2                                            
+013700        PERFORM SET-DB-UNIQUE                                             
+013800        IF ERRORS GO TO 2010-READ END-IF                                  
+013900        PERFORM READY-ONE                                                 
+014000        IF ERRORS GO TO 2010-READ END-IF                                  
+014100        MOVE "READY " TO WK1-DB-MIG(WK1PTR)                               
+014200        PERFORM WK1-TO-SC1                                                
+014300        GO TO 2010-READ.                                                  
+014400                                                                          
+014500     IF SCREEN-KEY-PRESSED = 3                                            
+014600        PERFORM SET-DB-UNIQUE                                             
+014700        IF ERRORS GO TO 2010-READ END-IF                                  
+014800        PERFORM NOTREADY-ONE                                              
+014900        IF ERRORS GO TO 2010-READ END-IF                                  
+015000        MOVE SPACES TO WK1-DB-MIG(WK1PTR)                                 
+015100        PERFORM WK1-TO-SC1                                                
+015200        GO TO 2010-READ.                                                  
+015300                                                                          
+015400     IF SCREEN-KEY-PRESSED = 4                                            
+015500        PERFORM LOAD-FIRSTPAGE                                            
+015600        PERFORM WK1-TO-SC1                                                
+015700        GO TO 2010-READ.                                                  
+015800                                                                          
+015900     IF SCREEN-KEY-PRESSED = 5                                            
+016000        PERFORM LOAD-NEXTPAGE                                             
+016100        PERFORM WK1-TO-SC1                                                
+016200        GO TO 2010-READ.                                                  
+016300                                                                          
+016400     IF SCREEN-KEY-PRESSED = 7                                            
+016500        PERFORM READY-ALL                                                 
+016600        PERFORM LOAD-FIRSTPAGE                                            
+016700        PERFORM WK1-TO-SC1                                                
+016800        GO TO 2010-READ.                                                  
+016900                                                                          
+017000     IF SCREEN-KEY-PRESSED = 6                                            
+017100        PERFORM NOTREADY-ALL                                              
+017200        PERFORM LOAD-FIRSTPAGE                                            
+017300        PERFORM WK1-TO-SC1                                                
+017400        GO TO 2010-READ.                                                  
+017500                                                                          
+017600     IF EDIT-ERRORS AND SCREEN-KEY-PRESSED = 0                            
+017700         COPY AMSCALL OF J3KLIB                                           
+017800         REPLACING ==VALUE OF PROCEDURE== BY =="VSSHOWERR"==.             
+017900         END-CALL                                                         
+018000         GO TO 2010-LOOP.                                                 
+018100     IF BAD-KEY    OR SCREEN-KEY-PRESSED <> 0                             
+018200        PERFORM 7801-BAD-FUNCTION-KEY                                     
+018300        GO TO 2010-LOOP.                                                  
+018400     GO TO 2010-LOOP.                                                     
+018500 2999-EXIT.                                                               
+018600     EXIT.                                                                
+018700$PAGE "MISC. SUBROUTINES"                                                 
+018800     COPY READSCR  OF J3KLIB.                                             
+018900*---------------------------------------------------------------          
+019000 7802-MENUSCRN.                                                           
+019100     INITIALIZE SCREEN-TITLE.                                             
+019200     STRING THIS-SCREEN DELIMITED BY SPACE                                
+019300      ": Database migration review" DELIMITED BY SIZE                     
+019400     INTO SCREEN-TITLE.                                                   
+019500     COPY AMSCALL OF J3KLIB                                               
+019600      REPLACING ==VALUE OF PROCEDURE== BY =="VSINIT"==.                   
+019700      END-CALL.                                                           
+019800     MOVE "  EXIT      " TO SCREEN-FUNC-KEY(8).                           
+019900     MOVE SPACES TO SCREEN-BUFFER.                                        
+020000*---------------------------------------------------------------          
+020100$PAGE "END OF PROGRAM"                                                    
+020200*------------------------------*                                          
+020300 9000-IMAGE-ERROR.                                                        
+020400     CALL "VSCLOSE" USING SCREEN-COMMON.                                  
+020500     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+020600     MOVE "IMAGEERROR" TO NEXT-SCREEN.                                    
+020700     GO TO 9900-RETURN.                                                   
+020800 9900-RETURN.                                                             
+020900     GOBACK.                                                              
+021000*----------------------------------------------------------               
+021100 MPECMD.                                                                  
+021200     INITIALIZE CMDSTR.                                                   
+021300     PERFORM VARYING CMDPTR FROM 255 BY -1                                
+021400       UNTIL ( CMD(CMDPTR:1) <> " " )                                     
+021500          OR ( CMDPTR < 2 )                                               
+021600      CONTINUE                                                            
+021700     END-PERFORM.                                                         
+021800     MOVE CMD(1:CMDPTR) TO CMDSTR.                                        
+021900     ADD 1 TO CMDPTR.                                                     
+022000     MOVE %15 TO CMDSTR(CMDPTR:1).                                        
+022100     INITIALIZE CMDERR CMDPARM CMDMSG.                                    
+022200     CALL INTRINSIC "HPCICOMMAND"                                         
+022300          USING CMDSTR CMDERR CMDPARM CMDMSG.                             
+022400     INITIALIZE CMD.                                                      
+022500     COPY SRVMST0   OF J3KLIB.                                            
+022600     COPY SRVMST1   OF J3KLIB.                                            
+022700     COPY SRVMST2   OF J3KLIB.                                            
+022800     COPY SRVMST3   OF J3KLIB.                                            
+022900     COPY SRVMST4   OF J3KLIB.                                            
+023000     COPY SRVMST5   OF J3KLIB.                                            
+023100     COPY SRVMST6   OF J3KLIB.                                            
+023200     COPY SRVMST7   OF J3KLIB.                                            
+023300     COPY SRVMST8   OF J3KLIB.                                            
+023400     COPY DBMSTR0   OF J3KLIB.                                            
+023500     COPY DBMSTR1   OF J3KLIB.                                            
+023600     COPY DBMSTR2   OF J3KLIB.                                            
+023700     COPY DBMSTR3   OF J3KLIB.                                            
+023800     COPY DBMSTR4   OF J3KLIB.                                            
+023900     COPY DBMSTR5   OF J3KLIB.                                            
+024000     COPY DBMSTR6   OF J3KLIB.                                            
+024100     COPY DBMSTR7   OF J3KLIB.                                            
+024200     COPY DBMSTR8   OF J3KLIB.                                            
+024300     COPY DBMSTR9   OF J3KLIB.                                            
+024400                                                                          
+024500     COPY DSMSTR0   OF J3KLIB.                                            
+024600     COPY DSMSTR1   OF J3KLIB.                                            
+024700     COPY DSMSTR2   OF J3KLIB.                                            
+024800     COPY DSMSTR3   OF J3KLIB.                                            
+024900     COPY DSMSTR4   OF J3KLIB.                                            
+025000     COPY DSMSTR5   OF J3KLIB.                                            
+025100     COPY DSMSTR6   OF J3KLIB.                                            
+025200     COPY DSMSTR7   OF J3KLIB.                                            
+025300     COPY DSMSTR8   OF J3KLIB.                                            
+025400     COPY DSMSTR9   OF J3KLIB.                                            
+025500                                                                          
+025600                                                                          
+025700*---------------------------------------------------                      
+025800 LOAD-SERVER-DATA.                                                        
+025900     DISPLAY "LOAD-SERVER-DATA MIGDB=" MIGDB.                             
+026000     MOVE 1 TO SEARCH-KEY-I2.                                             
+026100     PERFORM GET-SRVMST-KEYED.                                            
+026200     IF NO-ENTRY                                                          
+026300      MOVE "THERE IS NO RECORD FOR THIS SERVER"                           
+026400        TO SCREEN-MESSAGE                                                 
+026500     ELSE                                                                 
+026600      MOVE SRVMST-SVR-NAME       TO SC1-SVR-NAME                          
+026700      MOVE SRVMST-SVR-IPADDR     TO SC1-SVR-IPADDR                        
+026800      MOVE SRVMST-SVR-DBCNT      TO SC1-SRV-DBCNT                         
+026900      MOVE SRVMST-SVR-SUSAN      TO SC1-SVR-SUSAN                         
+027000      MOVE SRVMST-SVR-MPEVERSION TO SC1-SVR-MPEVERSION.                   
+027100*---------------------------------------------------                      
+027200 LOAD-FIRSTPAGE.                                                          
+027300     MOVE 1 TO SEARCH-KEY-I2.                                             
+027400     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+027500     MOVE 1 TO PGNBR.                                                     
+027600     PERFORM FIND-DBMSTR.                                                 
+027700     IF NO-ENTRY                                                          
+027800      MOVE "THERE ARE NO DATABASES ON THIS SERVER"                        
+027900        TO SCREEN-MESSAGE                                                 
+028000     ELSE                                                                 
+028100      COMPUTE PGTOTAL                                                     
+028200       = ( ENTRIES-IN-CHAIN / 17 ) + 1                                    
+028300      END-COMPUTE                                                         
+028400      INITIALIZE WK1-TABLE                                                
+028500      MOVE 17 TO WK1MAX                                                   
+028600      PERFORM VARYING WK1PTR FROM 1 BY 1                                  
+028700        UNTIL (END-OF-CHAIN)                                              
+028800           OR ( WK1PTR > WK1MAX  )                                        
+028900       ADD 1 TO WK1CNT                                                    
+029000       PERFORM GET-DBMSTR-CHAINED                                         
+029100       IF NOT END-OF-CHAIN                                                
+029200        MOVE DBMSTR-DB-UNIQUE TO WK1-DBUNIQ(WK1PTR)                       
+029300        MOVE SPACES TO WK1-PTR(WK1PTR)                                    
+029400        MOVE DBMSTR-SQL-NAME   TO WK1-BASENAME(WK1PTR)                    
+029500        COMPUTE MBYTES                                                    
+029600          = DBMSTR-DB-BYTES / 1000000                                     
+029700        END-COMPUTE                                                       
+029800        MOVE MBYTES           TO WK1-MBYTES(WK1PTR)                       
+029900        MOVE DBMSTR-DB-SETCNT TO WK1-SETS(WK1PTR)                         
+030000        MOVE DBMSTR-DB-RECCNT TO WK1-RECORDS(WK1PTR)                      
+030100        IF DBMSTR-DB-MIG = "**"                                           
+030200         MOVE "      " TO WK1-DB-MIG(WK1PTR)                              
+030300        ELSE                                                              
+030400         MOVE "READY " TO WK1-DB-MIG(WK1PTR)                              
+030500        END-IF                                                            
+030600       END-IF                                                             
+030700      END-PERFORM.                                                        
+030800*---------------------------------------------------                      
+030900 LOAD-NEXTPAGE.                                                           
+031000     ADD 1 TO PGNBR.                                                      
+031100     INITIALIZE WK1-TABLE.                                                
+031200     MOVE 17 TO WK1MAX.                                                   
+031300     PERFORM VARYING WK1PTR FROM 1 BY 1                                   
+031400        UNTIL (END-OF-CHAIN)                                              
+031500           OR ( WK1PTR > WK1MAX  )                                        
+031600       ADD 1 TO WK1CNT                                                    
+031700       PERFORM GET-DBMSTR-CHAINED                                         
+031800       IF NOT END-OF-CHAIN                                                
+031900        MOVE DBMSTR-DB-UNIQUE TO WK1-DBUNIQ(WK1PTR)                       
+032000        MOVE SPACES TO WK1-PTR(WK1PTR)                                    
+032100        MOVE DBMSTR-SQL-NAME   TO WK1-BASENAME(WK1PTR)                    
+032200        COMPUTE MBYTES                                                    
+032300          = DBMSTR-DB-BYTES / 1000                                        
+032400        END-COMPUTE                                                       
+032500        MOVE MBYTES           TO WK1-MBYTES(WK1PTR)                       
+032600        MOVE DBMSTR-DB-SETCNT TO WK1-SETS(WK1PTR)                         
+032700        MOVE DBMSTR-DB-RECCNT TO WK1-RECORDS(WK1PTR)                      
+032800        IF DBMSTR-DB-MIG = "**"                                           
+032900         MOVE "      " TO WK1-DB-MIG(WK1PTR)                              
+033000        ELSE                                                              
+033100         MOVE "READY " TO WK1-DB-MIG(WK1PTR)                              
+033200        END-IF                                                            
+033300       END-IF                                                             
+033400      END-PERFORM.                                                        
+033500*---------------------------------------------------------                
+033600 WK1-TO-SC1.                                                              
+033700     INITIALIZE SC1-DETAIL.                                               
+033800     PERFORM VARYING WK1IDX FROM 1 BY 1                                   
+033900       UNTIL (WK1IDX > WK1CNT )                                           
+034000      MOVE SPACES                TO SC1-PTR(WK1IDX)                       
+034100      MOVE WK1-BASENAME(WK1IDX)  TO SC1-BASENAME(WK1IDX)                  
+034200      MOVE WK1-MBYTES(WK1IDX)    TO SC1-MBYTES(WK1IDX)                    
+034300      MOVE WK1-SETS(WK1IDX)      TO SC1-SETS(WK1IDX)                      
+034400      MOVE WK1-RECORDS(WK1IDX)   TO SC1-RECORDS(WK1IDX)                   
+034500      MOVE WK1-DB-MIG(WK1IDX)    TO SC1-MIG(WK1IDX)                       
+034600     END-PERFORM.                                                         
+034700     MOVE PGTOTAL TO SC1-PAGE2.                                           
+034800     MOVE PGNBR   TO SC1-PAGE1.                                           
+034900*---------------------------------------------------------                
+035000 SETUP-SCREEN.                                                            
+035100     PERFORM VARYING WK1IDX FROM 1 BY 1                                   
+035200       UNTIL WK1IDX > 17                                                  
+035300      COMPUTE FLD1 = WK1IDX * 6 + 2 END-COMPUTE                           
+035400      MOVE "NONED CHAR" TO SCREEN-FIELD-SPEC(FLD1)                        
+035500     END-PERFORM.                                                         
+035600     IF PGTOTAL = PGNBR                                                   
+035700      PERFORM VARYING WK1IDX FROM 1 BY 1                                  
+035800        UNTIL WK1IDX >= WK1CNT                                            
+035900       COMPUTE FLD1 = WK1IDX * 6 + 2 END-COMPUTE                          
+036000       MOVE "HIU O CHAR" TO SCREEN-FIELD-SPEC(FLD1)                       
+036100      END-PERFORM                                                         
+036200     ELSE                                                                 
+036300      PERFORM VARYING WK1IDX FROM 1 BY 1                                  
+036400        UNTIL WK1IDX > WK1CNT                                             
+036500       COMPUTE FLD1 = WK1IDX * 6 + 2 END-COMPUTE                          
+036600       MOVE "HIU O CHAR" TO SCREEN-FIELD-SPEC(FLD1)                       
+036700      END-PERFORM.                                                        
+036800     MOVE SPACES TO SCREEN-FUNC-KEY(4).                                   
+036900     MOVE SPACES TO SCREEN-FUNC-KEY(5).                                   
+037000     IF PGNBR > 1                                                         
+037100      MOVE " FIRST    PAGE  " TO SCREEN-FUNC-KEY(4).                      
+037200     IF PGTOTAL > PGNBR                                                   
+037300      MOVE "  NEXT    PAGE  " TO SCREEN-FUNC-KEY(5).                      
+037400*     DISPLAY "LOAD-FIRSTPAGE FINDING : ".                                
+037500*    DISPLAY "DATA-BASE-NAME (MIGDB )["                                   
+037600*     DATA-BASE-NAME (MIGDB ) "]".                                        
+037700*    DISPLAY "DBMSTR      [" DBMSTR "]"                                   
+037800*    DISPLAY "MODE-1      [" MODE-1 "]".                                  
+037900*    DISPLAY "CONDITION-WORD  [" CONDITION-WORD   "]".                    
+038000*    DISPLAY "RECORD-LENGTH   [" RECORD-LENGTH    "]".                    
+038100*    DISPLAY "RECORD-NUMBER   [" RECORD-NUMBER    "]".                    
+038200*    DISPLAY "ENTRIES-IN-CHAIN[" ENTRIES-IN-CHAIN "]".                    
+038300*    DISPLAY "PREV-RECORD-NO  [" PREV-RECORD-NO   "]".                    
+038400*    DISPLAY "NEXT-RECORD-NO  [" NEXT-RECORD-NO   "]".                    
+038500*    DISPLAY "SEARCH-ITEM [" SEARCH-ITEM "]".                             
+038600*    DISPLAY "SEARCH-KEY  [" SEARCH-KEY "]".                              
+038700                                                                          
+038800*-----------------------------------------------------------------        
+038900 SET-DB-UNIQUE.                                                           
+039000     INITIALIZE LINK-DB-UNIQUE.                                           
+039100     MOVE "0" TO ERRORS-SW.                                               
+039200     PERFORM VARYING WK1IDX FROM 1 BY 1                                   
+039300       UNTIL (WK1IDX > WK1CNT ) OR (LINK-DB-UNIQUE > 0)                   
+039400      IF SC1-PTR(WK1IDX) > SPACES                                         
+039500       MOVE WK1-DBUNIQ(WK1IDX) TO LINK-DB-UNIQUE                          
+039600       MOVE WK1IDX TO WK1PTR                                              
+039700      END-IF                                                              
+039800     END-PERFORM.                                                         
+039900     IF LINK-DB-UNIQUE = 0                                                
+040000      MOVE "1" TO ERRORS-SW                                               
+040100      MOVE "TO SHOWSETS; PUT AN 'X' NEXT TO DATABASE"                     
+040200        TO SCREEN-MESSAGE.                                                
+040300*---------------------------------------------------                      
+040400 READY-ONE.                                                               
+040500     PERFORM LOCK-DBMSTR.                                                 
+040600     MOVE LINK-DB-UNIQUE TO SEARCH-KEY-I2.                                
+040700     MOVE "DB-UNIQUE;" TO SEARCH-ITEM.                                    
+040800     MOVE 1 TO PGNBR.                                                     
+040900     PERFORM FIND-DBMSTR.                                                 
+041000     IF NO-ENTRY                                                          
+041100      MOVE "DB UNIQUE NOT FOUND"                                          
+041200        TO SCREEN-MESSAGE                                                 
+041300     ELSE                                                                 
+041400       PERFORM GET-DBMSTR-CHAINED                                         
+041500       IF NOT END-OF-CHAIN                                                
+041600        MOVE "  " TO DBMSTR-DB-MIG                                        
+041700        PERFORM UPDATE-DBMSTR.                                            
+041800     PERFORM UNLOCK-DBMSTR.                                               
+041900     PERFORM LOCK-DSMSTR.                                                 
+042900     MOVE LINK-DB-UNIQUE TO Search-Key-I2.                                
+043000     MOVE "DB-UNIQUE;" TO SEARCH-ITEM.                                    
+043100     PERFORM FIND-DSMSTR.                                                 
+043200     move "0" to End-of-Data-Sw.                                          
+043300     PERFORM VARYING TBLIDX FROM 1 BY 1                                   
+043400         Until (End-Of-Data)                                              
+043500        PERFORM GET-DSMSTR-CHAINED                                        
+043600        If End-Of-Chain move "1" to End-of-Data-Sw End-If                 
+043700        IF NOT END-OF-CHAIN                                               
+043800         IF DSMSTR-DS-TYPE(2:1) = "X"                                     
+043900          MOVE " " TO DSMSTR-DS-TYPE(2:1)                                 
+044000          PERFORM UPDATE-DSMSTR                                           
+044100         END-IF                                                           
+044200        END-IF                                                            
+044300     END-PERFORM.                                                         
+044600     PERFORM UNLOCK-DSMSTR.                                               
+044700*---------------------------------------------------                      
+044800 NOTREADY-ONE.                                                            
+044900     PERFORM LOCK-DBMSTR.                                                 
+045000     MOVE LINK-DB-UNIQUE TO SEARCH-KEY-I2.                                
+045100     MOVE "DB-UNIQUE;" TO SEARCH-ITEM.                                    
+045200     MOVE 1 TO PGNBR.                                                     
+045300     PERFORM FIND-DBMSTR.                                                 
+045400     IF NO-ENTRY                                                          
+045500      MOVE "DB UNIQUE NOT FOUND"                                          
+045600        TO SCREEN-MESSAGE                                                 
+045700     ELSE                                                                 
+045800       PERFORM GET-DBMSTR-CHAINED                                         
+045900       IF NOT END-OF-CHAIN                                                
+046000        MOVE "**" TO DBMSTR-DB-MIG                                        
+046100        PERFORM UPDATE-DBMSTR.                                            
+046200     PERFORM UNLOCK-DBMSTR.                                               
+046210     PERFORM LOCK-DSMSTR.                                                 
+046301     MOVE LINK-DB-UNIQUE TO Search-Key-I2.                                
+046302     MOVE "DB-UNIQUE;" TO SEARCH-ITEM.                                    
+046303     PERFORM FIND-DSMSTR.                                                 
+046304     move "0" to End-of-Data-Sw.                                          
+046305     PERFORM VARYING TBLIDX FROM 1 BY 1                                   
+046306         Until (End-Of-Data)                                              
+046307        PERFORM GET-DSMSTR-CHAINED                                        
+046308        If End-Of-Chain move "1" to End-of-Data-Sw End-If                 
+046309        IF NOT END-OF-CHAIN                                               
+046310         IF DSMSTR-DS-TYPE(2:1) = " "                                     
+046311          MOVE "X" TO DSMSTR-DS-TYPE(2:1)                                 
+046312          PERFORM UPDATE-DSMSTR                                           
+046313         END-IF                                                           
+046314        END-IF                                                            
+046315     END-PERFORM.                                                         
+046316     PERFORM UNLOCK-DSMSTR.                                               
+046317*---------------------------------------------------                      
+046400 READY-ALL.                                                               
+046500     PERFORM LOCK-DBMSTR.                                                 
+046600     MOVE 1 TO SEARCH-KEY-I2.                                             
+046700     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+046800     MOVE 1 TO PGNBR.                                                     
+046900     PERFORM FIND-DBMSTR.                                                 
+047000     IF NO-ENTRY                                                          
+047100      MOVE "THERE ARE NO DATABASES ON THIS SERVER"                        
+047200        TO SCREEN-MESSAGE                                                 
+047300     ELSE                                                                 
+047400      PERFORM VARYING WK1PTR FROM 1 BY 1                                  
+047500        UNTIL (END-OF-CHAIN)                                              
+047600       PERFORM GET-DBMSTR-CHAINED                                         
+047700       IF NOT END-OF-CHAIN                                                
+047800        MOVE "  " TO DBMSTR-DB-MIG                                        
+047900        PERFORM UPDATE-DBMSTR                                             
+048000       END-IF                                                             
+048100      END-PERFORM.                                                        
+048200     PERFORM UNLOCK-DBMSTR.                                               
+048300     PERFORM LOCK-DSMSTR                                                  
+048400     Move 1 To Search-Key-I2.                                             
+048500     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+048600     move "0" to End-of-base-Sw                                           
+048700     Perform Find-Dbmstr.                                                 
+048800     Perform Varying CATIDX From 1 By 1                                   
+048900       Until (End-of-base)                                                
+049000      Perform Get-Dbmstr-Chained                                          
+049100      If End-Of-Chain Move "1" to End-of-base-Sw End-If                   
+049200      If Not End-Of-Chain                                                 
+049300       MOVE DBMSTR-DB-UNIQUE TO Search-Key-I2                             
+049400       MOVE "DB-UNIQUE;" TO SEARCH-ITEM                                   
+049500       PERFORM FIND-DSMSTR                                                
+049600       move "0" to End-of-Data-Sw                                         
+049700       PERFORM VARYING TBLIDX FROM 1 BY 1                                 
+049800         Until (End-Of-Data)                                              
+049900        PERFORM GET-DSMSTR-CHAINED                                        
+050000        If End-Of-Chain move "1" to End-of-Data-Sw End-If                 
+050100        IF NOT END-OF-CHAIN                                               
+050200         IF DSMSTR-DS-TYPE(2:1) = "X"                                     
+050300          MOVE " " TO DSMSTR-DS-TYPE(2:1)                                 
+050400          PERFORM UPDATE-DSMSTR                                           
+050500         END-IF                                                           
+050600        END-IF                                                            
+050700       END-PERFORM                                                        
+050800      End-If                                                              
+050900     End-Perform.                                                         
+051000     PERFORM UNLOCK-DSMSTR.                                               
+051100*---------------------------------------------------                      
+051200 NOTREADY-ALL.                                                            
+051300     PERFORM LOCK-DBMSTR.                                                 
+051400     MOVE 1 TO SEARCH-KEY-I2.                                             
+051500     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+051600     MOVE 1 TO PGNBR.                                                     
+051700     PERFORM FIND-DBMSTR.                                                 
+051800     IF NO-ENTRY                                                          
+051900      MOVE "THERE ARE NO DATABASES ON THIS SERVER"                        
+052000        TO SCREEN-MESSAGE                                                 
+052100     ELSE                                                                 
+052200      PERFORM VARYING WK1PTR FROM 1 BY 1                                  
+052300        UNTIL (END-OF-CHAIN)                                              
+052400       PERFORM GET-DBMSTR-CHAINED                                         
+052500       IF NOT END-OF-CHAIN                                                
+052600        MOVE "**" TO DBMSTR-DB-MIG                                        
+052700        PERFORM UPDATE-DBMSTR                                             
+052800       END-IF                                                             
+052900      END-PERFORM.                                                        
+053000     PERFORM UNLOCK-DBMSTR.                                               
+053100     PERFORM LOCK-DSMSTR                                                  
+053200     Move 1 To Search-Key-I2.                                             
+053300     MOVE "SVR-UNIQUE;" TO SEARCH-ITEM.                                   
+053400     move "0" to End-of-base-Sw                                           
+053500     Perform Find-Dbmstr.                                                 
+053600     Perform Varying CATIDX From 1 By 1                                   
+053700       Until (End-of-base)                                                
+053800      Perform Get-Dbmstr-Chained                                          
+053900      If End-Of-Chain Move "1" to End-of-base-Sw End-If                   
+054000      If Not End-Of-Chain                                                 
+054100       MOVE DBMSTR-DB-UNIQUE TO Search-Key-I2                             
+054200       MOVE "DB-UNIQUE;" TO SEARCH-ITEM                                   
+054300       PERFORM FIND-DSMSTR                                                
+054400       move "0" to End-of-Data-Sw                                         
+054500       PERFORM VARYING TBLIDX FROM 1 BY 1                                 
+054600         Until (End-Of-Data)                                              
+054700        PERFORM GET-DSMSTR-CHAINED                                        
+054800        If End-Of-Chain move "1" to End-of-Data-Sw End-If                 
+054900        IF NOT END-OF-CHAIN                                               
+055000         IF DSMSTR-DS-TYPE(2:1) = " "                                     
+055100          MOVE "X" TO DSMSTR-DS-TYPE(2:1)                                 
+055200          PERFORM UPDATE-DSMSTR                                           
+055300         END-IF                                                           
+055400        END-IF                                                            
+055500       END-PERFORM                                                        
+055600      End-If                                                              
+055700     End-Perform.                                                         
+055800     PERFORM UNLOCK-DSMSTR.                                               
+055900                                                                          

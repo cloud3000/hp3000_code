@@ -1,0 +1,794 @@
+001000$CONTROL LIST,POST85                                                      
+001100 IDENTIFICATION DIVISION.                                                 
+001200 PROGRAM-ID. NETCHK.                                                      
+001300 AUTHOR.     MICHAEL ANDERSON.                                            
+001400 DATE-COMPILED.                                                           
+001500 ENVIRONMENT DIVISION.                                                    
+001600 CONFIGURATION SECTION.                                                   
+001700* SOURCE-COMPUTER. HP3000.                                        DV091019
+001800 SOURCE-COMPUTER. HP3000 WITH DEBUGGING MODE.                     DV091019
+001900 OBJECT-COMPUTER. HP3000.                                                 
+002000******************************************************************        
+002100*                                                                *        
+002200******************************************************************        
+002300*  Date     Modified By          Modification Description        *        
+002400*-------- --------------- ---------------------------------------*        
+002500*09/21/99      DJV        Changed WINDD-FNAME value statement    *        
+002600*                         from "J:\WINDD\ntreskit\security.cmd MI*        
+002700*                         NIMIZED" to "C:\WTSRV\security.cmd MINI*        
+002800*                         MIZED".                                *        
+002900*                                                                *        
+003000*                                                                *        
+003100*                                                                *        
+003200******************************************************************        
+003300 SPECIAL-NAMES.                                                           
+003400     CONDITION-CODE IS CC.                                                
+003500 INPUT-OUTPUT SECTION.                                                    
+003600 FILE-CONTROL.                                                            
+003700     SELECT OPTIONS-FILE ASSIGN TO "OPTIONS.SECURE.SYS"                   
+003800            FILE STATUS IS OP-STATUS.                                     
+003900     SELECT NETLOG   ASSIGN USING LOG-FILE                                
+004000            FILE STATUS IS NETLOG-STATUS.                                 
+004100*****************************************************************         
+004200$PAGE                                                                     
+004300 DATA DIVISION.                                                           
+004400 FILE SECTION.                                                            
+004500 FD  OPTIONS-FILE.                                                        
+004600                                                                          
+004700 01  OPTIONS-DATA.                                                        
+004800     03  OP-TEXT.                                                         
+004900         05  OP-IP-BEG                PIC X(20).                          
+005000         05  OP-IP-END                PIC X(20).                          
+005100         05  OP-OPTION                PIC X(10).                          
+005200         05  OP-ERROR                 PIC X(05).                          
+005300         05  FILLER                   PIC X(25).                          
+005400                                                                          
+005500 FD  NETLOG.                                                              
+005600                                                                          
+005700 01  NETLOG-DATA.                                                         
+005800     03  NL-STATUS                    PIC X(6).                           
+005900     03  NL-ERR                       PIC 9(5)B.                          
+006000     03  NL-USER-NAME                 PIC X(9).                           
+006100     03  NL-ACCT-NAME                 PIC X(9).                           
+006200     03  NL-IP-ADDRESS                PIC X(16).                          
+006300     03  NL-DATE                      PIC X(9).                           
+006400     03  NL-TIME                      PIC X(7).                           
+006500     03  NL-SESSION                   PIC X(18).                          
+006600$PAGE                                                                     
+006700 WORKING-STORAGE SECTION.                                                 
+006800 01  DATA-BASE-COMMON EXTERNAL.                                           
+006900     02  DB-NUMS.                                                         
+007000         03  DB-NUM            PIC S9(4) COMP OCCURS 100.                 
+007100     02  FILLER REDEFINES DB-NUMS.                                        
+007200         03  SECDB             PIC S9(4) COMP.                            
+007300         03  FILLER            PIC S9(4) COMP OCCURS 99.                  
+007400     02  STATUS-AREA.                                                     
+007500         03  CONDITION-WORD    PIC S9(4) COMP.                            
+007600             88  NO-IMAGE-ERRORS         VALUE 0.                         
+007700             88  IMAGE-ERRORS  VALUES ARE -9999 THRU -1,                  
+007800-                                          1 THRU  9999.                  
+007900             88  END-OF-FILE             VALUE 11.                        
+008000             88  BEG-OF-FILE             VALUE 12.                        
+008100             88  BEG-OF-CHAIN            VALUE 14.                        
+008200             88  END-OF-CHAIN            VALUE 15.                        
+008300             88  NO-ENTRY                VALUE 17.                        
+008400         03  RECORD-LENGTH     PIC S9(4) COMP.                            
+008500         03  RECORD-NUMBER     PIC S9(9) COMP.                            
+008600         03  ENTRIES-IN-CHAIN  PIC S9(9) COMP.                            
+008700         03  PREV-RECORD-NO    PIC S9(9) COMP.                            
+008800         03  NEXT-RECORD-NO    PIC S9(9) COMP.                            
+008900 01  DB-MISC.                                                             
+009000     02  RE-READ           PIC S9(4) COMP VALUE 1.                        
+009100     02  SERIAL            PIC S9(4) COMP VALUE 2.                        
+009200     02  BACKWARD          PIC S9(4) COMP VALUE 3.                        
+009300     02  DIRECT            PIC S9(4) COMP VALUE 4.                        
+009400     02  CHAINED           PIC S9(4) COMP VALUE 5.                        
+009500     02  BACK-CHAINED      PIC S9(4) COMP VALUE 6.                        
+009600     02  KEYED             PIC S9(4) COMP VALUE 7.                        
+009700     02  MODE-1            PIC S9(4) COMP VALUE 1.                        
+009800     02  MODE-3            PIC S9(4) COMP VALUE 3.                        
+009900     02  MODE-4            PIC S9(4) COMP VALUE 4.                        
+010000     02  MODE-5            PIC S9(4) COMP VALUE 5.                        
+010100     02  MODE-N            PIC S9(4) COMP.                                
+010200     02  NULL-ITEM         PIC XX VALUE "; ".                             
+010300     02  ALL-ITEMS         PIC XX VALUE "@;".                             
+010400     02  IREAD-LEN         PIC S9(4) COMP.                                
+010500     02  SEARCH-ITEM       PIC X(18).                                     
+010600     02  SEARCH-KEY.                                                      
+010700         03  SEARCH-KEY-I2 PIC S9(9) COMP.                                
+010800         03  FILLER        PIC X(36).                                     
+010900     02  FILLER REDEFINES SEARCH-KEY.                                     
+011000         03  SEARCH-KEY-I1 PIC S9(4) COMP.                                
+011100         03  FILLER        PIC X(38).                                     
+011200                                                                          
+011300*------------------------------*                                          
+011400                                                                          
+011500 01  I                                PIC S9(4) COMP.                     
+011600 01  X                                PIC S9(4) COMP.                     
+011700 01  Y                                PIC S9(4) COMP.                     
+011800 01  J                                PIC S9(4) COMP.                     
+011900 01  K                                PIC S9(4) COMP.                     
+012000 01  X1                               PIC S9(9) COMP VALUE ZERO.  DV091021
+012100 01  10-SECONDS                       PIC S9(4) COMP VALUE 1000.          
+012200 01 DISP-94                           PIC -----9 VALUE ZERO.              
+012300 01 OCTET-PTR                         PIC S9(4) COMP VALUE 0.             
+012400 01 DOT-POINTER                       PIC S9(4) COMP VALUE 0.             
+012500 01 NUM1                              PIC X(14) VALUE SPACES.             
+012600 01 NUM2                              PIC 9(14) VALUE ZERO.               
+012700 01 NUMDEC                            PIC S9(4) COMP VALUE 0.             
+012800 01 NUMERR                            PIC S9(4) COMP VALUE 0.             
+012900 01 X80                               PIC X(80) VALUE SPACES.             
+013000 01 X80LEN                         PIC S9(4) COMP VALUE 0.                
+013100 01 IP-ADDRESS                        PIC X(20) VALUE SPACES.             
+013200 01 IP-FROM-FIREWALL                  PIC X(20) VALUE SPACES.             
+013300 01 IP-LDEV                           PIC 9(4)  VALUE ZERO.               
+013400 01 RETURN-ERROR                      PIC S9(4) COMP VALUE 0.             
+013500 01 CONNTYPE                          PIC X VALUE SPACE.                  
+013600    88  SERIAL-CONNECTION VALUE "S".                                      
+013700    88  NETWORK-CONNECTION VALUE "N".                                     
+013800                                                                          
+013900 01 DBNAME        PIC X(28) VALUE "  SECDB.SECURE.SYS;".                  
+014000 01 DBNAME2       PIC X(28) VALUE "  SECDB2.SECURE.SYS;".                 
+014100 01 DBPASS        PIC X(16) VALUE SPACES.                                 
+014200 01 TIWDEV               PIC X(8)   VALUE "DEVICES;".                     
+014300 01 TIWDEV-BUFFER.                                                        
+014400    02 TIWDEV-LDEV             PIC X(4).                                  
+014500    02 TIWDEV-ASSODEV          PIC X(4).                                  
+014600    02 TIWDEV-DEVICENAME       PIC X(8).                                  
+014700    02 TIWDEV-LOCCODE          PIC X(2).                                  
+014800    02 TIWDEV-INSTALLSITE      PIC X(32).                                 
+014900    02 TIWDEV-RESPUSER         PIC X(16).                                 
+015000    02 TIWDEV-DEVTYPE          PIC X(4).                                  
+015100    02 TIWDEV-DEVACTDATE       PIC X(6).                                  
+015200    02 TIWDEV-MPEACDFLAG       PIC X(2).                                  
+015300    02 TIWDEV-LOGONID          PIC X(18).                                 
+015400    02 TIWDEV-TIMEOUT          PIC X(2).                                  
+015500 01 USERS                PIC X(6)   VALUE "USERS;".                       
+015600 01 USERS-BUFF.                                                           
+015700    02 USERS-USERNAME         PIC X(16).                                  
+015800    02 USERS-FULLNAME         PIC X(30).                                  
+015900    02 USERS-USERTITLE        PIC X(16).                                  
+016000    02 USERS-USERHOMEDEV      PIC X(4).                                   
+016100    02 USERS-USERPHONE        PIC X(20).                                  
+016200 01 PASSWORDS            PIC X(10)   VALUE "PASSWORDS;".                  
+016300 01 PASS-BUFF.                                                            
+016400    02 PASS-USER-PASS        PIC X(24).                                   
+016500    02 PASS-PASSWORD         PIC X(8).                                    
+016600    02 PASS-USERNAME         PIC X(16).                                   
+016700    02 PASS-DEVICETABLE      PIC X(4)                                     
+016800                         OCCURS 30.                                       
+016900 01 HPCIVARNAME                       PIC X(20) VALUE %0.                 
+017000 01 HPCIVARVAL                        PIC X(20) VALUE SPACES.             
+017100 01 HPCIVARSTAT                       PIC S9(9) COMP VALUE 0.             
+017200 01 WRQ-COMMAND.                                                          
+017300    02 PIC X VALUE %33.                                                   
+017400    02 PIC XXX VALUE "&oF".                                               
+017500                                                                          
+017600 01 WINDD-EXEC.                                                           
+017700    02 WINDD-FNAME                    PIC X(42) VALUE                     
+017800       "C:\WTSRV\security.cmd MINIMIZED ".                                
+017900*******"J:\WINDD\ntreskit\security.cmd MINIMIZED ".                       
+018000 01 WINDD-FTPNAME                     PIC X(14) VALUE                     
+018100    "U:\reflect.sec".                                                     
+018200 01  OP-STATUS                        PIC XX.                             
+018300 01  NETLOG-STATUS                    PIC XX.                             
+018400 01  SESSION-NAME                     PIC X(16) VALUE SPACES.             
+018500 01  PASSWORD                         PIC X(8) VALUE SPACES.              
+018600 01  NT-USERNAME                      PIC X(16) VALUE SPACES.             
+018700 01  MPE-LOGONID                      PIC X(18) VALUE SPACES.             
+018800 01  NT-PASSWORD                      PIC X(8) VALUE SPACES.              
+018900                                                                          
+019000 01  AM-OP-FLAG                       PIC X.                              
+019100     88  AM-OP                        VALUE "Y".                          
+019200 01  AM-TELNET-FLAG                   PIC X.                              
+019300     88  AM-TELNET                    VALUE "Y".                          
+019400 01  EOF-OP-PARM-FLAG                 PIC X.                              
+019500     88  EOF-OP-PARM                  VALUE "Y".                          
+019600 01  ZERO-OK-FLAG                     PIC X.                              
+019700     88  ZERO-OK                      VALUE "Y".                          
+019800 01  CHECK-IP-DATA-FLAG               PIC X.                              
+019900     88  CHECK-IP-DATA                VALUE "Y".                          
+020000 01  END-OF-OCTET-FLAG                PIC X.                              
+020100     88  END-OF-OCTET                 VALUE "Y".                          
+020200 01  END-OF-NUM-FLAG                  PIC X.                              
+020300     88  END-OF-NUM                   VALUE "Y".                          
+020400 01  ACCESS-DETERMINED-FLAG           PIC X.                              
+020500     88  ACCESS-DETERMINED            VALUES "A", "D".                    
+020600     88  ACCESS-ALLOWED               VALUE  "A".                         
+020700     88  ACCESS-DENIED                VALUE  "D".                         
+020800                                                                          
+020900 01  USER-NAME                     PIC X(8).                              
+021000 01  ACCT-NAME                     PIC X(8).                              
+021100                                                                          
+021200 01  DATE-D                        PIC X(6).                              
+021300 01  TIME-D                        PIC X(8).                              
+021400 01  ERR-D                         PIC Z(4)9.                             
+021500                                                                          
+021600 01  DEC                           PIC 999.                               
+021700                                                                          
+021800 01  DEC-X                         PIC 999.                               
+021900                                                                          
+022000 01  RP-INFO-STRING                   PIC X(80).                          
+022100 01  RP-INFO-STRING-LEN               PIC S9(4) COMP.                     
+022200 01  RP-PARM                          PIC S9(4) COMP.                     
+022300     88  SHOW-IP                      VALUE 1, 3.                         
+022400     88  SHOW-STATUS                  VALUE 2, 3.                         
+022500 01  RP-ERROR                         PIC S9(4) COMP.                     
+022600                                                                          
+022700 01  CMD-STR                       PIC X(272).                            
+022800 01  E1                            PIC S9(4) COMP VALUE 0.                
+022900 01  E2                            PIC S9(4) COMP VALUE 0.                
+023000 01  CMD-TEXT                      PIC X(72).                             
+023100 01  CMD-ERROR                     PIC S9(4) COMP.                        
+023200 01  CMD-ERROR-PARM                PIC S9(4) COMP.                        
+023300 01  ERR-JCW                       PIC X(40).                             
+023400 01  IP-VAR                        PIC X(40).                             
+023500 01  DEFAULT                       PIC X.                                 
+023600 01  DEFAULT-ERROR                 PIC S9(4) COMP.                        
+023700 01  LOG-CONSOLE                   PIC X.                                 
+023800 01  LOG-FILE                      PIC X(40).                             
+023900 01  LOG-DETAIL                    PIC X(10).                             
+024000                                                                          
+024100 01  IP-ERR                        PIC S9(4) COMP.                        
+024200 01  ERROR-CODE                    PIC S9(4) COMP.                        
+024300 01  FIREWALL-SW                   PIC X(1) VALUE "0".                    
+024400     88 FROM-FIREWALL VALUE "1".                                          
+024410                                                                          
+024500 01 FIREWALL-TABLE.                                                       
+024600    02 FTIDX      PIC S9(4) COMP VALUE 0.                                 
+024700    02 FTPTR      PIC S9(4) COMP VALUE 0.                                 
+024800    02 FTCNT      PIC S9(4) COMP VALUE 0.                                 
+024900    02 FTMAX      PIC S9(4) COMP VALUE 64.                                
+025000    02 FT-ENTRIES VALUE SPACES.                                           
+025100       05 FT-ENTRY OCCURS 64 TIMES.                                       
+025200          10 FT-IP-ADDRESS PIC X(16).                                     
+025300                                                                          
+025400 01 FIREWALLS                  Pic X(16) VALUE "FIREWALLS;".              
+025500 01 FIREWALLS-BUFFER VALUE SPACES.                                        
+025600    02 FB-FIREWALL-ID          Pic X(12).                                 
+025700    02 FB-FIREWALL-DESCR       Pic X(30).                                 
+025800    02 FB-FIREWALL-IP          Pic X(16).                                 
+025900    02 FB-FIREWALL-MAC         Pic X(64).                                 
+026000    02 FB-LAST-TIME            Pic X(16).                                 
+026100    02 FB-LAST-USERNAME        Pic X(16).                                 
+026200                                                                          
+026300 01  IP-MAX                        PIC S9(4) COMP.                        
+026400 01  IP-TABLE.                                                            
+026500     03  IP-INFO                   OCCURS 500 TIMES.                      
+026600         05  IP-BEG-ADDRESS        PIC X(16).                             
+026700         05  IP-END-ADDRESS        PIC X(16).                             
+026800         05  IP-ACCESS             PIC X.                                 
+026900         05  IP-ERROR              PIC S9(4) COMP.                        
+027000                                                                          
+027100 01  DISPLAY-ACCESS                PIC X(06).                             
+027200 01  DISPLAY-ERROR                 PIC Z(4)9.                             
+027300                                                                          
+027400$PAGE                                                                     
+027500 PROCEDURE DIVISION.                                                      
+027600 1000-MAIN-LOGIC.                                                         
+027700D    DISPLAY "NETCHK/1000-MAIN-LOGIC".                                    
+027800                                                                          
+027900     MOVE "D"                   TO ACCESS-DETERMINED-FLAG                 
+028000     MOVE 99                    TO IP-ERR.                                
+028100     INITIALIZE USER-NAME ACCT-NAME MPE-LOGONID.                          
+028200     CALL INTRINSIC "WHO"                                                 
+028300          USING \\ \\ \\ USER-NAME \\ ACCT-NAME \\ \\.                    
+028400                                                                          
+028500     STRING USER-NAME DELIMITED BY SPACE                                  
+028600            "." DELIMITED BY SIZE                                         
+028700            ACCT-NAME DELIMITED BY SPACE                                  
+028800      INTO MPE-LOGONID.                                                   
+028900******************************************************************        
+029000*    the purpose of this call to tiwsdev is to capture the       *        
+029100*    contents of the HPREMIPADDR variable before it is changed   *        
+029200*    by a data base open of a data base on the HPUX machine.     *        
+029300*    once the data base open is performed, the HPREMIPADDR       *        
+029400*    variable is changed to the ip address of the HPUX machine.  *        
+029500*                                                                *        
+029600D    DISPLAY "NETCHK/MAKING FIRST CALL TO TIWSDEV".                       
+029700     CALL "TIWSDEV" USING IP-LDEV CONNTYPE RETURN-ERROR.                  
+029800     IF RETURN-ERROR NOT = 0                                              
+029900        DISPLAY "ERROR CALLING TIWSDEV"                                   
+030000        DISPLAY "ERROR CALLING TIWSDEV" UPON CONSOLE                      
+030100        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+030200        IF RETURN-ERROR < 0                                               
+030300           DISPLAY "IMAGE ERROR IS SUSPECTED"                             
+030400           DISPLAY "IMAGE ERROR IS SUSPECTED" UPON CONSOLE                
+030500           MOVE 4 TO IP-ERR                                               
+030600        ELSE                                                              
+030700           DISPLAY "NETCHK/(A) IP address may not be setup"               
+030800           DISPLAY "NETCHK/(A) IP address may not be setup"               
+030900                                                     UPON CONSOLE         
+031000           MOVE 5 TO IP-ERR                                               
+031100        END-IF                                                            
+031200        PERFORM 5000-OUTPUT-STATUS                                        
+031300        GO TO END-OF-PROGRAM                                              
+031400     END-IF.                                                              
+031500*                                                                *        
+031600******************************************************************        
+031700D    DISPLAY "NETCHK/AFTER FIRST CALL TO TIWSDEV".                        
+031800D    DISPLAY "NETCHK/IP-LDEV = " IP-LDEV.                                 
+031900D    DISPLAY "NETCHK/CONNTYPE = " CONNTYPE.                               
+032000D    DISPLAY "RETURN-ERROR = " RETURN-ERROR.                              
+032100     PERFORM 1000-GET-RUN-PARMS.                                          
+032200     PERFORM 1010-GET-IP-ADDRESS.                                         
+032300     INITIALIZE DBPASS.                                                   
+032400     STRING %101 %104 %101 %115 ";"                                       
+032500       DELIMITED BY SIZE INTO DBPASS.                                     
+032600     CALL "DBOPEN" USING DBNAME DBPASS MODE-5 STATUS-AREA.                
+032700     IF IMAGE-ERRORS                                                      
+032800        DISPLAY "NETCHK; CAN'T OPEN SECDB" UPON CONSOLE                   
+032900        MOVE CONDITION-WORD TO DISP-94                                    
+033000        DISPLAY "DBOPEN ERROR " DISP-94 UPON CONSOLE                      
+033100        GO TO END-OF-PROGRAM.                                             
+033200     IF IP-ADDRESS > SPACES                                               
+033300        PERFORM 2000-PROCESS-OPTIONS                                      
+033400        PERFORM 3000-CHECK-ACCESS                                         
+033500        IF SHOW-IP                                                        
+033600           DISPLAY "Your IP address: " IP-ADDRESS                         
+033700        END-IF                                                            
+033800        IF SHOW-STATUS                                                    
+033900           PERFORM 4000-DISPLAY-STATUS.                                   
+034000                                                                          
+034100     PERFORM 5000-OUTPUT-STATUS.                                          
+034200                                                                          
+034300     GO TO END-OF-PROGRAM.                                                
+034400$PAGE                                                                     
+034500*****************************************************************         
+034600* SUBROUTINE SECTION                                                      
+034700*---------------------------------------------------------------          
+034800 1000-GET-RUN-PARMS.                                                      
+034900D    DISPLAY "NETCHK/1000-GET-RUN-PARMS".                                 
+035000     INITIALIZE RP-INFO-STRING RP-PARM.                                   
+035100     MOVE 80 TO RP-INFO-STRING-LEN.                                       
+035200     CALL INTRINSIC "GETINFO" USING RP-INFO-STRING                        
+035300       RP-INFO-STRING-LEN RP-PARM GIVING RP-ERROR.                        
+035400D     DISPLAY "NETCHK/RP-INFO-STRING = " RP-INFO-STRING.                  
+035500D     DISPLAY "NETCHK/RP-INFO-STRING-LEN = " RP-INFO-STRING-LEN.          
+035600D     DISPLAY "NETCHK/RP-PARM = " RP-PARM.                                
+035700D     DISPLAY "NETCHK/RP-ERROR = " RP-ERROR.                              
+035800*---------------------------------------------------------------          
+035900 1010-GET-IP-ADDRESS.                                                     
+036000D     DISPLAY "NETCHK/1010-GET-IP-ADDRESS".                               
+036100     STRING "HPREMIPADDR" DELIMITED BY SIZE INTO HPCIVARNAME.             
+036200     CALL INTRINSIC "HPCIGETVAR" USING HPCIVARNAME HPCIVARSTAT            
+036300                                    \2\ HPCIVARVAL.                       
+036400     MOVE HPCIVARVAL TO IP-ADDRESS.                                       
+036500*---------------------------------------------------------------          
+036600 1011-GET-REAL-IP.                                                        
+036700     INITIALIZE CMD-STR E1 E2.                                            
+036800     STRING "SETVAR INTERNET_ADDR '" DELIMITED BY SIZE                    
+036900      IP-FROM-FIREWALL DELIMITED BY " "                                   
+037000      "'" %15 DELIMITED BY SIZE INTO CMD-STR.                             
+037100     PERFORM 7000-CMD-STR.                                                
+037200     MOVE IP-FROM-FIREWALL TO IP-ADDRESS.                                 
+037300D     DISPLAY "NETCHK/IP-ADDRESS = " IP-ADDRESS.                          
+037400*---------------------------------------------------------------          
+037500 1011-GET-NTIP-ADDRESS.                                                   
+037600     INITIALIZE HPCIVARNAME HPCIVARSTAT HPCIVARVAL.                       
+037700     STRING "TIW_NTIPADDR"                                                
+037800      DELIMITED BY SIZE INTO HPCIVARNAME.                                 
+037900     CALL INTRINSIC "HPCIGETVAR" USING HPCIVARNAME HPCIVARSTAT            
+038000                                    \2\ HPCIVARVAL.                       
+038100     MOVE HPCIVARVAL TO IP-ADDRESS.                                       
+038200D     DISPLAY "NETCHK/IP-ADDRESS = " IP-ADDRESS.                          
+038300*---------------------------------------------------------------          
+038400 2000-PROCESS-OPTIONS.                                                    
+038500D     DISPLAY "NETCHK/2000-PROCESS-OPTIONS".                              
+038600     MOVE ZERO                        TO IP-MAX.                          
+038700                                                                          
+038800     OPEN INPUT OPTIONS-FILE.                                             
+038900     IF OP-STATUS  = "00"                                                 
+039000        MOVE "vterr"                  TO ERR-JCW                          
+039100        MOVE "ipaddr"                 TO IP-VAR                           
+039200        MOVE "NETCHKLG.SECURE.SYS"    TO LOG-FILE                         
+039300        MOVE "Y"                      TO LOG-CONSOLE                      
+039400        MOVE "A"                      TO DEFAULT                          
+039500        MOVE "E"                      TO LOG-DETAIL                       
+039600        MOVE "Y"                      TO CHECK-IP-DATA-FLAG               
+039700        MOVE "N"                      TO EOF-OP-PARM-FLAG                 
+039800        PERFORM UNTIL EOF-OP-PARM                                         
+039900           READ OPTIONS-FILE                                              
+040000             AT END MOVE "Y" TO EOF-OP-PARM-FLAG                          
+040100             NOT AT END  PERFORM 2030-PROCESS-OP-REC                      
+040200           END-READ                                                       
+040300        END-PERFORM                                                       
+040400        CLOSE OPTIONS-FILE                                                
+040500     ELSE                                                                 
+040600        DISPLAY "** OPTIONS open failed **!"                              
+040700        DISPLAY "** OPTIONS open failed **!"                              
+040800         UPON CONSOLE                                                     
+040900        MOVE "N"                      TO CHECK-IP-DATA-FLAG.              
+041000*---------------------------------------------------------------          
+041100 2030-PROCESS-OP-REC.                                                     
+041200D     DISPLAY "NETCHK/2030-PROCESS-OP-REC".                               
+041300     IF OP-TEXT(1:4) = "JCW="                                             
+041400        MOVE OP-TEXT(5:40)           TO ERR-JCW                           
+041500     ELSE                                                                 
+041600     IF OP-TEXT(1:6) = "IPVAR="                                           
+041700        MOVE OP-TEXT(7:40)           TO IP-VAR                            
+041800     ELSE                                                                 
+041900     IF OP-TEXT(1:13) = "LOGCONSOLE=ON"                                   
+042000        MOVE "Y"                      TO LOG-CONSOLE                      
+042100     ELSE                                                                 
+042200     IF OP-TEXT(1:14) = "LOGCONSOLE=OFF"                                  
+042300        MOVE "N"                      TO LOG-CONSOLE                      
+042400     ELSE                                                                 
+042500     IF OP-TEXT(1:8) = "LOGFILE="                                         
+042600        MOVE OP-TEXT(9:40)            TO LOG-FILE                         
+042700     ELSE                                                                 
+042800     IF OP-TEXT(1:13) = "LOGDETAIL=ALL"                                   
+042900        MOVE "A"                      TO LOG-DETAIL                       
+043000     ELSE                                                                 
+043100     IF OP-TEXT(1:16) = "LOGDETAIL=ERRORS"                                
+043200        MOVE "E"                      TO LOG-DETAIL.                      
+043300$PAGE                                                                     
+043400*---------------------------------------------------------------          
+043500 3000-CHECK-ACCESS.                                                       
+043600D     DISPLAY "NETCHK/3000-CHECK-ACCESS".                                 
+043700     MOVE "D"                   TO ACCESS-DETERMINED-FLAG                 
+043800     MOVE 99                    TO IP-ERR.                                
+043900                                                                          
+044000     INITIALIZE HPCIVARNAME HPCIVARSTAT SESSION-NAME                      
+044100     PASSWORD X80.                                                        
+044200     MOVE SPACES  TO HPCIVARVAL.                                          
+044300     STRING "HPJOBNAME"   DELIMITED BY SIZE INTO HPCIVARNAME.             
+044400     CALL INTRINSIC "HPCIGETVAR" USING HPCIVARNAME HPCIVARSTAT            
+044500                                    \2\ HPCIVARVAL.                       
+044600     MOVE HPCIVARVAL TO SESSION-NAME.                                     
+044700     MOVE FUNCTION LOWER-CASE(SESSION-NAME) TO NT-USERNAME.               
+044800                                                                          
+044900     MOVE 0 TO CONDITION-WORD.                                            
+045000     IF SESSION-NAME NOT > SPACES                                         
+045100        PERFORM UNTIL ( SESSION-NAME > SPACES )                           
+045200                   OR ( CONDITION-WORD NOT = 0 )                          
+045300           DISPLAY "Enter your assigned username? "                       
+045400              WITH NO ADVANCING                                           
+045500           INITIALIZE SESSION-NAME                                        
+045600           ACCEPT SESSION-NAME                                            
+045700           MOVE FUNCTION LOWER-CASE(SESSION-NAME) TO NT-USERNAME          
+045800           MOVE FUNCTION UPPER-CASE(SESSION-NAME) TO SEARCH-KEY           
+045900           CALL "DBGET" USING DBNAME USERS KEYED                          
+046000                 STATUS-AREA ALL-ITEMS USERS-BUFF SEARCH-KEY              
+046100           IF NO-ENTRY                                                    
+046200              MOVE SPACES TO SESSION-NAME                                 
+046300              MOVE 0 TO CONDITION-WORD                                    
+046400              DISPLAY "Invalid user name, Try again."                     
+046500           END-IF                                                         
+046600        END-PERFORM                                                       
+046700     ELSE                                                                 
+046800        MOVE FUNCTION UPPER-CASE(SESSION-NAME) TO SEARCH-KEY              
+046900        CALL "DBGET" USING DBNAME USERS KEYED                             
+047000              STATUS-AREA ALL-ITEMS USERS-BUFF SEARCH-KEY                 
+047100        IF NO-ENTRY                                                       
+047200           MOVE 0 TO CONDITION-WORD                                       
+047300           DISPLAY "Invalid user name, Logon again."                      
+047400           MOVE 1 TO IP-ERR                                               
+047500           MOVE "D" TO ACCESS-DETERMINED-FLAG                             
+047600           PERFORM 5000-OUTPUT-STATUS                                     
+047700           GO TO END-OF-PROGRAM                                           
+047800        END-IF                                                            
+047900     END-IF                                                               
+048000     IF IMAGE-ERRORS                                                      
+048100        MOVE -1 TO IP-ERR                                                 
+048200        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+048300        PERFORM 5000-OUTPUT-STATUS                                        
+048400        GO TO 9000-IMAGE-ERRORS.                                          
+048500                                                                          
+048600     MOVE 1 TO X80LEN.                                                    
+048700     STRING "ENTER USER (" DELIMITED BY SIZE                              
+048800            SESSION-NAME   DELIMITED BY SPACE                             
+048900            ") PASSWORD:"  DELIMITED BY SIZE                              
+049000            %33 "&dS"      DELIMITED BY SIZE                              
+049100       INTO X80 WITH POINTER X80LEN.                                      
+049200     INITIALIZE CONDITION-WORD PASSWORD X.                                
+049300     PERFORM VARYING X FROM 1 BY 1                                        
+049400       UNTIL ( PASSWORD > SPACES )                                        
+049500          OR ( CONDITION-WORD NOT = 0 )                                   
+049600          OR ( X > 3 )                                                    
+049700        DISPLAY X80(1:X80LEN) WITH NO ADVANCING                           
+049800        ACCEPT PASSWORD                                                   
+049900        MOVE FUNCTION LOWER-CASE(PASSWORD) TO NT-PASSWORD                 
+050000        MOVE FUNCTION UPPER-CASE(PASSWORD) TO PASS-PASSWORD               
+050100        MOVE SPACES TO SEARCH-KEY                                         
+050200        STRING PASS-PASSWORD USERS-USERNAME                               
+050300         DELIMITED BY SIZE INTO SEARCH-KEY                                
+050400        CALL "DBGET" USING DBNAME PASSWORDS KEYED                         
+050500              STATUS-AREA ALL-ITEMS PASS-BUFF SEARCH-KEY                  
+050600        IF NO-ENTRY                                                       
+050700           MOVE 0 TO CONDITION-WORD                                       
+050800           DISPLAY "Invalid Password "                                    
+050900           INITIALIZE CONDITION-WORD PASSWORD                             
+051000        END-IF                                                            
+051100     END-PERFORM.                                                         
+051200     IF IMAGE-ERRORS                                                      
+051300        MOVE -2 TO IP-ERR                                                 
+051400        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+051500        PERFORM 5000-OUTPUT-STATUS                                        
+051600        GO TO 9000-IMAGE-ERRORS.                                          
+051700                                                                          
+051800     IF X > 3                                                             
+051900        MOVE  2 TO IP-ERR                                                 
+052000        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+052100        PERFORM 5000-OUTPUT-STATUS                                        
+052200        GO TO END-OF-PROGRAM.                                             
+052300                                                                          
+052400     perform get-firewall-table.                                          
+052500     Move "0" To FireWall-sw.                                             
+052600     Perform Varying FTIDX From 1 By 1                                    
+052700       Until FTIDX > FTCNT                                                
+052800      If FT-IP-ADDRESS(FTCNT) = IP-ADDRESS                                
+052900       Move "1" To FireWall-sw                                            
+053000      End-If                                                              
+053100     End-Perform.                                                         
+053200                                                                          
+053300     IF FROM-FIREWALL                                                     
+053400        PERFORM 6000-ASK-FIREWALL                                         
+053500        PERFORM 1011-GET-REAL-IP.                                         
+053600                                                                          
+053700     PERFORM 8000-SET-TIWSDEV-REMIPADR.                                   
+053900                                                                          
+054000D    DISPLAY "CALLING TIWSDEV-SECOND TIME *************"                  
+054100                                                                          
+054200     CALL "TIWSDEV" USING IP-LDEV CONNTYPE RETURN-ERROR.                  
+054300D    DISPLAY "IP-LDEV = [" IP-LDEV "]".                                   
+054400D    DISPLAY "CONNTYPE = [" CONNTYPE "]".                                 
+054500D    DISPLAY "RETURN-ERROR = [" RETURN-ERROR "]".                         
+054600     IF RETURN-ERROR NOT = 0                                              
+054700        DISPLAY "ERROR CALLING TIWSDEV"                                   
+054800        DISPLAY "ERROR CALLING TIWSDEV" UPON CONSOLE                      
+054900        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+055000        IF RETURN-ERROR < 0                                               
+055100           DISPLAY "NETCHK/(B) IMAGE ERROR IS SUSPECTED"                  
+055200           DISPLAY "NETCHK/(B) IMAGE ERROR IS SUSPECTED"                  
+055300                                                      UPON CONSOLE        
+055400           MOVE 4 TO IP-ERR                                               
+055500        ELSE                                                              
+055600           DISPLAY "IP address may not be setup"                          
+055700           DISPLAY "IP address may not be setup" UPON CONSOLE             
+055800           MOVE 5 TO IP-ERR                                               
+055900        END-IF                                                            
+056000        PERFORM 5000-OUTPUT-STATUS                                        
+056100        GO TO END-OF-PROGRAM                                              
+056200     END-IF.                                                              
+056300     MOVE IP-LDEV TO SEARCH-KEY.                                          
+056400     CALL "DBGET" USING DBNAME TIWDEV KEYED                               
+056500           STATUS-AREA ALL-ITEMS TIWDEV-BUFFER SEARCH-KEY.                
+056600     IF NO-ENTRY                                                          
+056700        MOVE 0 TO CONDITION-WORD                                          
+056800        DISPLAY "Invalid Device number "                                  
+056900        INITIALIZE CONDITION-WORD TIWDEV-BUFFER                           
+057000        MOVE "YE" TO TIWDEV-MPEACDFLAG.                                   
+057100     PERFORM VARYING X FROM 1 BY 1                                        
+057200       UNTIL ( X > 30 )                                                   
+057300          OR ( PASS-DEVICETABLE(X) = IP-LDEV )                            
+057400          OR ( PASS-DEVICETABLE(X) = "@   " )                             
+057500      CONTINUE                                                            
+057600     END-PERFORM                                                          
+057700     IF X > 30                                                            
+057800        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+057900        MOVE 6 TO IP-ERR                                                  
+058000        DISPLAY "ACCESS TO DEVICE " IP-LDEV " NOT ALLOWED"                
+058100        DISPLAY "ACCESS TO DEVICE " IP-LDEV " NOT ALLOWED"                
+058200          UPON CONSOLE                                                    
+058300        PERFORM 5000-OUTPUT-STATUS                                        
+058400        GO TO END-OF-PROGRAM.                                             
+058500                                                                          
+058600     IF TIWDEV-MPEACDFLAG(1:1) = "Y"  AND                                 
+058700        MPE-LOGONID <> TIWDEV-LOGONID                                     
+058800        MOVE "D" TO ACCESS-DETERMINED-FLAG                                
+058900        MOVE 6 TO IP-ERR                                                  
+059000        DISPLAY "LOGON  TO DEVICE " IP-LDEV " NOT ALLOWED"                
+059100        DISPLAY "LOGON  TO DEVICE " IP-LDEV " NOT ALLOWED"                
+059200          UPON CONSOLE                                                    
+059300        PERFORM 5000-OUTPUT-STATUS                                        
+059400        GO TO END-OF-PROGRAM.                                             
+059500                                                                          
+059600     MOVE "A"                   TO ACCESS-DETERMINED-FLAG                 
+059700     MOVE 0                     TO IP-ERR.                                
+059800                                                                          
+059900*---------------------------------------------------------------          
+060000 4000-DISPLAY-STATUS.                                                     
+060100D     DISPLAY "NETCHK/4000-DISPLAY-STATUS".                               
+060200     DISPLAY "Net Check A0.01  Copyright TIW Corporation, Inc."           
+060300                                                                          
+060400     DISPLAY " "                                                          
+060500     DISPLAY "Parameter settings:".                                       
+060600     DISPLAY " ".                                                         
+060700     DISPLAY "  Error jcw: ", ERR-JCW.                                    
+060800     IF NOT SHOW-IP                                                       
+060900        DISPLAY " IP address: ", IP-ADDRESS.                              
+061000     DISPLAY "    Default: ", DEFAULT.                                    
+061100     DISPLAY "Default err: ", DEFAULT-ERROR.                              
+061200     DISPLAY "Log console: ", LOG-CONSOLE.                                
+061300     DISPLAY "   Log file: ", LOG-FILE.                                   
+061400     DISPLAY " Log Detail: ", LOG-DETAIL.                                 
+061500     DISPLAY " ".                                                         
+061600                                                                          
+061700                                                                          
+061800     DISPLAY " ".                                                         
+061900                                                                          
+062000     IF ACCESS-ALLOWED                                                    
+062100        DISPLAY "You are allowed access to the system!"                   
+062200     ELSE                                                                 
+062300        DISPLAY "You are denied access to the system!"                    
+062400        DISPLAY "Error: ", IP-ERR.                                        
+062500                                                                          
+062600     DISPLAY " ".                                                         
+062700*---------------------------------------------------------------          
+062800 5000-OUTPUT-STATUS.                                                      
+062900D     DISPLAY "NETCHK/5000-OUTPUT-STATUS".                                
+063000     IF ERR-JCW <> SPACES                                                 
+063100        CALL INTRINSIC "PUTJCW"                                           
+063200          USING ERR-JCW IP-ERR ERROR-CODE.                                
+063300     IF IP-VAR <> SPACES                                                  
+063400        STRING "SETVAR " IP-VAR QUOTE IP-ADDRESS QUOTE %15                
+063500         DELIMITED BY SIZE INTO CMD-TEXT                                  
+063600        CALL INTRINSIC "HPCICOMMAND"                                      
+063700          USING CMD-TEXT CMD-ERROR CMD-ERROR-PARM \2\.                    
+063800     IF LOG-CONSOLE = "Y" OR LOG-FILE <> SPACES                           
+063900        ACCEPT DATE-D  FROM DATE                                          
+064000        ACCEPT TIME-D  FROM TIME                                          
+064100        IF(LOG-CONSOLE = "Y" AND LOG-DETAIL = "A") OR                     
+064200           (LOG-CONSOLE = "Y" AND LOG-DETAIL = "E" AND                    
+064300           (ACCESS-DENIED))                                               
+064400           MOVE SPACES                TO CMD-TEXT                         
+064500           IF ACCESS-ALLOWED                                              
+064600              MOVE "NETCHK:"          TO CMD-TEXT                         
+064700              MOVE 7                  TO I                                
+064800           ELSE                                                           
+064900              MOVE "NETERR("          TO CMD-TEXT                         
+065000              MOVE 8                  TO I                                
+065100              MOVE IP-ERR          TO ERR-D                               
+065200              PERFORM VARYING J FROM 1 BY 1                               
+065300                        UNTIL J > 5                                       
+065400                IF ERR-D(J:1) <> SPACE                                    
+065500                   MOVE ERR-D(J:1) TO CMD-TEXT(I:1)                       
+065600                   ADD 1               TO I                               
+065700                END-IF                                                    
+065800              END-PERFORM                                                 
+065900              MOVE "):"               TO CMD-TEXT(I:)                     
+066000              ADD 2                   TO I                                
+066100           END-IF                                                         
+066200           PERFORM VARYING J FROM 1 BY 1                                  
+066300                     UNTIL J > 8                                          
+066400             IF USER-NAME(J:1) <> SPACE                                   
+066500                MOVE USER-NAME(J:1) TO CMD-TEXT(I:1)                      
+066600                ADD 1                   TO I                              
+066700             END-IF                                                       
+066800           END-PERFORM                                                    
+066900           MOVE "."                   TO CMD-TEXT(I:1)                    
+067000           ADD 1                      TO I                                
+067100           PERFORM VARYING J FROM 1 BY 1                                  
+067200                     UNTIL J > 8                                          
+067300             IF ACCT-NAME(J:1) <> SPACE                                   
+067400                MOVE ACCT-NAME(J:1) TO CMD-TEXT(I:1)                      
+067500                ADD 1                   TO I                              
+067600             END-IF                                                       
+067700           END-PERFORM                                                    
+067800           MOVE "("                  TO CMD-TEXT(I:2)                     
+067900           ADD 2                      TO I                                
+068000           PERFORM VARYING J FROM 1 BY 1                                  
+068100                     UNTIL J > 15                                         
+068200             IF IP-ADDRESS(J:1) <> SPACE                                  
+068300                MOVE IP-ADDRESS(J:1) TO CMD-TEXT(I:1)                     
+068400                ADD 1                    TO I                             
+068500             END-IF                                                       
+068600           END-PERFORM                                                    
+068700           MOVE ") "                  TO CMD-TEXT(I:2)                    
+068800           ADD 2                      TO I                                
+068900           MOVE DATE-D(3:2)       TO CMD-TEXT(I:2)                        
+069000           MOVE "/"                   TO CMD-TEXT(I + 2:1)                
+069100           MOVE DATE-D(5:2)       TO CMD-TEXT(I + 3:2)                    
+069200           MOVE "/"                   TO CMD-TEXT(I + 5:1)                
+069300           IF DATE-D(1:2) > "90"                                          
+069400              MOVE "19"               TO CMD-TEXT(I + 6:2)                
+069500           ELSE                                                           
+069600              MOVE "20"               TO CMD-TEXT(I + 6:2)                
+069700           END-IF                                                         
+069800           MOVE DATE-D(1:2)       TO CMD-TEXT(I + 8:2)                    
+069900           MOVE SPACE                 TO CMD-TEXT(I + 10:1)               
+070000           ADD 11                     TO I                                
+070100           MOVE TIME-D(1:2)       TO CMD-TEXT(I:2)                        
+070200           MOVE ":"                   TO CMD-TEXT(I + 2:1)                
+070300           MOVE TIME-D(3:2)       TO CMD-TEXT(I + 3:2)                    
+070400           MOVE ":"                   TO CMD-TEXT(I + 5:1)                
+070500           MOVE TIME-D(5:2)       TO CMD-TEXT(I + 6:2)                    
+070600           ADD 8                      TO I                                
+070700           DISPLAY CMD-TEXT(1:I - 1) UPON CONSOLE                         
+070800        END-IF                                                            
+070900        IF(LOG-FILE <> SPACES AND LOG-DETAIL = "A") OR                    
+071000           (LOG-FILE <> SPACES AND LOG-DETAIL = "E" AND                   
+071100           (ACCESS-DENIED))                                               
+071200           OPEN EXTEND NETLOG                                             
+071300           IF NETLOG-STATUS <> "00"                                       
+071400              DISPLAY "** NETLOG open failed **!"                         
+071500                 UPON CONSOLE                                             
+071600           ELSE                                                           
+071700              MOVE SPACES             TO NETLOG-DATA                      
+071800              IF ACCESS-ALLOWED                                           
+071900                 MOVE "allow"         TO NL-STATUS                        
+072000              ELSE                                                        
+072100                 MOVE "deny"          TO NL-STATUS                        
+072200              END-IF                                                      
+072300              MOVE IP-ERR          TO NL-ERR                              
+072400              MOVE USER-NAME       TO NL-USER-NAME                        
+072500              MOVE ACCT-NAME       TO NL-ACCT-NAME                        
+072600              MOVE IP-ADDRESS      TO NL-IP-ADDRESS                       
+072700              MOVE DATE-D          TO NL-DATE(3:)                         
+072800              IF DATE-D(1:2) > "90"                                       
+072900                 MOVE "19"            TO NL-DATE(1:2)                     
+073000              ELSE                                                        
+073100                 MOVE "20"            TO NL-DATE(1:2)                     
+073200              END-IF                                                      
+073300              MOVE TIME-D(1:6)    TO NL-TIME                              
+073400              MOVE SESSION-NAME TO NL-SESSION                             
+073500              WRITE NETLOG-DATA.                                          
+073600*---------------------------------------------------------------          
+073700 6000-ASK-FIREWALL.                                                       
+073800D     DISPLAY "NETCHK/6000-ASK-FIREWALL".                                 
+073900     DISPLAY %33 "%%i0P" WITH NO ADVANCING.                               
+074000     ACCEPT IP-FROM-FIREWALL.                                             
+074100D    DISPLAY "FIREWALL RETURNED [" IP-FROM-FIREWALL "]".                  
+074200*------------------------------------------------------------             
+074300 7000-CMD-STR.                                                            
+074400D     DISPLAY "NETCHK/7000-CMD-STR".                                      
+074500     CALL INTRINSIC "HPCICOMMAND" USING CMD-STR E1 E2 \2\.                
+074600     IF ( E1 GREATER THAN ZERO OR                                         
+074700          E2 GREATER THAN ZERO)                                           
+074800        INSPECT CMD-STR REPLACING ALL %15 BY " "                          
+074900        DISPLAY "ERROR " E1 " and " E2                                    
+075000        DISPLAY "WHILE EXECUTING THE FOLLOWING COMMAND:"                  
+075100        DISPLAY QUOTE CMD-STR QUOTE.                                      
+075200D    INSPECT CMD-STR REPLACING ALL %15 BY " ".                            
+075300D     DISPLAY "NETCHK/CMD-STR = " CMD-STR.                                
+075400D     DISPLAY "NETCHK/E1 = " E1.                                          
+075500D     DISPLAY "NETCHK/E2 = " E2.                                          
+075600     INITIALIZE CMD-STR E1 E2.                                            
+075700*---------------------------------------------------------------          
+075800 8000-SET-TIWSDEV-REMIPADR.                                               
+075900     PERFORM VARYING X1 FROM 20 BY -1                                     
+076000       UNTIL X1 IS LESS THAN 1                                            
+076100          OR ((IP-ADDRESS (X1:1) NOT EQUAL SPACES ) AND                   
+076200              (IP-ADDRESS (X1:1) NOT EQUAL %0))                           
+076300      CONTINUE                                                            
+076400     END-PERFORM.                                                         
+076500                                                                          
+076600     MOVE %0 TO HPCIVARNAME.                                              
+076700     MOVE ZERO TO HPCIVARSTAT.                                            
+076800     MOVE "TIWSDEV_REMIPADDR" TO HPCIVARNAME.                             
+076900     MOVE IP-ADDRESS TO HPCIVARVAL.                                       
+077000     CALL INTRINSIC "HPCIPUTVAR"                                          
+077100      USING HPCIVARNAME HPCIVARSTAT \2\ HPCIVARVAL \11\ X1.               
+077200*---------------------------------------------------------------          
+077300 9000-IMAGE-ERRORS.                                                       
+077400     CALL "DBEXPLAIN" USING STATUS-AREA.                                  
+077500*---------------------------------------------------------------          
+077600 END-OF-PROGRAM.                                                          
+077700     CALL "DBCLOSE" USING DBNAME MODE-1 NULL-ITEM STATUS-AREA.            
+077800     CLOSE NETLOG.                                                        
+077900D     DISPLAY "Leaving netchk program".                                   
+078000     STOP RUN.                                                            
+078100*---------------------------------------------------------------          
+078200 get-firewall-table.                                                      
+078300     INITIALIZE Firewall-Table.                                           
+078400     Perform Rewind-Firewalls.                                            
+078500     Perform Varying FTIDX From 1 by 1                                    
+078600       Until End-Of-File or FTIDX > 64                                    
+078700      Move Spaces To Firewalls-Buffer                                     
+078800      Perform Get-Firewalls-Serial                                        
+078900      If Not End-Of-File                                                  
+079000       Add 1 To FTCNT                                                     
+079100       Display "Known firewal: " FB-FIREWALL-IP                           
+079200       Move FB-FIREWALL-IP     To FT-IP-ADDRESS(FTCNT)                    
+079300      End-If                                                              
+079400     End-Perform.                                                         
+079500*--------------------------------------------------------------           
+079600 Rewind-Firewalls.                                                        
+079700     CALL "DBCLOSE" USING DBNAME FireWalls MODE-3 STATUS-AREA.            
+079800     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERRORS.                             
+079900*--------------------------------------------------------------           
+080000 Get-Firewalls-Serial.                                                    
+080100     CALL "DBGET" USING DBNAME FireWalls SERIAL                           
+080200          STATUS-AREA ALL-ITEMS FireWalls-Buffer SEARCH-KEY.              
+080300     IF IMAGE-ERRORS GO TO 9000-IMAGE-ERRORS.                             
